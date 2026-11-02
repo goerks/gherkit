@@ -233,3 +233,12 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 .st .arg { min-width: 0; overflow-x: auto; }
 .st .grid2 { grid-template-columns: minmax(0, 200px) minmax(0, 1fr); }
 .st .step-hint { margin-left: 0; padding-left: 118px; }
+
+/* Split pane is narrow: tools drop below the step, the block head wraps, the feature head stacks */
+.main.split .st .step { grid-template-columns: 96px minmax(0, 1fr); }
+.main.split .st .step .tools { grid-column: 2; justify-self: end; opacity: .6; }
+.main.split .st .step:hover .tools, .main.split .st .step:focus-within .tools { opacity: 1; }
+.main.split .st .block-head { flex-wrap: wrap; }
+.main.split .st .block-head input { flex: 1 1 150px; min-width: 120px; }
+.main.split .st .grid2 { grid-template-columns: minmax(0, 1fr); }
+.main.split .st .step-hint { padding-left: 102px; }
