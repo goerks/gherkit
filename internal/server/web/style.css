@@ -274,10 +274,19 @@ table.cases tr.case-detail td { background: var(--bg); padding: 8px 14px 12px; }
 .st .lst-item:hover { background: var(--sunken); }
 .st .lst-item.sel { background: var(--accent-soft); font-weight: 600; }
 .st .lst-item.over { box-shadow: 0 -2px 0 var(--accent); }
-.st .lst-item .grip { color: var(--muted); cursor: grab; width: 12px; font-size: 11px; }
+.st .lst-item .grip { color: var(--muted); cursor: grab; flex: 0 0 14px; font-size: 11px; letter-spacing: -2px; overflow: hidden; }
 .st .lst-item .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st .lst-item .lbl i { color: var(--muted); font-weight: 400; }
 .st .lst-item .cnt { font-size: 11px; color: var(--muted); background: var(--sunken); border-radius: 999px; padding: 0 8px; }
 .st-list .add { padding: 6px 4px 2px; }
 .st-detail .block { margin-top: 0; }
 @media (max-width: 900px) { .st-cols { grid-template-columns: minmax(0, 1fr); } .st-list { position: static; max-height: 40vh; } }
+
+/* The detail column can be narrow: let the step tools drop below the field */
+.st-detail { container-type: inline-size; }
+@container (max-width: 620px) {
+  .step { grid-template-columns: 96px minmax(0, 1fr); }
+  .step .tools { grid-column: 2; justify-self: end; opacity: .6; }
+  .step:hover .tools, .step:focus-within .tools { opacity: 1; }
+  .step-hint { padding-left: 102px; }
+}

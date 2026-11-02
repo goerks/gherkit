@@ -65,3 +65,12 @@ Code and Document side by side, the document updates while typing.
 
 **Decision (2026-11-02):** all four variants stay in M1, Code and Document are polished first, and the Code view
 stays a lightweight textarea. CodeMirror 6 is reconsidered when large files become common.
+
+## Implemented for M1
+
+| Variant | Addition | Screenshot |
+| --- | --- | --- |
+| Structure | **Calm cards:** tags and description appear as chips until used, keywords are colored pills (click or Alt+Up/Down), Enter adds the next step | ![Structure](img/editor-struct.png) |
+| Structure | **List and detail:** scenario list with test case counts, edit one block at a time, reorder by drag and drop (Background first, scenarios before rules) | ![Structure list](img/editor-struct-list.png) |
+| Split | **Form and preview:** form (or code) on the left, preview on the right, the focused step is marked, a click in the preview focuses it in the form | ![Split](img/editor-split.png) |
+| Split | **Test cases tab:** every test case generated from scenario outlines, expandable into readable steps; a Problems tab next to the Document tab | ![Split test cases](img/editor-split-cases.png) |
