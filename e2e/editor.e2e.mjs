@@ -129,21 +129,21 @@ test('code view keeps indentation on Enter, indents blocks and toggles comments'
   await page.keyboard.press('Control+End');
   await page.keyboard.type('\n\n  Scenario: Editing\n');
   // after a block header the next line is indented one level deeper
-  await page.keyboard.type('Given a');
-  assert.match(await page.inputValue('#src'), /\n  Scenario: Editing\n    Given a$/);
+  await page.keyboard.type('Given zz');
+  assert.match(await page.inputValue('#src'), /\n  Scenario: Editing\n    Given zz$/);
   // the next step keeps the indentation
-  await page.keyboard.type('\nWhen b');
-  assert.match(await page.inputValue('#src'), /\n    Given a\n    When b$/);
+  await page.keyboard.type('\nWhen yy');
+  assert.match(await page.inputValue('#src'), /\n    Given zz\n    When yy$/);
   // comment out both steps and back
   await page.keyboard.press('Shift+Home');
   await page.keyboard.press('Shift+ArrowUp');
   await page.keyboard.press('Control+/');
-  assert.match(await page.inputValue('#src'), /\n    # Given a\n    # When b$/);
+  assert.match(await page.inputValue('#src'), /\n    # Given zz\n    # When yy$/);
   await page.keyboard.press('Control+/');
-  assert.match(await page.inputValue('#src'), /\n    Given a\n    When b$/);
+  assert.match(await page.inputValue('#src'), /\n    Given zz\n    When yy$/);
   // Shift+Tab outdents the selected lines
   await page.keyboard.press('Shift+Tab');
-  assert.match(await page.inputValue('#src'), /\n  Given a\n  When b$/);
+  assert.match(await page.inputValue('#src'), /\n  Given zz\n  When yy$/);
   assert.deepEqual(page.errors, []);
   await page.close();
 });

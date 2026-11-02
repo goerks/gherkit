@@ -302,9 +302,12 @@
   function syncDocToCursor() {
     if (S.variant !== 'split') return;
     var line = src.value.slice(0, src.selectionStart).split('\n').length, best = null, bestLine = 0;
+    var first = null;
     $('view-doc').querySelectorAll('[id^="n-"]').forEach(function (n) {
-      var l = +n.id.slice(2); if (l <= line && l >= bestLine) { best = n; bestLine = l; }
+      var l = +n.id.slice(2); if (!first) first = n;
+      if (l <= line && l >= bestLine) { best = n; bestLine = l; }
     });
+    if (!best) best = first; // cursor on the tag line above "Feature:".
     var old = $('view-doc').querySelector('.cur'); if (old && old !== best) old.classList.remove('cur');
     if (best) { best.classList.add('cur'); best.scrollIntoView({ block: 'nearest' }); }
   }
