@@ -171,6 +171,7 @@ test('document view filters scenarios by tag', async () => {
 test('split view marks the document block of the cursor line', async () => {
   const page = await open('split', 'shop/checkout.feature');
   await page.waitForSelector('.doc h1');
+  await page.click('#split-left [data-left="code"]');
   await page.click('#src');
   await page.keyboard.press('Control+End');
   await page.waitForSelector('.doc .cur');
@@ -216,7 +217,9 @@ test('structure view pastes a table from a spreadsheet', async () => {
 test('split view: resize the panes and click a block to move the code cursor', async () => {
   const page = await open('split', 'shop/checkout.feature');
   await page.waitForSelector('.doc h1');
+  await page.click('#split-left [data-left="code"]');
   const width = () => page.evaluate(() => document.getElementById('view-code').getBoundingClientRect().width);
+  await page.waitForSelector('#view-code:not([hidden])');
   const w0 = await width();
   await page.focus('#split-handle');
   await page.keyboard.press('ArrowRight');
@@ -239,14 +242,63 @@ test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
   mkdirSync(process.env.GHERKIT_SHOTS, { recursive: true });
   for (const [variant, name] of [['struct', 'editor-struct'], ['split', 'editor-split']]) {
     const page = await open(variant, 'shop/checkout.feature');
-    await page.waitForSelector(variant === 'struct' ? '.st .block' : '.doc h1');
+    await page.waitForSelector(variant === 'struct' ? '.st .block' : '.st .block, .doc h1');
     if (variant === 'split') {
-      await page.click('#src');
-      await page.keyboard.press('Control+Home');
-      for (let i = 0; i < 16; i++) await page.keyboard.press('ArrowDown');
+      await page.locator('.st input[aria-label="step"]').nth(2).click();
       await page.waitForSelector('.doc .cur');
     }
     await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, name + '.png') });
     await page.close();
   }
+});
+
+test('structure (calm cards): chips offer optional fields, keywords are pills, Enter continues the steps', async () => {
+  const page = await open('struct', 'shop/checkout.feature');
+  await page.waitForSelector('.st .block.scenario');
+  const block = () => page.locator('.st .block.scenario').first();
+  // a scenario without tags shows a chip, not an empty tags field
+  assert.equal(await block().locator('[data-key$=":tags"]').count(), 0);
+  await block().locator('.chips button', { hasText: '+ Tags' }).click();
+  await page.waitForFunction(() => (document.activeElement.dataset.key || '').endsWith(':tags'));
+  await page.keyboard.type('@smoke');
+  await page.waitForFunction(() => /@smoke\n\s+Scenario/.test(window.gherkit.text));
+  // the keyword is a pill; Alt+Down changes it
+  const first = block().locator('input[aria-label="step"]').first();
+  assert.equal((await block().locator('.step .pill').first().textContent()).trim(), 'Given');
+  await first.click();
+  await page.keyboard.press('Alt+ArrowDown');
+  assert.equal((await block().locator('.step .pill').first().textContent()).trim(), 'When');
+  await page.waitForFunction(() => /When a paid order/.test(window.gherkit.text));
+  // Enter after a "When" step adds a "Then" step and focuses it
+  const second = block().locator('input[aria-label="step"]').nth(1);
+  await second.click();
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.activeElement.getAttribute('aria-label') === 'step' && document.activeElement.value === '');
+  await page.keyboard.type('zzz');
+  await page.waitForFunction(() => /Then zzz/.test(window.gherkit.text));
+  assert.equal((await page.evaluate(() => window.gherkit.parsed.errors)).length, 0, 'printed text parses');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('split (form and preview): edits appear in the preview, clicks sync both ways', async () => {
+  const page = await open('split', 'shop/checkout.feature');
+  await page.waitForSelector('.st .block.scenario');
+  await page.waitForSelector('.doc h1');
+  assert.equal(await page.locator('#view-code').isHidden(), true, 'left half is the form by default');
+  const input = (n) => page.locator('.st .block.scenario').first().locator('input[aria-label="step"]').nth(n);
+  await input(1).fill('the order is confirmed by the customer');
+  await page.waitForFunction(() => document.querySelector('.doc').textContent.includes('confirmed by the customer'));
+  // focusing a form step marks it in the preview
+  await input(0).click();
+  await page.waitForFunction(() => (document.querySelector('.doc .cur') || { textContent: '' }).textContent.includes('a paid order'));
+  // clicking a step in the preview focuses it in the form
+  await page.locator('.doc ol.steps li', { hasText: 'confirmed by the customer' }).click();
+  await page.waitForFunction(() => (document.activeElement.value || '').includes('confirmed by the customer'));
+  // the left half can show the code instead
+  await page.click('#split-left [data-left="code"]');
+  await page.waitForSelector('#view-code:not([hidden])');
+  assert.match(await page.inputValue('#src'), /confirmed by the customer/);
+  assert.deepEqual(page.errors, []);
+  await page.close();
 });

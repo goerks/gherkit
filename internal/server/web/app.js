@@ -24,7 +24,7 @@
       row: '+ Zeile', col: '+ Spalte', newFileName: 'Dateiname für das neue Feature (z. B. login.feature):', discard: 'Ungespeicherte Änderungen verwerfen?',
       folderFeatures: '{n} Features', fmtFailed: 'Formatieren nicht möglich: Syntaxfehler', comments: 'Kommentare',
       tagFilter: 'Nach Tag filtern', clearFilter: 'Filter aufheben', noMatch: 'Kein Szenario mit diesem Tag.',
-      copy: 'Kopie', pasteHint: 'Aus Excel einfügen: Tabellenbereich kopieren und hier einfügen', duplicate: 'Duplizieren', fold: 'Auf-/zuklappen', splitHandle: 'Breite anpassen', nSteps: '{n} Schritte', nBlocks: '{n} Blöcke'
+      copy: 'Kopie', leftForm: 'Formular', leftCode: 'Code', splitLeftLabel: 'Linke Seite', stepHint: 'Enter: nächster Schritt · Alt+↑/↓: Schlüsselwort wechseln', chipTags: '+ Tags', chipDesc: '+ Beschreibung', kwTitle: 'Schlüsselwort wechseln (Klick, Umschalt+Klick rückwärts)', pasteHint: 'Aus Excel einfügen: Tabellenbereich kopieren und hier einfügen', duplicate: 'Duplizieren', fold: 'Auf-/zuklappen', splitHandle: 'Breite anpassen', nSteps: '{n} Schritte', nBlocks: '{n} Blöcke'
     },
     en: {
       vCode: 'Code', vDoc: 'Document', vStruct: 'Structure', vSplit: 'Split', format: 'Format', save: 'Save',
@@ -40,7 +40,7 @@
       row: '+ Row', col: '+ Column', newFileName: 'File name for the new feature (e.g. login.feature):', discard: 'Discard unsaved changes?',
       folderFeatures: '{n} features', fmtFailed: 'Cannot format: syntax errors', comments: 'Comments',
       tagFilter: 'Filter by tag', clearFilter: 'Clear filter', noMatch: 'No scenario with this tag.',
-      copy: 'copy', pasteHint: 'Paste from Excel: copy a cell range and paste it here', duplicate: 'Duplicate', fold: 'Collapse/expand', splitHandle: 'Adjust width', nSteps: '{n} steps', nBlocks: '{n} blocks'
+      copy: 'copy', leftForm: 'Form', leftCode: 'Code', splitLeftLabel: 'Left pane', stepHint: 'Enter: next step · Alt+↑/↓: change keyword', chipTags: '+ Tags', chipDesc: '+ Description', kwTitle: 'Change keyword (click, Shift+click backwards)', pasteHint: 'Paste from Excel: copy a cell range and paste it here', duplicate: 'Duplicate', fold: 'Collapse/expand', splitHandle: 'Adjust width', nSteps: '{n} steps', nBlocks: '{n} blocks'
     }
   };
   var lang = 'de';
@@ -80,8 +80,12 @@
   // ---------- state ----------
   var S = {
     root: '', files: [], path: '', text: '', saved: '', parsed: null, lastGood: null, diags: [],
-    variant: 'code', dialect: null, dialectCode: '', steps: [], edit: null, tagFilter: '', folded: {}
+    variant: 'code', dialect: null, dialectCode: '', steps: [], edit: null, tagFilter: '', folded: {}, opened: {}, focusKey: '', curPath: '', splitLeft: 'form'
   };
+
+  try { S.splitLeft = localStorage.getItem('gherkit.splitLeft') === 'code' ? 'code' : 'form'; } catch (e) { }
+  function structActive() { return S.variant === 'struct' || (S.variant === 'split' && S.splitLeft === 'form'); }
+  function codeActive() { return S.variant === 'code' || (S.variant === 'split' && S.splitLeft === 'code'); }
 
   function setStatus(msg, cls) { var s = $('status'); s.textContent = msg || ''; s.className = 'status ' + (cls || ''); }
   function dirty() { return S.text !== S.saved; }
@@ -114,7 +118,7 @@
   function openFile(path) {
     if (dirty() && !confirm(t('discard'))) return Promise.resolve();
     return api('GET', '/api/file?path=' + encodeURIComponent(path)).then(function (f) {
-      S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null; S.lastGood = null; S.parsed = null; S.tagFilter = ''; S.folded = {};
+      S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null; S.lastGood = null; S.parsed = null; S.tagFilter = ''; S.folded = {}; S.opened = {};
       persist(); renderFiles(); showVariant(); setSource(S.text, true); updateDirty();
       return reparse();
     });
@@ -151,7 +155,7 @@
       return ensureDialect(S.parsed.language).then(function () {
         renderCodeHL(); renderProblems(); renderOutline(); renderFacts();
         if (S.variant === 'doc' || S.variant === 'split') renderDoc();
-        if (S.variant === 'struct' && !S.edit) renderStruct();
+        if (structActive() && !S.edit) renderStruct();
       });
     });
   }
@@ -170,20 +174,31 @@
     var has = !!S.path, v = S.variant;
     $('empty').hidden = has;
     $('empty').textContent = S.files.length ? t('noFile') : t('noFiles');
-    $('view-code').hidden = !has || !(v === 'code' || v === 'split');
+    $('view-code').hidden = !has || !codeActive();
     $('view-doc').hidden = !has || !(v === 'doc' || v === 'split');
-    $('view-struct').hidden = !has || v !== 'struct';
+    $('view-struct').hidden = !has || !structActive();
+    $('split-left').hidden = !(v === 'split' && has);
+    document.querySelectorAll('#split-left button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.left === S.splitLeft)); });
     $('main').classList.toggle('split', v === 'split' && has);
     $('split-handle').hidden = !(v === 'split' && has);
     if (!has) return;
     if (v === 'doc' || v === 'split') renderDoc();
-    if (v === 'struct') renderStruct();
-    if (v === 'code' || v === 'split') { setSource(S.text, false); renderCodeHL(); }
+    if (structActive()) renderStruct();
+    if (codeActive()) { setSource(S.text, false); renderCodeHL(); }
   }
   function setVariant(v) {
-    if (S.variant === 'struct' && v !== 'struct') S.edit = null;
+    if (structActive() && !(v === 'struct' || (v === 'split' && S.splitLeft === 'form'))) S.edit = null;
     S.variant = v; persist(); showVariant();
   }
+  // Split: choose what the left half shows (form or code); the right half is always the preview.
+  function setLeft(side) {
+    if (side === S.splitLeft) return;
+    if (S.splitLeft === 'form') S.edit = null;
+    S.splitLeft = side;
+    try { localStorage.setItem('gherkit.splitLeft', side); } catch (e) { }
+    showVariant();
+  }
+  document.querySelectorAll('#split-left button').forEach(function (b) { b.addEventListener('click', function () { setLeft(b.dataset.left); }); });
   function persist() {
     var h = '#variant=' + S.variant + (S.path ? '&file=' + encodeURIComponent(S.path) : '');
     if (location.hash !== h) history.replaceState(null, '', h);
@@ -229,7 +244,7 @@
     gutter.innerHTML = g;
   }
   function jumpTo(line) {
-    if (S.variant !== 'code' && S.variant !== 'split') setVariant('code');
+    if (!codeActive()) { if (S.variant === 'split') setLeft('code'); else setVariant('code'); }
     var lines = src.value.split('\n'), pos = 0;
     for (var i = 0; i < line - 1 && i < lines.length; i++) pos += lines[i].length + 1;
     src.focus(); src.setSelectionRange(pos, pos + (lines[line - 1] || '').length);
@@ -303,7 +318,7 @@
   // In Split, mark the document block that belongs to the cursor line.
   var syncDocSoon = debounce(syncDocToCursor, 80);
   function syncDocToCursor() {
-    if (S.variant !== 'split') return;
+    if (S.variant !== 'split' || S.splitLeft !== 'code') return;
     var line = src.value.slice(0, src.selectionStart).split('\n').length, best = null, bestLine = 0;
     var first = null;
     $('view-doc').querySelectorAll('[id^="n-"]').forEach(function (n) {
@@ -433,26 +448,25 @@
         return '<tr>' + r.cells.map(function (c) { return '<' + tag + '>' + HL.stepText(c.value, { str: 'str', ph: 'ph', num: '' }) + '</' + tag + '>'; }).join('') + '</tr>';
       }).join('') + '</table>';
     }
-    function steps(list) {
-      var last = 'Context';
-      return '<ol class="steps">' + list.map(function (s) {
+    function steps(list, path) {
+      return '<ol class="steps">' + list.map(function (s, k) {
         var kt = s.keywordType || 'Unknown';
-        var h = cm(s.location.line) + '<li id="n-' + s.location.line + '"><span class="skw ' + kt + '">' + esc(s.keyword.trim()) + '</span> ' + HL.stepText(s.text, { str: 'str', ph: 'ph', num: '' });
+        var h = cm(s.location.line) + '<li id="n-' + s.location.line + '" data-path="' + path + '.s' + k + '"><span class="skw ' + kt + '">' + esc(s.keyword.trim()) + '</span> ' + HL.stepText(s.text, { str: 'str', ph: 'ph', num: '' });
         var tbl = s.dataTable ? table(s.dataTable.rows, '', false) : '';
         var doc = s.docString ? '<pre>' + (s.docString.mediaType ? '<span class="media">' + esc(s.docString.mediaType) + '</span>' : '') + esc(s.docString.content) + '</pre>' : '';
         h += s.docString && s.dataTable && s.docString.location.line < s.dataTable.location.line ? doc + tbl : tbl + doc;
         return h + '</li>';
       }).join('') + '</ol>';
     }
-    function bg(b) {
-      return cm(b.location.line) + '<div class="card bg" id="n-' + b.location.line + '">' + editBtn(b.location) + '<div class="kind">' + esc(b.keyword) + '</div>' +
-        (b.name ? '<h3>' + esc(b.name) + '</h3>' : '') + (b.description ? '<div class="desc">' + md(b.description) + '</div>' : '') + steps(b.steps) + '</div>';
+    function bg(b, path) {
+      return cm(b.location.line) + '<div class="card bg" id="n-' + b.location.line + '" data-path="' + path + '">' + editBtn(b.location) + '<div class="kind">' + esc(b.keyword) + '</div>' +
+        (b.name ? '<h3>' + esc(b.name) + '</h3>' : '') + (b.description ? '<div class="desc">' + md(b.description) + '</div>' : '') + steps(b.steps, path) + '</div>';
     }
-    function scenario(s, inherited) {
+    function scenario(s, inherited, path) {
       var line = (s.tags[0] || s).location.line, n = picklesFor(s.id), pre = cm(line);
       if (!shown(s, inherited)) return '';
-      var h = pre + '<div class="card" id="n-' + s.location.line + '">' + editBtn(s.location) + '<div class="kind">' + esc(s.keyword) + '</div><h3>' + HL.stepText(s.name, { str: 'str', ph: 'ph', num: '' }) + '</h3>' + tags(s.tags) +
-        (s.description ? '<div class="desc">' + md(s.description) + '</div>' : '') + steps(s.steps);
+      var h = pre + '<div class="card" id="n-' + s.location.line + '" data-path="' + path + '">' + editBtn(s.location) + '<div class="kind">' + esc(s.keyword) + '</div><h3>' + HL.stepText(s.name, { str: 'str', ph: 'ph', num: '' }) + '</h3>' + tags(s.tags) +
+        (s.description ? '<div class="desc">' + md(s.description) + '</div>' : '') + steps(s.steps, path);
       (s.examples || []).forEach(function (ex) {
         var rows = (ex.tableHeader ? [ex.tableHeader] : []).concat(ex.tableBody || []);
         h += cm((ex.tags[0] || ex).location.line) + '<div class="examples-head">' + esc(ex.keyword) + (ex.name ? ': ' + esc(ex.name) : '') + '</div>' + tags(ex.tags) +
@@ -479,27 +493,54 @@
       }).join('') + (flt ? '<button class="clear" data-tag="">✕ ' + esc(t('clearFilter')) + '</button>' : '') + '</div>';
     }
     var visible = 0, ftags = names(f.tags);
-    f.children.forEach(function (ch) {
-      if (ch.background) out += bg(ch.background);
-      if (ch.scenario) { var o = scenario(ch.scenario, ftags); if (o) visible++; out += o; }
+    f.children.forEach(function (ch, ci) {
+      var cp = 'c' + ci;
+      if (ch.background) out += bg(ch.background, cp);
+      if (ch.scenario) { var o = scenario(ch.scenario, ftags, cp); if (o) visible++; out += o; }
       if (ch.rule) {
         var r = ch.rule, inh = ftags.concat(names(r.tags)), body = '';
-        r.children.forEach(function (rc) { if (rc.background) body += bg(rc.background); if (rc.scenario) { var o2 = scenario(rc.scenario, inh); if (o2) visible++; body += o2; } });
+        r.children.forEach(function (rc, rj) { var rp = cp + '.c' + rj; if (rc.background) body += bg(rc.background, rp); if (rc.scenario) { var o2 = scenario(rc.scenario, inh, rp); if (o2) visible++; body += o2; } });
         if (flt && body.indexOf('class="card"') < 0) return;
-        out += cm((r.tags[0] || r).location.line) + '<section class="rule" id="n-' + r.location.line + '"><div class="kind">' + esc(r.keyword) + '</div><h2>' + esc(r.name) + '</h2>' + tags(r.tags) + (r.description ? '<div class="desc">' + md(r.description) + '</div>' : '');
+        out += cm((r.tags[0] || r).location.line) + '<section class="rule" id="n-' + r.location.line + '" data-path="' + cp + '"><div class="kind">' + esc(r.keyword) + '</div><h2>' + esc(r.name) + '</h2>' + tags(r.tags) + (r.description ? '<div class="desc">' + md(r.description) + '</div>' : '');
         out += body + '</section>';
       }
     });
     if (flt && !visible) out += '<p class="broken">' + esc(t('noMatch')) + '</p>';
     out += cm(1e9) + '</div>';
     view.innerHTML = out;
+    markPath(S.curPath, true);
   }
+  // Mark the preview block that belongs to a form block or step (identified by its position, e.g. c1.s2).
+  function markPath(p, keepScroll) {
+    var d = $('view-doc'), old = d.querySelector('.cur');
+    if (old) old.classList.remove('cur');
+    if (S.variant !== 'split' || S.splitLeft !== 'form') return;
+    S.curPath = p || '';
+    if (!p) return;
+    var n = d.querySelector('[data-path="' + p + '"]');
+    if (n) { n.classList.add('cur'); if (!keepScroll) n.scrollIntoView({ block: 'nearest' }); }
+  }
+  function focusForm(p) {
+    markPath(p);
+    var blk = $('view-struct').querySelector('[data-path="' + p + '"]');
+    if (!blk) return;
+    var inp = blk.querySelector('input[aria-label="step"]') || blk.querySelector('input');
+    if (inp) inp.focus();
+    blk.scrollIntoView({ block: 'nearest' });
+  }
+  $('view-struct').addEventListener('focusin', function (e) {
+    if (S.variant !== 'split') return;
+    var n = e.target.closest('[data-path]'); markPath(n ? n.dataset.path : '');
+  });
   $('view-doc').addEventListener('click', function (e) {
     var b = e.target.closest('button.edit'); if (b) { jumpTo(+b.dataset.line); return; }
     var tg = e.target.closest('[data-tag]');
     if (tg) { S.tagFilter = tg.dataset.tag === S.tagFilter ? '' : tg.dataset.tag; renderDoc(); return; }
     // In Split a click on a block puts the code cursor on its line.
-    if (S.variant === 'split') { var n = e.target.closest('[id^="n-"]'); if (n) { jumpTo(+n.id.slice(2)); syncDocSoon(); } }
+    if (S.variant === 'split') {
+      if (S.splitLeft === 'form') { var pn = e.target.closest('[data-path]'); if (pn) focusForm(pn.dataset.path); }
+      else { var n = e.target.closest('[id^="n-"]'); if (n) { jumpTo(+n.id.slice(2)); syncDocSoon(); } }
+    }
   });
 
   // ---------- split handle ----------
@@ -569,7 +610,7 @@
     });
   }
   function goto(line) {
-    if (S.variant === 'doc') { var n = document.getElementById('n-' + line); if (n) n.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (S.variant === 'doc' || (S.variant === 'split' && S.splitLeft === 'form')) { var n = document.getElementById('n-' + line); if (n) n.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     jumpTo(line);
   }
   function renderFacts() {
@@ -592,6 +633,7 @@
       setSource(S.text, true); updateDirty();
       api('POST', '/api/lint', { path: S.path, content: S.text }).then(function (l) { S.diags = l.diagnostics || []; renderProblems(); renderCodeHL(); });
       renderOutline(); renderFacts();
+      if (S.variant === 'split') renderDoc();
     });
   }, 250);
   function changed() { syncSoon(); }
@@ -612,15 +654,30 @@
     lines.forEach(function (l) { if (l.trim()) min = Math.min(min, l.match(/^\s*/)[0].length); });
     return min === Infinity ? '' : lines.map(function (l) { return l.slice(Math.min(min, l.match(/^\s*/)[0].length)); }).join('\n');
   }
-  function textarea(value, onchange) {
-    var tx = el('textarea', { oninput: function (e) { onchange(e.target.value); tx.rows = Math.max(2, e.target.value.split('\n').length); } });
+  function textarea(value, onchange, key) {
+    var tx = el('textarea', { 'data-key': key, oninput: function (e) { onchange(e.target.value); tx.rows = Math.max(2, e.target.value.split('\n').length); } });
     tx.value = dedent(value); tx.rows = Math.max(2, tx.value.split('\n').length); return tx;
   }
   function tagsInput(obj) {
     return input((obj.tags || []).map(function (x) { return x.name; }).join(' '), function (v) {
       obj.tags = v.split(/\s+/).filter(Boolean).map(function (n) { return { name: n[0] === '@' ? n : '@' + n, id: newId() }; }); changed();
-    }, { placeholder: '@tag', 'aria-label': t('tagsHint') });
+    }, { placeholder: '@tag', 'aria-label': t('tagsHint'), 'data-key': (obj.id || 'feature') + ':tags' });
   }
+  // Tags and description are shown when they have content or were opened with a chip; otherwise a chip offers them.
+  function optionalFields(obj, withTags) {
+    var id = obj.id || 'feature', out = { fields: [], chips: [] };
+    function chip(kind, label) {
+      return el('button', { class: 'chip', text: label, onclick: function () { S.opened[id + ':' + kind] = true; S.focusKey = id + ':' + kind; renderStruct(); } });
+    }
+    if (withTags) {
+      if ((obj.tags && obj.tags.length) || S.opened[id + ':tags']) out.fields.push(el('label', { text: t('tagsHint') }), tagsInput(obj));
+      else out.chips.push(chip('tags', t('chipTags')));
+    }
+    if ((obj.description && obj.description.trim()) || S.opened[id + ':desc']) out.fields.push(el('label', { text: t('description') }), textarea(obj.description, function (v) { obj.description = v; changed(); }, id + ':desc'));
+    else out.chips.push(chip('desc', t('chipDesc')));
+    return out;
+  }
+  function chipRow(chips) { return chips.length ? el('div', { class: 'chips' }, chips) : null; }
   function moveIn(arr, i, d) { var j = i + d; if (j < 0 || j >= arr.length) return; var x = arr[i]; arr[i] = arr[j]; arr[j] = x; changed(); renderStruct(); }
   function removeAt(arr, i) { arr.splice(i, 1); changed(); renderStruct(); }
   function reid(o) {
@@ -697,16 +754,39 @@
     tb.insertBefore(el('button', { text: '⊞', title: t('table'), onclick: function () { if (s.dataTable) delete s.dataTable; else { s.dataTable = { rows: [{ cells: [{ value: '' }, { value: '' }], id: newId() }] }; } changed(); renderStruct(); } }), tb.firstChild);
     return tb;
   }
-  function stepsEditor(steps) {
+  var STEP_ROLES = ['given', 'when', 'then', 'and', 'but'];
+  function firstKw(role) { return kwOptions(role).filter(function (k) { return k.trim() !== '*'; })[0]; }
+  function roleOf(kw) { for (var i = 0; i < STEP_ROLES.length; i++) if (kwOptions(STEP_ROLES[i]).indexOf(kw) >= 0) return i; return -1; }
+  function cycleKeyword(s, dir, pillEl) {
+    var next = STEP_ROLES[(roleOf(s.keyword) + dir + STEP_ROLES.length) % STEP_ROLES.length], kw = firstKw(next);
+    if (!kw) return;
+    s.keyword = kw; s.keywordType = stepKwType(kw); setPill(pillEl, s); changed();
+  }
+  function setPill(pillEl, s) { pillEl.textContent = s.keyword.trim(); pillEl.className = 'pill ' + (s.keywordType || 'Unknown'); }
+  function pill(s) {
+    var b = el('button', { type: 'button', title: t('kwTitle') });
+    setPill(b, s);
+    b.addEventListener('click', function (e) { cycleKeyword(s, e.shiftKey ? -1 : 1, b); });
+    return b;
+  }
+  // Suggested keyword for the step that follows prev.
+  function nextKeyword(prev) { return firstKw(prev.keywordType === 'Action' ? 'then' : 'and') || prev.keyword; }
+  function stepsEditor(steps, path) {
     var box = el('div', {}, []), list = (S.steps || []).map(function (s) { return s.text; });
     var dl = el('datalist', { id: 'dl-steps' }, list.slice(0, 500).map(function (x) { return el('option', { value: x }); }));
     box.appendChild(dl);
     steps.forEach(function (s, i) {
-      var kws = [];
-      ['given', 'when', 'then', 'and', 'but'].forEach(function (k) { kwOptions(k).forEach(function (w) { if (kws.indexOf(w) < 0) kws.push(w); }); });
-      var row = el('div', { class: 'step' }, [
-        select(kws, s.keyword, function (v) { s.keyword = v; s.keywordType = stepKwType(v); changed(); }),
-        input(s.text, function (v) { s.text = v; changed(); }, { list: 'dl-steps', 'aria-label': 'step' }),
+      var pl = pill(s);
+      var row = el('div', { class: 'step', 'data-path': path + '.s' + i }, [
+        pl,
+        input(s.text, function (v) { s.text = v; changed(); }, { list: 'dl-steps', 'aria-label': 'step', 'data-key': 'step:' + s.id, onkeydown: function (e) {
+          if (e.altKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); cycleKeyword(s, e.key === 'ArrowDown' ? 1 : -1, pl); }
+          else if (e.key === 'Enter' && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && s.text.trim()) {
+            e.preventDefault();
+            var kw = nextKeyword(s), ns = { keyword: kw, keywordType: stepKwType(kw), text: '', id: newId() };
+            steps.splice(i + 1, 0, ns); S.focusKey = 'step:' + ns.id; changed(); renderStruct();
+          }
+        } }),
         stepTools(s, steps, i)
       ]);
       box.appendChild(row);
@@ -722,8 +802,10 @@
     box.appendChild(el('div', { class: 'add' }, [el('button', { text: t('addStep'), onclick: function () {
       var prev = steps[steps.length - 1], and = kwOptions('and').filter(function (k) { return k.trim() !== '*'; })[0] || '* ';
       var kw = prev ? and : (kwOptions('given').filter(function (k) { return k.trim() !== '*'; })[0] || '* ');
-      steps.push({ keyword: kw, keywordType: stepKwType(kw), text: '', id: newId() }); changed(); renderStruct();
+      var ns = { keyword: kw, keywordType: stepKwType(kw), text: '', id: newId() };
+      steps.push(ns); S.focusKey = 'step:' + ns.id; changed(); renderStruct();
     } })]));
+    box.appendChild(el('div', { class: 'hint step-hint', text: t('stepHint') }));
     return box;
   }
   function examplesEditor(sc) {
@@ -745,26 +827,24 @@
     } })]));
     return box;
   }
-  function blockEditor(child, arr, i, inRule) {
+  function blockEditor(child, arr, i, inRule, path) {
     if (child.rule) {
-      var r = child.rule, rf = !!S.folded[r.id];
+      var r = child.rule, rf = !!S.folded[r.id], ro = optionalFields(r, true);
       var rhead = el('div', { class: 'block-head' }, [foldButton(r.id), select(kwOptions('rule'), r.keyword, function (v) { r.keyword = v; changed(); }), input(r.name, function (v) { r.name = v; changed(); }, { placeholder: t('name') }), tools(arr, i, true)]);
-      return el('div', { class: 'block rule' + (rf ? ' collapsed' : '') }, [rhead].concat(rf ? [el('div', { class: 'summary', text: t('nBlocks', r.children.length) })] : [
-        el('label', { text: t('tagsHint') }), tagsInput(r),
-        el('label', { text: t('description') }), textarea(r.description, function (v) { r.description = v; changed(); }),
-        el('div', { class: 'children' }, r.children.map(function (c, j) { return blockEditor(c, r.children, j, true); })),
+      return el('div', { class: 'block rule' + (rf ? ' collapsed' : ''), 'data-path': path }, [rhead].concat(rf ? [el('div', { class: 'summary', text: t('nBlocks', r.children.length) })] : [].concat(ro.fields, [
+        chipRow(ro.chips),
+        el('div', { class: 'children' }, r.children.map(function (c, j) { return blockEditor(c, r.children, j, true, path + '.c' + j); })),
         addButtons(r.children, true)
-      ]));
+      ])));
     }
-    var b = child.background || child.scenario, isBg = !!child.background, bf = !!S.folded[b.id];
+    var b = child.background || child.scenario, isBg = !!child.background, bf = !!S.folded[b.id], bo = optionalFields(b, !isBg);
     var kinds = isBg ? kwOptions('background') : kwOptions('scenario').concat(kwOptions('scenarioOutline'));
     var head = el('div', { class: 'block-head' }, [foldButton(b.id), select(kinds, b.keyword, function (v) { b.keyword = v; changed(); }), input(b.name, function (v) { b.name = v; changed(); }, { placeholder: t('name') }), tools(arr, i, true)]);
-    return el('div', { class: 'block ' + (isBg ? 'background' : 'scenario') + (bf ? ' collapsed' : '') }, [head].concat(bf ? [el('div', { class: 'summary', text: t('nSteps', b.steps.length) })] : [
-      isBg ? null : el('label', { text: t('tagsHint') }), isBg ? null : tagsInput(b),
-      el('label', { text: t('description') }), textarea(b.description, function (v) { b.description = v; changed(); }),
-      el('label', { text: t('steps') }), stepsEditor(b.steps),
-      isBg ? null : examplesEditor(b)
-    ]));
+    return el('div', { class: 'block ' + (isBg ? 'background' : 'scenario') + (bf ? ' collapsed' : ''), 'data-path': path }, [head].concat(bf ? [el('div', { class: 'summary', text: t('nSteps', b.steps.length) })] : [].concat(bo.fields, [
+      stepsEditor(b.steps, path),
+      isBg ? null : examplesEditor(b),
+      chipRow(bo.chips)
+    ])));
   }
   function addButtons(children, inRule) {
     function first(k) { return kwOptions(k)[0] || k; }
@@ -786,7 +866,7 @@
   }
   function renderStruct() {
     var view = $('view-struct');
-    if (!S.path || S.variant !== 'struct') return;
+    if (!S.path || !structActive()) return;
     var res = S.parsed;
     if (!res) { view.innerHTML = ''; return; }
     if (res.errors.length) {
@@ -802,18 +882,20 @@
     api('GET', '/api/dialects').then(function (list) {
       list.forEach(function (d) { langSel.appendChild(el('option', { value: d.code, text: d.code + ' – ' + d.native, selected: d.code === f.language })); });
     });
+    var fo = optionalFields(f, true);
     var root = el('div', { class: 'st' }, [
       el('div', { class: 'grid2' }, [
         el('div', {}, [el('label', { text: t('language') }), langSel]),
         el('div', {}, [el('label', { text: t('name') }), el('div', { class: 'block-head' }, [select(kwOptions('feature'), f.keyword, function (v) { f.keyword = v; changed(); }), input(f.name, function (v) { f.name = v; changed(); }, { class: 'name', placeholder: t('name') })])])
       ]),
-      el('label', { text: t('tagsHint') }), tagsInput(f),
-      el('label', { text: t('description') }), textarea(f.description, function (v) { f.description = v; changed(); }),
-      el('div', {}, f.children.map(function (c, i) { return blockEditor(c, f.children, i, false); })),
+      el('div', {}, fo.fields),
+      chipRow(fo.chips),
+      el('div', {}, f.children.map(function (c, i) { return blockEditor(c, f.children, i, false, 'c' + i); })),
       addButtons(f.children, false)
     ]);
     var scroll = view.scrollTop;
     view.innerHTML = ''; view.appendChild(root); view.scrollTop = scroll;
+    if (S.focusKey) { var ft = view.querySelector('[data-key="' + S.focusKey + '"]'); S.focusKey = ''; if (ft) ft.focus(); }
   }
 
   // Translate all keywords of the edited document into another language by
