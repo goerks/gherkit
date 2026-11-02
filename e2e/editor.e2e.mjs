@@ -246,6 +246,8 @@ test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
     if (variant === 'split') {
       await page.locator('.st input[aria-label="step"]').nth(2).click();
       await page.waitForSelector('.doc .cur');
+    } else {
+      await page.locator('.st .block.scenario input[aria-label="step"]').last().click();
     }
     await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, name + '.png') });
     await page.close();
