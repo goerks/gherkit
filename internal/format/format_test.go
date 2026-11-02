@@ -185,3 +185,19 @@ func TestCheck(t *testing.T) {
 		t.Fatal("syntax error not reported")
 	}
 }
+
+func TestFeatureScenarioAfterRuleIsPrintedBeforeRules(t *testing.T) {
+	doc := &messages.GherkinDocument{Feature: &messages.Feature{Keyword: "Feature", Name: "F", Language: "en", Children: []*messages.FeatureChild{
+		{Rule: &messages.Rule{Keyword: "Rule", Name: "R", Children: []*messages.RuleChild{{Scenario: &messages.Scenario{Keyword: "Scenario", Name: "in rule", Steps: []*messages.Step{{Keyword: "Given ", Text: "x"}}}}}}},
+		{Scenario: &messages.Scenario{Keyword: "Scenario", Name: "top level", Steps: []*messages.Step{{Keyword: "Given ", Text: ""}}}},
+	}}}
+	out := Document(doc, Default)
+	res := parse.Source("x", out)
+	if !res.OK() {
+		t.Fatalf("output does not parse: %v\n%s", res.Errors, out)
+	}
+	ch := res.Document.Feature.Children
+	if len(ch) != 2 || ch[0].Scenario == nil || ch[0].Scenario.Name != "top level" || ch[1].Rule == nil {
+		t.Fatalf("structure changed:\n%s", out)
+	}
+}

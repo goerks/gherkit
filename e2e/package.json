@@ -1,0 +1,12 @@
+{
+  "name": "gherkit-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Browser tests for the gherkit editor",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 editor.e2e.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

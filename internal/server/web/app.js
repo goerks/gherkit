@@ -110,7 +110,7 @@
   function openFile(path) {
     if (dirty() && !confirm(t('discard'))) return Promise.resolve();
     return api('GET', '/api/file?path=' + encodeURIComponent(path)).then(function (f) {
-      S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null;
+      S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null; S.lastGood = null; S.parsed = null;
       persist(); renderFiles(); showVariant(); setSource(S.text, true); updateDirty();
       return reparse();
     });
@@ -492,7 +492,17 @@
     var a = Object.assign({ value: value || '', oninput: function (e) { onchange(e.target.value); } }, attrs || {});
     return el('input', a);
   }
-  function textarea(value, onchange) { var tx = el('textarea', { oninput: function (e) { onchange(e.target.value); } }); tx.value = value || ''; return tx; }
+  // Descriptions keep their source indentation in the AST; show them dedented
+  // (the printer re-indents anyway) and size the box to its content.
+  function dedent(v) {
+    var lines = String(v || '').split('\n'), min = Infinity;
+    lines.forEach(function (l) { if (l.trim()) min = Math.min(min, l.match(/^\s*/)[0].length); });
+    return min === Infinity ? '' : lines.map(function (l) { return l.slice(Math.min(min, l.match(/^\s*/)[0].length)); }).join('\n');
+  }
+  function textarea(value, onchange) {
+    var tx = el('textarea', { oninput: function (e) { onchange(e.target.value); tx.rows = Math.max(2, e.target.value.split('\n').length); } });
+    tx.value = dedent(value); tx.rows = Math.max(2, tx.value.split('\n').length); return tx;
+  }
   function tagsInput(obj) {
     return input((obj.tags || []).map(function (x) { return x.name; }).join(' '), function (v) {
       obj.tags = v.split(/\s+/).filter(Boolean).map(function (n) { return { name: n[0] === '@' ? n : '@' + n, id: newId() }; }); changed();
@@ -609,7 +619,13 @@
   function addButtons(children, inRule) {
     function first(k) { return kwOptions(k)[0] || k; }
     function given() { return kwOptions('given').filter(function (k) { return k.trim() !== '*'; })[0] || '* '; }
-    function add(obj) { children.push(obj); changed(); renderStruct(); }
+    // Feature-level scenarios must come before the first Rule (Gherkin
+    // would otherwise attach them to that Rule).
+    function add(obj) {
+      var at = children.length;
+      if (!inRule && !obj.rule) { for (var k = 0; k < children.length; k++) if (children[k].rule) { at = k; break; } }
+      children.splice(at, 0, obj); changed(); renderStruct();
+    }
     var btns = [
       el('button', { text: t('addScenario'), onclick: function () { add({ scenario: { keyword: first('scenario'), name: '', description: '', tags: [], steps: [{ keyword: given(), keywordType: 'Context', text: '', id: newId() }], examples: [], id: newId() } }); } }),
       el('button', { text: t('addOutline'), onclick: function () { add({ scenario: { keyword: first('scenarioOutline'), name: '', description: '', tags: [], steps: [{ keyword: given(), keywordType: 'Context', text: '<param>', id: newId() }], examples: [{ keyword: first('examples'), name: '', description: '', tags: [], tableHeader: { cells: [{ value: 'param' }], id: newId() }, tableBody: [{ cells: [{ value: 'a' }], id: newId() }], id: newId() }], id: newId() } }); } }),
@@ -721,6 +737,12 @@
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); }
     if (e.altKey && e.shiftKey && (e.key === 'F' || e.key === 'f')) { e.preventDefault(); formatSource(); }
+  });
+  window.addEventListener('hashchange', function () {
+    var p = new URLSearchParams(location.hash.slice(1)), v = p.get('variant'), f = p.get('file');
+    var okV = v && ['code', 'doc', 'struct', 'split'].indexOf(v) >= 0;
+    if (f && f !== S.path && S.files.indexOf(f) >= 0) { if (okV) S.variant = v; openFile(f); return; }
+    if (okV && v !== S.variant) setVariant(v);
   });
   window.addEventListener('beforeunload', function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
 

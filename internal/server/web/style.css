@@ -17,6 +17,7 @@
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; }
 body { background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -134,7 +135,7 @@ input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px s
 .doc th, .doc td { border: 1px solid var(--line); padding: 3px 10px; text-align: left; }
 .doc th { background: var(--sunken); }
 .doc pre { margin: 6px 0 6px 64px; padding: 8px 10px; background: var(--sunken); border-radius: 6px; font: 12.5px/1.45 var(--mono); overflow: auto; position: relative; }
-.doc pre .media { position: absolute; right: 8px; top: 4px; font-size: 11px; color: var(--muted); }
+.doc pre .media { display: block; text-align: right; font-size: 11px; color: var(--muted); margin: -2px 0 2px; }
 .doc .examples-head { margin-top: 12px; font-weight: 600; }
 .doc .pickles { color: var(--muted); font-size: 12px; margin-top: 8px; }
 .doc .comment { color: var(--k-comment); font-style: italic; font-size: 12px; margin: 2px 0; }
@@ -145,8 +146,10 @@ input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px s
 .st { max-width: 920px; margin: 0 auto; }
 .st label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin: 8px 0 2px; }
 .st input.name { font-size: 18px; font-weight: 600; width: 100%; }
-.st textarea { width: 100%; min-height: 54px; resize: vertical; }
-.st .grid2 { display: grid; grid-template-columns: 160px 1fr; gap: 8px; align-items: end; }
+.st textarea { width: 100%; resize: vertical; }
+.st .grid2 { display: grid; grid-template-columns: 200px 1fr; gap: 12px; align-items: end; }
+.st .grid2 > div > select { width: 100%; }
+.st .grid2 .block-head select { width: auto; }
 .st .block { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 12px 0; }
 .st .block.rule { border-left: 4px solid var(--k-feature); }
 .st .block.background { background: var(--sunken); }

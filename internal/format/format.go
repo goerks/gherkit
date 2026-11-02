@@ -52,13 +52,19 @@ func Document(doc *messages.GherkinDocument, opt Options) string {
 		p.tags(f.Tags, 0)
 		p.writeln(0, header(f.Keyword, f.Name))
 		p.description(f.Description, 1)
+		// Gherkin has no syntax for a Feature-level Background or Scenario
+		// after a Rule: it would become part of that Rule. Print them first so
+		// edited documents keep their meaning.
 		for _, c := range f.Children {
 			switch {
 			case c.Background != nil:
 				p.background(c.Background, 1)
 			case c.Scenario != nil:
 				p.scenario(c.Scenario, 1)
-			case c.Rule != nil:
+			}
+		}
+		for _, c := range f.Children {
+			if c.Rule != nil {
 				p.rule(c.Rule, 1)
 			}
 		}
