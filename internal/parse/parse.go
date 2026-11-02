@@ -5,6 +5,8 @@
 // official specification exactly.
 package parse
 
+//go:generate ../../scripts/gen-dialects.sh
+
 import (
 	"regexp"
 	"strconv"

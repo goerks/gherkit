@@ -173,7 +173,7 @@ func FromCucumberJSON(readers ...io.Reader) (*Report, error) {
 			return nil, fmt.Errorf("reading cucumber json: %w", err)
 		}
 		for _, cf := range fs {
-			f := &Feature{URI: cf.URI, Keyword: cf.Keyword, Name: cf.Name, Description: strings.TrimSpace(cf.Description), Tags: tags(cf.Tags)}
+			f := &Feature{URI: relURI(cf.URI), Keyword: cf.Keyword, Name: cf.Name, Description: strings.TrimSpace(cf.Description), Tags: tags(cf.Tags)}
 			for _, el := range cf.Elements {
 				if el.Type == "background" {
 					continue
@@ -206,6 +206,19 @@ func FromCucumberJSON(readers ...io.Reader) (*Report, error) {
 	sort.SliceStable(r.Features, func(i, j int) bool { return r.Features[i].URI < r.Features[j].URI })
 	r.Summary.Features = len(r.Features)
 	return r, nil
+}
+
+// relURI shortens absolute feature paths below the working directory.
+func relURI(u string) string {
+	if !filepath.IsAbs(u) {
+		return u
+	}
+	if wd, err := os.Getwd(); err == nil {
+		if r, err := filepath.Rel(wd, u); err == nil && !strings.HasPrefix(r, "..") {
+			return filepath.ToSlash(r)
+		}
+	}
+	return u
 }
 
 func scenarioStatus(steps []*Step) string {

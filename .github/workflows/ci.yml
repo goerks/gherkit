@@ -1,0 +1,83 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: unit · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test -cover ./internal/...
+
+  dogfood:
+    name: acceptance (gherkit tests gherkit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make build
+      - name: Format check of our own specifications
+        run: bin/gherkit fmt --check features
+      - name: Lint our own specifications (annotations on the PR)
+        run: bin/gherkit lint --strict -o github features
+      - name: Run acceptance tests
+        run: go test -count=1 ./acceptance -args -gherkit.cucumber=$PWD/build/acceptance/cucumber.json
+      - name: Report with gherkit
+        if: always()
+        run: |
+          bin/gherkit report build/acceptance/cucumber.json -o build/acceptance/report.html --title "gherkit acceptance tests"
+          bin/gherkit report build/acceptance/cucumber.json -f md --title "gherkit acceptance tests" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance-report
+          path: build/acceptance/
+
+  e2e:
+    name: browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: make build
+      - working-directory: e2e
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+          npm test
+
+  release-check:
+    name: goreleaser config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          args: build --snapshot --clean
