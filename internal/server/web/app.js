@@ -23,7 +23,8 @@
       addBackground: '+ Hintergrund', addRule: '+ Regel', addStep: '+ Schritt', addExamples: '+ Beispiele', table: 'Tabelle', docstring: 'DocString',
       row: '+ Zeile', col: '+ Spalte', newFileName: 'Dateiname für das neue Feature (z. B. login.feature):', discard: 'Ungespeicherte Änderungen verwerfen?',
       folderFeatures: '{n} Features', fmtFailed: 'Formatieren nicht möglich: Syntaxfehler', comments: 'Kommentare',
-      tagFilter: 'Nach Tag filtern', clearFilter: 'Filter aufheben', noMatch: 'Kein Szenario mit diesem Tag.'
+      tagFilter: 'Nach Tag filtern', clearFilter: 'Filter aufheben', noMatch: 'Kein Szenario mit diesem Tag.',
+      copy: 'Kopie', pasteHint: 'Aus Excel einfügen: Tabellenbereich kopieren und hier einfügen', duplicate: 'Duplizieren', fold: 'Auf-/zuklappen', splitHandle: 'Breite anpassen', nSteps: '{n} Schritte', nBlocks: '{n} Blöcke'
     },
     en: {
       vCode: 'Code', vDoc: 'Document', vStruct: 'Structure', vSplit: 'Split', format: 'Format', save: 'Save',
@@ -38,7 +39,8 @@
       addBackground: '+ Background', addRule: '+ Rule', addStep: '+ Step', addExamples: '+ Examples', table: 'Table', docstring: 'DocString',
       row: '+ Row', col: '+ Column', newFileName: 'File name for the new feature (e.g. login.feature):', discard: 'Discard unsaved changes?',
       folderFeatures: '{n} features', fmtFailed: 'Cannot format: syntax errors', comments: 'Comments',
-      tagFilter: 'Filter by tag', clearFilter: 'Clear filter', noMatch: 'No scenario with this tag.'
+      tagFilter: 'Filter by tag', clearFilter: 'Clear filter', noMatch: 'No scenario with this tag.',
+      copy: 'copy', pasteHint: 'Paste from Excel: copy a cell range and paste it here', duplicate: 'Duplicate', fold: 'Collapse/expand', splitHandle: 'Adjust width', nSteps: '{n} steps', nBlocks: '{n} blocks'
     }
   };
   var lang = 'de';
@@ -78,7 +80,7 @@
   // ---------- state ----------
   var S = {
     root: '', files: [], path: '', text: '', saved: '', parsed: null, lastGood: null, diags: [],
-    variant: 'code', dialect: null, dialectCode: '', steps: [], edit: null, tagFilter: ''
+    variant: 'code', dialect: null, dialectCode: '', steps: [], edit: null, tagFilter: '', folded: {}
   };
 
   function setStatus(msg, cls) { var s = $('status'); s.textContent = msg || ''; s.className = 'status ' + (cls || ''); }
@@ -112,7 +114,7 @@
   function openFile(path) {
     if (dirty() && !confirm(t('discard'))) return Promise.resolve();
     return api('GET', '/api/file?path=' + encodeURIComponent(path)).then(function (f) {
-      S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null; S.lastGood = null; S.parsed = null; S.tagFilter = '';
+      S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null; S.lastGood = null; S.parsed = null; S.tagFilter = ''; S.folded = {};
       persist(); renderFiles(); showVariant(); setSource(S.text, true); updateDirty();
       return reparse();
     });
@@ -172,6 +174,7 @@
     $('view-doc').hidden = !has || !(v === 'doc' || v === 'split');
     $('view-struct').hidden = !has || v !== 'struct';
     $('main').classList.toggle('split', v === 'split' && has);
+    $('split-handle').hidden = !(v === 'split' && has);
     if (!has) return;
     if (v === 'doc' || v === 'split') renderDoc();
     if (v === 'struct') renderStruct();
@@ -494,8 +497,31 @@
   $('view-doc').addEventListener('click', function (e) {
     var b = e.target.closest('button.edit'); if (b) { jumpTo(+b.dataset.line); return; }
     var tg = e.target.closest('[data-tag]');
-    if (tg) { S.tagFilter = tg.dataset.tag === S.tagFilter ? '' : tg.dataset.tag; renderDoc(); }
+    if (tg) { S.tagFilter = tg.dataset.tag === S.tagFilter ? '' : tg.dataset.tag; renderDoc(); return; }
+    // In Split a click on a block puts the code cursor on its line.
+    if (S.variant === 'split') { var n = e.target.closest('[id^="n-"]'); if (n) { jumpTo(+n.id.slice(2)); syncDocSoon(); } }
   });
+
+  // ---------- split handle ----------
+  var handle = $('split-handle'), splitPct = 50;
+  function setSplit(p) {
+    splitPct = Math.max(20, Math.min(80, p));
+    $('main').style.setProperty('--split', splitPct + '%');
+    handle.setAttribute('aria-valuenow', String(Math.round(splitPct)));
+    try { localStorage.setItem('gherkit.split', String(splitPct)); } catch (e) { }
+  }
+  try { var sp = parseFloat(localStorage.getItem('gherkit.split')); if (sp) setSplit(sp); } catch (e) { }
+  handle.addEventListener('pointerdown', function (e) { handle.setPointerCapture(e.pointerId); handle.dataset.drag = '1'; e.preventDefault(); });
+  handle.addEventListener('pointermove', function (e) {
+    if (!handle.dataset.drag) return;
+    var r = $('main').getBoundingClientRect(); setSplit((e.clientX - r.left) / r.width * 100);
+  });
+  handle.addEventListener('pointerup', function () { delete handle.dataset.drag; });
+  handle.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); setSplit(splitPct - 5); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); setSplit(splitPct + 5); }
+  });
+  handle.addEventListener('dblclick', function () { setSplit(50); });
 
   function counts(res) {
     var c = { scenarios: 0, steps: 0, rules: 0, tags: 0, pickles: (res.pickles || []).length };
@@ -597,12 +623,27 @@
   }
   function moveIn(arr, i, d) { var j = i + d; if (j < 0 || j >= arr.length) return; var x = arr[i]; arr[i] = arr[j]; arr[j] = x; changed(); renderStruct(); }
   function removeAt(arr, i) { arr.splice(i, 1); changed(); renderStruct(); }
-  function tools(arr, i) {
+  function reid(o) {
+    if (Array.isArray(o)) o.forEach(reid);
+    else if (o && typeof o === 'object') { if ('id' in o) o.id = newId(); Object.keys(o).forEach(function (k) { if (k !== 'id') reid(o[k]); }); }
+  }
+  function duplicateAt(arr, i) {
+    var c = clone(arr[i]); reid(c);
+    var b = c.rule || c.scenario || c.background || c;
+    if (b && typeof b.name === 'string' && b.name) b.name += ' (' + t('copy') + ')';
+    arr.splice(i + 1, 0, c); changed(); renderStruct();
+  }
+  function tools(arr, i, dup) {
     return el('div', { class: 'tools' }, [
       el('button', { title: '↑', text: '↑', onclick: function () { moveIn(arr, i, -1); } }),
       el('button', { title: '↓', text: '↓', onclick: function () { moveIn(arr, i, 1); } }),
+      dup ? el('button', { class: 'dup', title: t('duplicate'), text: '⧉', onclick: function () { duplicateAt(arr, i); } }) : null,
       el('button', { title: '✕', text: '✕', onclick: function () { removeAt(arr, i); } })
     ]);
+  }
+  function foldButton(id) {
+    var folded = !!S.folded[id];
+    return el('button', { class: 'fold', title: t('fold'), 'aria-expanded': String(!folded), text: folded ? '▸' : '▾', onclick: function () { S.folded[id] = !folded; renderStruct(); } });
   }
   function stepKwType(kw) {
     var d = S.dialect || {}, map = { given: 'Context', when: 'Action', then: 'Outcome', and: 'Conjunction', but: 'Conjunction' };
@@ -610,12 +651,34 @@
     return 'Unknown';
   }
   // rows is edited in place; after() lets the caller copy rows back (Examples).
+  // Paste from a spreadsheet: tab/newline separated text fills the grid from the
+  // focused cell on and adds the rows and columns it needs.
+  function pasteGrid(rows, ri, ci, e, after) {
+    var txt = (e.clipboardData || window.clipboardData).getData('text');
+    if (txt.indexOf('\t') < 0 && txt.indexOf('\n') < 0) return; // a single value: normal paste
+    e.preventDefault();
+    var data = txt.replace(/\r/g, '').replace(/\n$/, '').split('\n').map(function (l) { return l.split('\t'); });
+    var width = Math.max.apply(null, data.map(function (r) { return r.length; }));
+    var cols = Math.max(rows[0] ? rows[0].cells.length : 0, ci + width);
+    data.forEach(function (vals, di) {
+      var r = rows[ri + di];
+      if (!r) { r = { cells: [], id: newId() }; rows.push(r); }
+      vals.forEach(function (v, vi) { while (r.cells.length <= ci + vi) r.cells.push({ value: '' }); r.cells[ci + vi].value = v.trim(); });
+    });
+    rows.forEach(function (r) { while (r.cells.length < cols) r.cells.push({ value: '' }); });
+    after(); changed(); renderStruct();
+  }
   function gridEditor(rows, headClass, after) {
     after = after || function () { };
     var tb = el('table', { class: 'grid' });
     rows.forEach(function (r, ri) {
       var tr = el('tr');
-      r.cells.forEach(function (c) { tr.appendChild(el('td', {}, [input(c.value, function (v) { c.value = v; changed(); }, { class: ri === 0 && headClass ? 'head' : '' })])); });
+      r.cells.forEach(function (c) {
+        tr.appendChild(el('td', {}, [input(c.value, function (v) { c.value = v; changed(); }, {
+          class: ri === 0 && headClass ? 'head' : '', title: t('pasteHint'),
+          onpaste: function (e) { pasteGrid(rows, ri, r.cells.indexOf(c), e, after); }
+        })]));
+      });
       tr.appendChild(el('td', {}, [el('button', { text: '−', title: 'row', onclick: function () { rows.splice(ri, 1); after(); changed(); renderStruct(); } })]));
       tb.appendChild(tr);
     });
@@ -669,7 +732,7 @@
       var rows = (ex.tableHeader ? [ex.tableHeader] : []).concat(ex.tableBody || []);
       function commit() { ex.tableHeader = rows[0] || undefined; ex.tableBody = rows.slice(1); }
       box.appendChild(el('div', { class: 'block' }, [
-        el('div', { class: 'block-head' }, [select(kwOptions('examples'), ex.keyword, function (v) { ex.keyword = v; changed(); }), input(ex.name, function (v) { ex.name = v; changed(); }, { placeholder: t('name') }), tools(sc.examples, i)]),
+        el('div', { class: 'block-head' }, [select(kwOptions('examples'), ex.keyword, function (v) { ex.keyword = v; changed(); }), input(ex.name, function (v) { ex.name = v; changed(); }, { placeholder: t('name') }), tools(sc.examples, i, true)]),
         el('label', { text: t('tagsHint') }), tagsInput(ex),
         gridEditor(rows, true, commit),
         gridButtons(rows, commit)
@@ -684,24 +747,24 @@
   }
   function blockEditor(child, arr, i, inRule) {
     if (child.rule) {
-      var r = child.rule;
-      return el('div', { class: 'block rule' }, [
-        el('div', { class: 'block-head' }, [select(kwOptions('rule'), r.keyword, function (v) { r.keyword = v; changed(); }), input(r.name, function (v) { r.name = v; changed(); }, { placeholder: t('name') }), tools(arr, i)]),
+      var r = child.rule, rf = !!S.folded[r.id];
+      var rhead = el('div', { class: 'block-head' }, [foldButton(r.id), select(kwOptions('rule'), r.keyword, function (v) { r.keyword = v; changed(); }), input(r.name, function (v) { r.name = v; changed(); }, { placeholder: t('name') }), tools(arr, i, true)]);
+      return el('div', { class: 'block rule' + (rf ? ' collapsed' : '') }, [rhead].concat(rf ? [el('div', { class: 'summary', text: t('nBlocks', r.children.length) })] : [
         el('label', { text: t('tagsHint') }), tagsInput(r),
         el('label', { text: t('description') }), textarea(r.description, function (v) { r.description = v; changed(); }),
         el('div', { class: 'children' }, r.children.map(function (c, j) { return blockEditor(c, r.children, j, true); })),
         addButtons(r.children, true)
-      ]);
+      ]));
     }
-    var b = child.background || child.scenario, isBg = !!child.background;
+    var b = child.background || child.scenario, isBg = !!child.background, bf = !!S.folded[b.id];
     var kinds = isBg ? kwOptions('background') : kwOptions('scenario').concat(kwOptions('scenarioOutline'));
-    return el('div', { class: 'block ' + (isBg ? 'background' : 'scenario') }, [
-      el('div', { class: 'block-head' }, [select(kinds, b.keyword, function (v) { b.keyword = v; changed(); }), input(b.name, function (v) { b.name = v; changed(); }, { placeholder: t('name') }), tools(arr, i)]),
+    var head = el('div', { class: 'block-head' }, [foldButton(b.id), select(kinds, b.keyword, function (v) { b.keyword = v; changed(); }), input(b.name, function (v) { b.name = v; changed(); }, { placeholder: t('name') }), tools(arr, i, true)]);
+    return el('div', { class: 'block ' + (isBg ? 'background' : 'scenario') + (bf ? ' collapsed' : '') }, [head].concat(bf ? [el('div', { class: 'summary', text: t('nSteps', b.steps.length) })] : [
       isBg ? null : el('label', { text: t('tagsHint') }), isBg ? null : tagsInput(b),
       el('label', { text: t('description') }), textarea(b.description, function (v) { b.description = v; changed(); }),
       el('label', { text: t('steps') }), stepsEditor(b.steps),
       isBg ? null : examplesEditor(b)
-    ]);
+    ]));
   }
   function addButtons(children, inRule) {
     function first(k) { return kwOptions(k)[0] || k; }

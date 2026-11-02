@@ -178,3 +178,75 @@ test('split view marks the document block of the cursor line', async () => {
   await page.waitForFunction(() => document.querySelector('.doc .cur')?.tagName === 'H1');
   await page.close();
 });
+
+test('structure view duplicates and folds blocks', async () => {
+  const page = await open('struct', 'shop/checkout.feature');
+  await page.waitForSelector('.st .block.scenario');
+  const before = await page.locator('.st .block.scenario').count();
+  await page.locator('.st .block.scenario .dup').first().click();
+  await page.waitForFunction(() => window.gherkit.text.includes('(copy)'));
+  assert.equal(await page.locator('.st .block.scenario').count(), before + 1);
+  assert.equal((await page.evaluate(() => window.gherkit.parsed.errors)).length, 0, 'printed text parses');
+  await page.locator('.st .block.scenario .fold').first().click();
+  assert.equal(await page.locator('.st .block.collapsed').count(), 1);
+  assert.match(await page.textContent('.st .block.collapsed .summary'), /\d+ steps/);
+  await page.locator('.st .block.collapsed .fold').click();
+  assert.equal(await page.locator('.st .block.collapsed').count(), 0);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('structure view pastes a table from a spreadsheet', async () => {
+  const page = await open('struct', 'shop/checkout.feature');
+  await page.waitForSelector('.st table.grid input');
+  await page.evaluate(() => {
+    const input = document.querySelector('.st table.grid input');
+    const data = new DataTransfer();
+    data.setData('text/plain', 'a\tb\tc\n1\t2\t3\n4\t5\t6\n');
+    input.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+  });
+  await page.waitForFunction(() => /\|\s*a\s*\|\s*b\s*\|\s*c\s*\|/.test(window.gherkit.text));
+  const text = await page.evaluate(() => window.gherkit.text);
+  assert.match(text, /\|\s*4\s*\|\s*5\s*\|\s*6\s*\|/);
+  assert.equal((await page.evaluate(() => window.gherkit.parsed.errors)).length, 0, 'printed text parses');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('split view: resize the panes and click a block to move the code cursor', async () => {
+  const page = await open('split', 'shop/checkout.feature');
+  await page.waitForSelector('.doc h1');
+  const width = () => page.evaluate(() => document.getElementById('view-code').getBoundingClientRect().width);
+  const w0 = await width();
+  await page.focus('#split-handle');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  assert.ok((await width()) > w0 + 50, 'code pane grew');
+  await page.dblclick('#split-handle');
+  assert.ok(Math.abs((await width()) - w0) < 4, 'double click resets to half');
+  // clicking a step in the document selects its line in the code
+  await page.locator('.doc ol.steps li').nth(2).click();
+  await page.waitForFunction(() => document.activeElement.id === 'src');
+  const picked = await page.evaluate(() => { const s = document.getElementById('src'); return s.value.slice(s.selectionStart, s.selectionEnd).trim(); });
+  assert.match(picked, /^(Given|When|Then|And|But|\*)\s/);
+  assert.equal(await page.evaluate(() => window.gherkit.variant), 'split');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+// Screenshots for the docs: GHERKIT_SHOTS=<dir> npm test
+test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
+  mkdirSync(process.env.GHERKIT_SHOTS, { recursive: true });
+  for (const [variant, name] of [['struct', 'editor-struct'], ['split', 'editor-split']]) {
+    const page = await open(variant, 'shop/checkout.feature');
+    await page.waitForSelector(variant === 'struct' ? '.st .block' : '.doc h1');
+    if (variant === 'split') {
+      await page.click('#src');
+      await page.keyboard.press('Control+Home');
+      for (let i = 0; i < 16; i++) await page.keyboard.press('ArrowDown');
+      await page.waitForSelector('.doc .cur');
+    }
+    await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, name + '.png') });
+    await page.close();
+  }
+});

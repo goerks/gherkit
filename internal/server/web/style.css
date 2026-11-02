@@ -58,6 +58,8 @@ input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px s
 .view { flex: 1; overflow: auto; min-height: 0; }
 .main.split { flex-direction: row; }
 .main.split .view { flex: 1 1 50%; }
+.main.split #view-code { flex: 0 0 var(--split, 50%); min-width: 0; }
+.main.split #view-doc { flex: 1 1 0; min-width: 0; }
 .main.split #view-code { border-right: 1px solid var(--line); }
 .empty { margin: auto; color: var(--muted); text-align: center; padding: 40px; }
 .panel h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin: 12px 0 6px; }
@@ -190,6 +192,8 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
   .side { max-height: 30vh; border-right: 0; border-bottom: 1px solid var(--line); }
   .panel { display: none; }
   .main.split { flex-direction: column; }
+  .main.split #view-code, .main.split #view-doc { flex: 1 1 50%; }
+  .split-handle { display: none; }
 }
 
 /* Document: tag filter, Split: cursor sync */
@@ -201,3 +205,10 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 .doc .tagbar .clear { border: 0; background: none; color: var(--muted); font-size: 12px; }
 .doc .cur { box-shadow: 0 0 0 2px var(--accent); border-radius: 6px; }
 .doc li.cur { box-shadow: none; background: var(--accent-soft); }
+
+/* Structure: fold, duplicate */
+.split-handle { flex: 0 0 6px; cursor: col-resize; background: var(--line); touch-action: none; }
+.split-handle:hover, .split-handle:focus-visible, .split-handle[data-drag] { background: var(--accent); outline: none; }
+.st .fold { padding: 2px 7px; font-size: 12px; border: 0; background: none; color: var(--muted); }
+.st .block.collapsed { padding-top: 8px; padding-bottom: 8px; }
+.st .summary { color: var(--muted); font-size: 12px; margin: 4px 0 0 30px; }

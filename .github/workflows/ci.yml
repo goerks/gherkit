@@ -67,6 +67,14 @@ jobs:
           npm install
           npx playwright install --with-deps chromium
           npm test
+        env:
+          GHERKIT_SHOTS: ${{ github.workspace }}/build/editor-shots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-screenshots
+          path: build/editor-shots/
+          if-no-files-found: ignore
 
   release-check:
     name: goreleaser config
