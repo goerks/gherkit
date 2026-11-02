@@ -1,4 +1,4 @@
-# Editor variants (decision pending)
+# Editor variants (decided for M1, see [ADR 0007](adr/0007-editor-variants-m1.md))
 
 `gherkit edit [folder]` contains four variants that can be switched in the top bar (and via
 `#variant=code|doc|struct|split`). All four are working on real files so they can be tried
@@ -63,5 +63,5 @@ Code and Document side by side, the document updates while typing.
 | Structure view as main view for business users, with glossary side panel | medium | if business users write themselves |
 | Spreadsheet mode for Examples tables (paste from Excel) | small | useful addition to C |
 
-**Please decide:** which variants go into M1, and whether the Code view stays a lightweight
-textarea or moves to CodeMirror 6.
+**Decision (2026-11-02):** all four variants stay in M1, Code and Document are polished first, and the Code view
+stays a lightweight textarea. CodeMirror 6 is reconsidered when large files become common.

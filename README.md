@@ -41,7 +41,7 @@ pickles (test cases), scanner tokens and diagnostics.
 | **Structure** | Business analysts | Form editor on the AST: blocks, steps, tables, Examples, tags; translates all keywords into another language |
 | **Split** | Everyone | Code and Document side by side, live |
 
-See [docs/editor-variants.md](docs/editor-variants.md) for screenshots and the open decision.
+See [docs/editor-variants.md](docs/editor-variants.md) for screenshots and the M1 decision.
 
 ## gherkit tests gherkit
 
