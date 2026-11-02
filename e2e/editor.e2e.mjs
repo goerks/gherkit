@@ -237,6 +237,53 @@ test('split view: resize the panes and click a block to move the code cursor', a
   await page.close();
 });
 
+test('structure (list): select a block, edit it, reorder by drag, reject an invalid order', async () => {
+  const page = await open('struct', 'shop/checkout.feature');
+  await page.waitForSelector('.st .block.scenario');
+  await page.click('.st-bar [data-layout="list"]');
+  await page.waitForSelector('.st .lst-item');
+  const names = await page.locator('.st .lst-item .lbl').allTextContents();
+  assert.ok(names.some((n) => n.includes('Discount code')), 'outline is listed');
+  // selecting shows exactly that block; editing the name updates the list
+  await page.locator('.st .lst-item', { hasText: 'Invoice is sent as PDF' }).click();
+  assert.equal(await page.locator('.st-detail .block').count(), 1);
+  assert.equal(await page.inputValue('.st-detail .block-head input'), 'Invoice is sent as PDF');
+  await page.fill('.st-detail .block-head input', 'Invoice as PDF');
+  await page.waitForFunction(() => document.querySelector('.st .lst-item.sel .lbl').textContent.includes('Invoice as PDF'));
+  // dragging a rule above another rule reorders the file
+  await page.locator('.st .lst-item', { hasText: 'Discounts are applied' }).dragTo(page.locator('.st .lst-item', { hasText: 'An order needs' }));
+  await page.waitForFunction(() => { const t = window.gherkit.text; return t.indexOf('Rule: Discounts') > 0 && t.indexOf('Rule: Discounts') < t.indexOf('Rule: An order'); });
+  // a scenario cannot be dropped behind a rule
+  const before = await page.evaluate(() => window.gherkit.text);
+  await page.locator('.st .lst-item', { hasText: 'Invoice as PDF' }).dragTo(page.locator('.st .lst-item', { hasText: 'An order needs' }));
+  await page.waitForFunction(() => document.getElementById('status').textContent.includes('Order not allowed'));
+  assert.equal(await page.evaluate(() => window.gherkit.text.indexOf('Scenario: Invoice as PDF') < window.gherkit.text.indexOf('Rule:')), true);
+  assert.equal((await page.evaluate(() => window.gherkit.parsed.errors)).length, 0);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('split: the preview lists test cases and problems', async () => {
+  const page = await open('split', 'shop/checkout.feature');
+  await page.waitForSelector('.rtabs');
+  await page.click('.rtabs [data-rtab="cases"]');
+  await page.waitForSelector('table.cases');
+  const total = await page.evaluate(() => window.gherkit.parsed.pickles.length);
+  assert.equal(await page.locator('tr.case').count(), total);
+  await page.locator('tr.case').last().click();
+  await page.waitForSelector('tr.case-detail .steps li');
+  assert.match(await page.textContent('tr.case-detail'), /NOPE/, 'example values are filled in');
+  await page.locator('tr.case').last().click();
+  assert.equal(await page.locator('tr.case-detail').count(), 0, 'a second click closes it');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+  const broken = await open('split', 'shop/broken.feature');
+  await broken.click('.rtabs [data-rtab="problems"]');
+  await broken.waitForSelector('.plist li');
+  assert.match(await broken.textContent('.plist'), /inconsistent cell count/);
+  await broken.close();
+});
+
 // Screenshots for the docs: GHERKIT_SHOTS=<dir> npm test
 test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
   mkdirSync(process.env.GHERKIT_SHOTS, { recursive: true });
@@ -250,6 +297,26 @@ test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
       await page.locator('.st .block.scenario').first().locator('input[aria-label="step"]').last().click();
     }
     await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, name + '.png') });
+    await page.close();
+  }
+  // S2: list layout
+  {
+    const page = await open('struct', 'shop/checkout.feature');
+    await page.click('.st-bar [data-layout="list"]');
+    await page.locator('.st .lst-item', { hasText: 'Discount code' }).click();
+    await page.waitForSelector('.st-detail .block');
+    await page.locator('.st-detail input[aria-label="step"]').nth(1).click();
+    await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, 'editor-struct-list.png') });
+    await page.close();
+  }
+  // P2: test cases tab
+  {
+    const page = await open('split', 'shop/checkout.feature');
+    await page.click('.rtabs [data-rtab="cases"]');
+    await page.waitForSelector('table.cases');
+    await page.locator('tr.case').nth(3).click();
+    await page.waitForSelector('tr.case-detail');
+    await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, 'editor-split-cases.png') });
     await page.close();
   }
 });

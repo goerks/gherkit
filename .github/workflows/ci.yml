@@ -53,8 +53,12 @@ jobs:
   e2e:
     name: browser tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # TEMPORARY: lets the screenshot step below push to the PR branch
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -75,6 +79,15 @@ jobs:
           name: editor-screenshots
           path: build/editor-shots/
           if-no-files-found: ignore
+      - name: Refresh docs screenshots (TEMPORARY)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          cp build/editor-shots/*.png docs/img/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/img/editor-*.png
+          git commit -m "docs: refresh editor screenshots" || exit 0
+          git push origin "HEAD:${{ github.head_ref }}"
 
   release-check:
     name: goreleaser config

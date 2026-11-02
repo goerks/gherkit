@@ -24,7 +24,7 @@
       row: '+ Zeile', col: '+ Spalte', newFileName: 'Dateiname für das neue Feature (z. B. login.feature):', discard: 'Ungespeicherte Änderungen verwerfen?',
       folderFeatures: '{n} Features', fmtFailed: 'Formatieren nicht möglich: Syntaxfehler', comments: 'Kommentare',
       tagFilter: 'Nach Tag filtern', clearFilter: 'Filter aufheben', noMatch: 'Kein Szenario mit diesem Tag.',
-      copy: 'Kopie', leftForm: 'Formular', leftCode: 'Code', splitLeftLabel: 'Linke Seite', stepHint: 'Enter: nächster Schritt · Alt+↑/↓: Schlüsselwort wechseln', chipTags: '+ Tags', chipDesc: '+ Beschreibung', kwTitle: 'Schlüsselwort wechseln (Klick, Umschalt+Klick rückwärts)', pasteHint: 'Aus Excel einfügen: Tabellenbereich kopieren und hier einfügen', duplicate: 'Duplizieren', fold: 'Auf-/zuklappen', splitHandle: 'Breite anpassen', nSteps: '{n} Schritte', nBlocks: '{n} Blöcke'
+      copy: 'Kopie', leftForm: 'Formular', tabDoc: 'Dokument', tabProblems: 'Probleme', tabCases: 'Testfälle', casesSummary: '{n} Testfälle aus {m} Szenarien', caseNo: 'Nr.', caseEx: 'Beispiele', caseVals: 'Werte', noCases: 'Keine Testfälle.', layoutCards: 'Karten', layoutList: 'Liste', layoutLabel: 'Darstellung', ruleHint: 'Die Szenarien dieser Regel stehen in der Liste links.', badOrder: 'Reihenfolge nicht erlaubt: Hintergrund steht zuerst, Szenarien vor den Regeln.', noName: '(ohne Namen)', featureItem: 'Funktionalität', openCase: 'Testfall ein-/ausklappen', leftCode: 'Code', splitLeftLabel: 'Linke Seite', stepHint: 'Enter: nächster Schritt · Alt+↑/↓: Schlüsselwort wechseln', chipTags: '+ Tags', chipDesc: '+ Beschreibung', kwTitle: 'Schlüsselwort wechseln (Klick, Umschalt+Klick rückwärts)', pasteHint: 'Aus Excel einfügen: Tabellenbereich kopieren und hier einfügen', duplicate: 'Duplizieren', fold: 'Auf-/zuklappen', splitHandle: 'Breite anpassen', nSteps: '{n} Schritte', nBlocks: '{n} Blöcke'
     },
     en: {
       vCode: 'Code', vDoc: 'Document', vStruct: 'Structure', vSplit: 'Split', format: 'Format', save: 'Save',
@@ -40,7 +40,7 @@
       row: '+ Row', col: '+ Column', newFileName: 'File name for the new feature (e.g. login.feature):', discard: 'Discard unsaved changes?',
       folderFeatures: '{n} features', fmtFailed: 'Cannot format: syntax errors', comments: 'Comments',
       tagFilter: 'Filter by tag', clearFilter: 'Clear filter', noMatch: 'No scenario with this tag.',
-      copy: 'copy', leftForm: 'Form', leftCode: 'Code', splitLeftLabel: 'Left pane', stepHint: 'Enter: next step · Alt+↑/↓: change keyword', chipTags: '+ Tags', chipDesc: '+ Description', kwTitle: 'Change keyword (click, Shift+click backwards)', pasteHint: 'Paste from Excel: copy a cell range and paste it here', duplicate: 'Duplicate', fold: 'Collapse/expand', splitHandle: 'Adjust width', nSteps: '{n} steps', nBlocks: '{n} blocks'
+      copy: 'copy', leftForm: 'Form', tabDoc: 'Document', tabProblems: 'Problems', tabCases: 'Test cases', casesSummary: '{n} test cases from {m} scenarios', caseNo: 'No.', caseEx: 'Examples', caseVals: 'Values', noCases: 'No test cases.', layoutCards: 'Cards', layoutList: 'List', layoutLabel: 'Layout', ruleHint: 'The scenarios of this rule are in the list on the left.', badOrder: 'Order not allowed: Background comes first, scenarios before rules.', noName: '(no name)', featureItem: 'Feature', openCase: 'Toggle test case', leftCode: 'Code', splitLeftLabel: 'Left pane', stepHint: 'Enter: next step · Alt+↑/↓: change keyword', chipTags: '+ Tags', chipDesc: '+ Description', kwTitle: 'Change keyword (click, Shift+click backwards)', pasteHint: 'Paste from Excel: copy a cell range and paste it here', duplicate: 'Duplicate', fold: 'Collapse/expand', splitHandle: 'Adjust width', nSteps: '{n} steps', nBlocks: '{n} blocks'
     }
   };
   var lang = 'de';
@@ -80,10 +80,11 @@
   // ---------- state ----------
   var S = {
     root: '', files: [], path: '', text: '', saved: '', parsed: null, lastGood: null, diags: [],
-    variant: 'code', dialect: null, dialectCode: '', steps: [], edit: null, tagFilter: '', folded: {}, opened: {}, focusKey: '', curPath: '', splitLeft: 'form'
+    variant: 'code', dialect: null, dialectCode: '', steps: [], edit: null, tagFilter: '', folded: {}, opened: {}, focusKey: '', curPath: '', splitLeft: 'form', rightTab: 'doc', caseOpen: '', layout: 'cards', sel: ''
   };
 
   try { S.splitLeft = localStorage.getItem('gherkit.splitLeft') === 'code' ? 'code' : 'form'; } catch (e) { }
+  try { var rt = localStorage.getItem('gherkit.rightTab'); if (['doc', 'problems', 'cases'].indexOf(rt) >= 0) S.rightTab = rt; S.layout = localStorage.getItem('gherkit.structLayout') === 'list' ? 'list' : 'cards'; } catch (e) { }
   function structActive() { return S.variant === 'struct' || (S.variant === 'split' && S.splitLeft === 'form'); }
   function codeActive() { return S.variant === 'code' || (S.variant === 'split' && S.splitLeft === 'code'); }
 
@@ -118,7 +119,7 @@
   function openFile(path) {
     if (dirty() && !confirm(t('discard'))) return Promise.resolve();
     return api('GET', '/api/file?path=' + encodeURIComponent(path)).then(function (f) {
-      S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null; S.lastGood = null; S.parsed = null; S.tagFilter = ''; S.folded = {}; S.opened = {};
+      S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null; S.lastGood = null; S.parsed = null; S.tagFilter = ''; S.folded = {}; S.opened = {}; S.caseOpen = ''; S.sel = '';
       persist(); renderFiles(); showVariant(); setSource(S.text, true); updateDirty();
       return reparse();
     });
@@ -423,9 +424,14 @@
   function renderDoc() {
     var view = $('view-doc'), res = S.parsed && !S.parsed.errors.length ? S.parsed : S.lastGood;
     if (!S.path) return;
+    var split = S.variant === 'split', tabs = split ? rightTabs(res) : '';
+    view.classList.toggle('has-tabs', split);
+    function put(html) { view.innerHTML = split ? tabs + '<div class="rbody">' + html + '</div>' : html; }
+    if (split && S.rightTab === 'problems') { put(problemsHtml()); return; }
+    if (split && S.rightTab === 'cases') { put(casesHtml(res)); return; }
     var out = '<div class="doc">';
     if (S.parsed && S.parsed.errors.length) out += '<p class="broken">' + esc(t('brokenDoc')) + '</p>';
-    if (!res || !res.document || !res.document.feature) { view.innerHTML = out + '</div>'; return; }
+    if (!res || !res.document || !res.document.feature) { put(out + '</div>'); return; }
     var f = res.document.feature, comments = (res.document.comments || []).slice();
     var flt = S.tagFilter;
     function cm(line) {
@@ -507,9 +513,68 @@
     });
     if (flt && !visible) out += '<p class="broken">' + esc(t('noMatch')) + '</p>';
     out += cm(1e9) + '</div>';
-    view.innerHTML = out;
+    put(out);
     markPath(S.curPath, true);
   }
+  // ---------- preview tabs: document, problems, test cases ----------
+  function rightTabs(res) {
+    function b(id, label, n) {
+      return '<button role="tab" data-rtab="' + id + '" aria-selected="' + (S.rightTab === id) + '">' + esc(label) + (n === undefined ? '' : ' <span class="count">' + n + '</span>') + '</button>';
+    }
+    return '<div class="rtabs" role="tablist">' + b('doc', t('tabDoc')) + b('problems', t('tabProblems'), S.diags.length) + b('cases', t('tabCases'), ((res && res.pickles) || []).length) + '</div>';
+  }
+  function problemsHtml() {
+    if (!S.diags.length) return '<div class="doc"><p class="hint">' + esc(t('none')) + '</p></div>';
+    return '<ul class="plist">' + S.diags.map(function (d) {
+      return '<li tabindex="0" data-pline="' + d.line + '"><span class="sev ' + esc(d.severity) + '"></span><span>' + esc(d.message) + ' <small>' + esc(t('line')) + ' ' + d.line + ' · ' + esc(d.rule) + '</small></span></li>';
+    }).join('') + '</ul>';
+  }
+  // One row per test case (pickle), grouped by scenario; a click shows the case as readable steps.
+  function casesHtml(res) {
+    var f = res && res.document && res.document.feature;
+    if (!f || !(res.pickles || []).length) return '<div class="doc"><p class="hint">' + esc(t('noCases')) + '</p></div>';
+    var sc = {}, rows = {}, kw = {};
+    function steps(list) { list.forEach(function (st) { kw[st.id] = st.keyword; }); }
+    function scen(x) {
+      sc[x.id] = x; steps(x.steps);
+      (x.examples || []).forEach(function (ex) {
+        var head = ex.tableHeader ? ex.tableHeader.cells.map(function (c) { return c.value; }) : [];
+        (ex.tableBody || []).forEach(function (r) { rows[r.id] = { ex: ex, head: head, vals: r.cells.map(function (c) { return c.value; }) }; });
+      });
+    }
+    f.children.forEach(function (ch) {
+      if (ch.background) steps(ch.background.steps);
+      if (ch.scenario) scen(ch.scenario);
+      if (ch.rule) ch.rule.children.forEach(function (rc) { if (rc.background) steps(rc.background.steps); if (rc.scenario) scen(rc.scenario); });
+    });
+    var order = [], groups = {};
+    res.pickles.forEach(function (pk) { var id = pk.astNodeIds[0]; if (!groups[id]) { groups[id] = []; order.push(id); } groups[id].push(pk); });
+    var out = '<div class="doc"><p class="hint cases-sum">' + esc(t('casesSummary', res.pickles.length).replace('{m}', order.length)) + '</p>';
+    order.forEach(function (id) {
+      var x = sc[id], list = groups[id];
+      out += '<section class="case-group"><h3>' + esc(x ? x.name : '') + ' <span class="count">' + list.length + '</span></h3>' +
+        '<table class="cases"><thead><tr><th>' + esc(t('caseNo')) + '</th><th>' + esc(t('caseEx')) + '</th><th>' + esc(t('caseVals')) + '</th></tr></thead><tbody>';
+      list.forEach(function (pk, i) {
+        var r = rows[pk.astNodeIds[1]], open = S.caseOpen === pk.id;
+        var vals = r ? r.vals.map(function (v, k) { return '<span class="kv"><i>' + esc(r.head[k] || '') + '</i>' + esc(v) + '</span>'; }).join('') : '';
+        out += '<tr class="case' + (open ? ' open' : '') + '" tabindex="0" data-case="' + esc(pk.id) + '" aria-expanded="' + open + '" title="' + esc(t('openCase')) + '"><td>' + (i + 1) + '</td><td>' + esc(r && r.ex.name ? r.ex.name : '–') + '</td><td>' + vals + '</td></tr>';
+        if (open) {
+          out += '<tr class="case-detail"><td colspan="3"><ol class="steps">' + pk.steps.map(function (st) {
+            return '<li><span class="skw ' + esc(st.type || 'Unknown') + '">' + esc((kw[st.astNodeIds[0]] || '').trim()) + '</span> ' + esc(st.text) + '</li>';
+          }).join('') + '</ol></td></tr>';
+        }
+      });
+      out += '</tbody></table></section>';
+    });
+    return out + '</div>';
+  }
+  function toggleCase(id) { S.caseOpen = S.caseOpen === id ? '' : id; renderDoc(); }
+  $('view-doc').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var r = e.target.closest('tr[data-case]'), p = e.target.closest('[data-pline]');
+    if (r) { e.preventDefault(); toggleCase(r.dataset.case); }
+    else if (p) { e.preventDefault(); jumpTo(+p.dataset.pline); }
+  });
   // Mark the preview block that belongs to a form block or step (identified by its position, e.g. c1.s2).
   function markPath(p, keepScroll) {
     var d = $('view-doc'), old = d.querySelector('.cur');
@@ -533,6 +598,10 @@
     var n = e.target.closest('[data-path]'); markPath(n ? n.dataset.path : '');
   });
   $('view-doc').addEventListener('click', function (e) {
+    var rtab = e.target.closest('[data-rtab]');
+    if (rtab) { S.rightTab = rtab.dataset.rtab; try { localStorage.setItem('gherkit.rightTab', S.rightTab); } catch (x) { } renderDoc(); return; }
+    var cr = e.target.closest('tr[data-case]'); if (cr) { toggleCase(cr.dataset.case); return; }
+    var pl = e.target.closest('[data-pline]'); if (pl) { jumpTo(+pl.dataset.pline); return; }
     var b = e.target.closest('button.edit'); if (b) { jumpTo(+b.dataset.line); return; }
     var tg = e.target.closest('[data-tag]');
     if (tg) { S.tagFilter = tg.dataset.tag === S.tagFilter ? '' : tg.dataset.tag; renderDoc(); return; }
@@ -631,7 +700,7 @@
     api('POST', '/api/render', S.edit).then(function (r) {
       S.text = r.content; S.parsed = r.parsed; if (!r.parsed.errors.length) S.lastGood = r.parsed;
       setSource(S.text, true); updateDirty();
-      api('POST', '/api/lint', { path: S.path, content: S.text }).then(function (l) { S.diags = l.diagnostics || []; renderProblems(); renderCodeHL(); });
+      api('POST', '/api/lint', { path: S.path, content: S.text }).then(function (l) { S.diags = l.diagnostics || []; renderProblems(); renderCodeHL(); if (S.variant === 'split') renderDoc(); });
       renderOutline(); renderFacts();
       if (S.variant === 'split') renderDoc();
     });
@@ -678,7 +747,33 @@
     return out;
   }
   function chipRow(chips) { return chips.length ? el('div', { class: 'chips' }, chips) : null; }
-  function moveIn(arr, i, d) { var j = i + d; if (j < 0 || j >= arr.length) return; var x = arr[i]; arr[i] = arr[j]; arr[j] = x; changed(); renderStruct(); }
+  // Gherkin order: Background first, scenarios before the first Rule.
+  function validOrder(arr) {
+    var rule = false;
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].background && i > 0) return false;
+      if (arr[i].rule) rule = true; else if (arr[i].scenario && rule) return false;
+    }
+    return true;
+  }
+  // List layout: keep the selection on the block that was moved or duplicated.
+  function followSel(arr, from, to) {
+    if (S.variant !== 'struct' || S.layout !== 'list' || !S.sel || S.sel === 'f' || !S.edit || !S.edit.feature) return;
+    var parent = S.sel.indexOf('.') >= 0 ? S.sel.slice(0, S.sel.lastIndexOf('.')) : '';
+    var cur = +S.sel.slice(S.sel.lastIndexOf('c') + 1), pn = parent ? nodeAt(S.edit.feature, parent) : null;
+    var same = parent ? !!(pn && pn.rule && pn.rule.children === arr) : S.edit.feature.children === arr;
+    if (same && cur === from) S.sel = (parent ? parent + '.' : '') + 'c' + to;
+  }
+  function syncListLabel(v) {
+    var l = document.querySelector('.st .lst-item.sel .lbl');
+    if (l && l.lastChild && l.lastChild.nodeType === 3) l.lastChild.nodeValue = v || t('noName');
+  }
+  function moveIn(arr, i, d) {
+    var j = i + d; if (j < 0 || j >= arr.length) return;
+    var x = arr[i]; arr[i] = arr[j]; arr[j] = x;
+    if (!validOrder(arr)) { arr[j] = arr[i]; arr[i] = x; setStatus(t('badOrder'), 'dirty'); return; }
+    followSel(arr, i, j); changed(); renderStruct();
+  }
   function removeAt(arr, i) { arr.splice(i, 1); changed(); renderStruct(); }
   function reid(o) {
     if (Array.isArray(o)) o.forEach(reid);
@@ -688,7 +783,7 @@
     var c = clone(arr[i]); reid(c);
     var b = c.rule || c.scenario || c.background || c;
     if (b && typeof b.name === 'string' && b.name) b.name += ' (' + t('copy') + ')';
-    arr.splice(i + 1, 0, c); changed(); renderStruct();
+    arr.splice(i + 1, 0, c); followSel(arr, i, i + 1); changed(); renderStruct();
   }
   function tools(arr, i, dup) {
     return el('div', { class: 'tools' }, [
@@ -827,26 +922,29 @@
     } })]));
     return box;
   }
-  function blockEditor(child, arr, i, inRule, path) {
+  function blockEditor(child, arr, i, inRule, path, opts) {
+    opts = opts || {};
     if (child.rule) {
-      var r = child.rule, rf = !!S.folded[r.id], ro = optionalFields(r, true);
-      var rhead = el('div', { class: 'block-head' }, [foldButton(r.id), select(kwOptions('rule'), r.keyword, function (v) { r.keyword = v; changed(); }), input(r.name, function (v) { r.name = v; changed(); }, { placeholder: t('name') }), tools(arr, i, true)]);
+      var r = child.rule, rf = !opts.noFold && !!S.folded[r.id], ro = optionalFields(r, true);
+      var rhead = el('div', { class: 'block-head' }, [opts.noFold ? null : foldButton(r.id), select(kwOptions('rule'), r.keyword, function (v) { r.keyword = v; changed(); }), input(r.name, function (v) { r.name = v; syncListLabel(v); changed(); }, { placeholder: t('name') }), tools(arr, i, true)]);
+      if (opts.shallow) return el('div', { class: 'block rule', 'data-path': path }, [rhead].concat(ro.fields, [chipRow(ro.chips), el('p', { class: 'hint', text: t('ruleHint') })]));
       return el('div', { class: 'block rule' + (rf ? ' collapsed' : ''), 'data-path': path }, [rhead].concat(rf ? [el('div', { class: 'summary', text: t('nBlocks', r.children.length) })] : [].concat(ro.fields, [
         chipRow(ro.chips),
         el('div', { class: 'children' }, r.children.map(function (c, j) { return blockEditor(c, r.children, j, true, path + '.c' + j); })),
-        addButtons(r.children, true)
+        addButtons(r.children, true, path)
       ])));
     }
-    var b = child.background || child.scenario, isBg = !!child.background, bf = !!S.folded[b.id], bo = optionalFields(b, !isBg);
+    var b = child.background || child.scenario, isBg = !!child.background, bf = !opts.noFold && !!S.folded[b.id], bo = optionalFields(b, !isBg);
     var kinds = isBg ? kwOptions('background') : kwOptions('scenario').concat(kwOptions('scenarioOutline'));
-    var head = el('div', { class: 'block-head' }, [foldButton(b.id), select(kinds, b.keyword, function (v) { b.keyword = v; changed(); }), input(b.name, function (v) { b.name = v; changed(); }, { placeholder: t('name') }), tools(arr, i, true)]);
+    var head = el('div', { class: 'block-head' }, [opts.noFold ? null : foldButton(b.id), select(kinds, b.keyword, function (v) { b.keyword = v; changed(); }), input(b.name, function (v) { b.name = v; syncListLabel(v); changed(); }, { placeholder: t('name') }), tools(arr, i, true)]);
     return el('div', { class: 'block ' + (isBg ? 'background' : 'scenario') + (bf ? ' collapsed' : ''), 'data-path': path }, [head].concat(bf ? [el('div', { class: 'summary', text: t('nSteps', b.steps.length) })] : [].concat(bo.fields, [
       stepsEditor(b.steps, path),
       isBg ? null : examplesEditor(b),
       chipRow(bo.chips)
     ])));
   }
-  function addButtons(children, inRule) {
+  function addButtons(children, inRule, parentPath) {
+    var pre = parentPath ? parentPath + '.' : '';
     function first(k) { return kwOptions(k)[0] || k; }
     function given() { return kwOptions('given').filter(function (k) { return k.trim() !== '*'; })[0] || '* '; }
     // Feature-level scenarios must come before the first Rule (Gherkin
@@ -854,15 +952,85 @@
     function add(obj) {
       var at = children.length;
       if (!inRule && !obj.rule) { for (var k = 0; k < children.length; k++) if (children[k].rule) { at = k; break; } }
-      children.splice(at, 0, obj); changed(); renderStruct();
+      children.splice(at, 0, obj); S.sel = pre + 'c' + at; changed(); renderStruct();
     }
     var btns = [
       el('button', { text: t('addScenario'), onclick: function () { add({ scenario: { keyword: first('scenario'), name: '', description: '', tags: [], steps: [{ keyword: given(), keywordType: 'Context', text: '', id: newId() }], examples: [], id: newId() } }); } }),
       el('button', { text: t('addOutline'), onclick: function () { add({ scenario: { keyword: first('scenarioOutline'), name: '', description: '', tags: [], steps: [{ keyword: given(), keywordType: 'Context', text: '<param>', id: newId() }], examples: [{ keyword: first('examples'), name: '', description: '', tags: [], tableHeader: { cells: [{ value: 'param' }], id: newId() }, tableBody: [{ cells: [{ value: 'a' }], id: newId() }], id: newId() }], id: newId() } }); } }),
-      el('button', { text: t('addBackground'), onclick: function () { children.unshift({ background: { keyword: first('background'), name: '', description: '', steps: [{ keyword: given(), keywordType: 'Context', text: '', id: newId() }], id: newId() } }); changed(); renderStruct(); } })
+      el('button', { text: t('addBackground'), onclick: function () { children.unshift({ background: { keyword: first('background'), name: '', description: '', steps: [{ keyword: given(), keywordType: 'Context', text: '', id: newId() }], id: newId() } }); S.sel = pre + 'c0'; changed(); renderStruct(); } })
     ];
     if (!inRule) btns.push(el('button', { text: t('addRule'), onclick: function () { add({ rule: { keyword: first('rule'), name: '', description: '', tags: [], children: [], id: newId() } }); } }));
     return el('div', { class: 'add' }, btns);
+  }
+  // ---------- structure, list layout: scenario list on the left, one block on the right ----------
+  function childrenAt(f, parent) { return !parent ? f.children : nodeAt(f, parent).rule.children; }
+  function nodeAt(f, path) {
+    var cur = null, arr = f.children, ps = path.split('.');
+    for (var k = 0; k < ps.length; k++) {
+      var idx = +ps[k].slice(1); cur = arr[idx]; if (!cur) return null;
+      if (k < ps.length - 1) { if (!cur.rule) return null; arr = cur.rule.children; }
+    }
+    return cur;
+  }
+  function caseCount(c) {
+    if (c.scenario) { var ex = c.scenario.examples || []; return ex.length ? ex.reduce(function (a, e) { return a + (e.tableBody || []).length; }, 0) : 1; }
+    if (c.rule) return c.rule.children.reduce(function (a, x) { return a + (x.scenario ? caseCount(x) : 0); }, 0);
+    return 0;
+  }
+  function moveByPath(f, from, to) {
+    var pf = from.slice(0, Math.max(0, from.lastIndexOf('.'))), pt = to.slice(0, Math.max(0, to.lastIndexOf('.')));
+    if (from.indexOf('.') < 0) pf = ''; if (to.indexOf('.') < 0) pt = '';
+    if (pf !== pt || from === to) return;
+    var arr = childrenAt(f, pf), a = +from.slice(from.lastIndexOf('c') + 1), b = +to.slice(to.lastIndexOf('c') + 1);
+    var copy = arr.slice(), item = copy.splice(a, 1)[0]; copy.splice(b, 0, item);
+    if (!validOrder(copy)) { setStatus(t('badOrder'), 'dirty'); return; }
+    arr.splice(0, arr.length); copy.forEach(function (x) { arr.push(x); });
+    S.sel = (pf ? pf + '.' : '') + 'c' + b; changed(); renderStruct();
+  }
+  function listLayout(f, layoutBar, featureHead) {
+    if (!S.sel || (S.sel !== 'f' && !nodeAt(f, S.sel))) {
+      var firstSc = -1; f.children.forEach(function (c, i) { if (firstSc < 0 && c.scenario) firstSc = i; });
+      S.sel = firstSc >= 0 ? 'c' + firstSc : 'f';
+    }
+    var ul = el('ul', { class: 'lst', role: 'listbox', 'aria-label': t('outline') });
+    function item(path, kind, name, count, depth, draggable) {
+      var li = el('li', { class: 'lst-item' + (S.sel === path ? ' sel' : ''), tabindex: '0', role: 'option', 'aria-selected': String(S.sel === path), 'data-path': path, draggable: draggable ? 'true' : null,
+        onclick: function () { S.sel = path; renderStruct(); },
+        onkeydown: function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); S.sel = path; renderStruct(); } } },
+        [el('span', { class: 'grip', 'aria-hidden': 'true', text: draggable ? '⋮⋮' : '' }), el('span', { class: 'lbl' }, [kind ? el('i', { text: kind + ' ' }) : null, name || t('noName')]), count === null ? null : el('span', { class: 'cnt', title: t('testcases'), text: String(count) })]);
+      li.style.paddingLeft = (8 + depth * 16) + 'px';
+      if (draggable) {
+        li.addEventListener('dragstart', function (e) { e.dataTransfer.setData('text/plain', path); e.dataTransfer.effectAllowed = 'move'; });
+        li.addEventListener('dragover', function (e) { e.preventDefault(); li.classList.add('over'); });
+        li.addEventListener('dragleave', function () { li.classList.remove('over'); });
+        li.addEventListener('drop', function (e) { e.preventDefault(); li.classList.remove('over'); moveByPath(f, e.dataTransfer.getData('text/plain'), path); });
+      }
+      ul.appendChild(li);
+    }
+    item('f', t('featureItem'), f.name, null, 0, false);
+    f.children.forEach(function (c, i) {
+      var p = 'c' + i;
+      if (c.background) item(p, c.background.keyword.replace(/:$/, ''), c.background.name, null, 1, true);
+      if (c.scenario) item(p, '', c.scenario.name, caseCount(c), 1, true);
+      if (c.rule) {
+        item(p, c.rule.keyword.replace(/:$/, ''), c.rule.name, caseCount(c), 1, true);
+        c.rule.children.forEach(function (rc, j) {
+          var q = p + '.c' + j;
+          if (rc.background) item(q, rc.background.keyword.replace(/:$/, ''), rc.background.name, null, 2, true);
+          if (rc.scenario) item(q, '', rc.scenario.name, caseCount(rc), 2, true);
+        });
+      }
+    });
+    var detail;
+    if (S.sel === 'f') detail = el('div', {}, featureHead);
+    else {
+      var parent = S.sel.indexOf('.') >= 0 ? S.sel.slice(0, S.sel.lastIndexOf('.')) : '', arr = childrenAt(f, parent), idx = +S.sel.slice(S.sel.lastIndexOf('c') + 1);
+      detail = blockEditor(arr[idx], arr, idx, !!parent, S.sel, { noFold: true, shallow: !!arr[idx].rule });
+    }
+    return el('div', { class: 'st st-wide' }, [layoutBar, el('div', { class: 'st-cols' }, [
+      el('div', { class: 'st-list' }, [ul, addButtons(f.children, false, '')]),
+      el('div', { class: 'st-detail' }, [detail])
+    ])]);
   }
   function renderStruct() {
     var view = $('view-struct');
@@ -883,16 +1051,22 @@
       list.forEach(function (d) { langSel.appendChild(el('option', { value: d.code, text: d.code + ' – ' + d.native, selected: d.code === f.language })); });
     });
     var fo = optionalFields(f, true);
-    var root = el('div', { class: 'st' }, [
+    var listMode = S.variant === 'struct' && S.layout === 'list';
+    var layoutBar = S.variant === 'struct' ? el('div', { class: 'st-bar' }, [el('span', { class: 'hint', text: t('layoutLabel') }), el('div', { class: 'seg', role: 'group', 'aria-label': t('layoutLabel') }, ['cards', 'list'].map(function (m) {
+      return el('button', { 'data-layout': m, 'aria-pressed': String(S.layout === m), text: t(m === 'cards' ? 'layoutCards' : 'layoutList'), onclick: function () { S.layout = m; try { localStorage.setItem('gherkit.structLayout', m); } catch (e) { } renderStruct(); } });
+    }))]) : null;
+    var featureHead = [
       el('div', { class: 'grid2' }, [
         el('div', {}, [el('label', { text: t('language') }), langSel]),
-        el('div', {}, [el('label', { text: t('name') }), el('div', { class: 'block-head' }, [select(kwOptions('feature'), f.keyword, function (v) { f.keyword = v; changed(); }), input(f.name, function (v) { f.name = v; changed(); }, { class: 'name', placeholder: t('name') })])])
+        el('div', {}, [el('label', { text: t('name') }), el('div', { class: 'block-head' }, [select(kwOptions('feature'), f.keyword, function (v) { f.keyword = v; changed(); }), input(f.name, function (v) { f.name = v; syncListLabel(v); changed(); }, { class: 'name', placeholder: t('name') })])])
       ]),
       el('div', {}, fo.fields),
-      chipRow(fo.chips),
+      chipRow(fo.chips)
+    ];
+    var root = listMode ? listLayout(f, layoutBar, featureHead) : el('div', { class: 'st' }, [layoutBar].concat(featureHead, [
       el('div', {}, f.children.map(function (c, i) { return blockEditor(c, f.children, i, false, 'c' + i); })),
-      addButtons(f.children, false)
-    ]);
+      addButtons(f.children, false, '')
+    ]));
     var scroll = view.scrollTop;
     view.innerHTML = ''; view.appendChild(root); view.scrollTop = scroll;
     if (S.focusKey) { var ft = view.querySelector('[data-key="' + S.focusKey + '"]'); S.focusKey = ''; if (ft) ft.focus(); }

@@ -242,3 +242,42 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 .main.split .st .block-head input { flex: 1 1 150px; min-width: 120px; }
 .main.split .st .grid2 { grid-template-columns: minmax(0, 1fr); }
 .main.split .st .step-hint { padding-left: 102px; }
+
+/* P2: preview tabs, test cases, problems */
+.doc-view.has-tabs { padding: 0; }
+.rtabs { position: sticky; top: 0; z-index: 2; display: flex; gap: 2px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.rtabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 9px 14px; color: var(--muted); }
+.rtabs button[aria-selected="true"] { color: var(--fg); font-weight: 600; border-bottom-color: var(--accent); }
+.rtabs .count, .case-group .count { display: inline-block; min-width: 20px; text-align: center; font-size: 11px; font-weight: 600; border-radius: 999px; padding: 0 6px; background: var(--sunken); color: var(--muted); }
+.rbody { padding: 24px clamp(16px, 4vw, 48px); }
+.case-group { margin: 0 0 22px; }
+.case-group h3 { font-size: 15px; margin: 0 0 6px; display: flex; gap: 8px; align-items: center; }
+table.cases { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--surface); border: 1px solid var(--line); }
+table.cases th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); background: var(--sunken); padding: 6px 10px; }
+table.cases td { padding: 6px 10px; border-top: 1px solid var(--line); vertical-align: top; }
+table.cases tr.case { cursor: pointer; }
+table.cases tr.case:hover td, table.cases tr.case.open td { background: var(--accent-soft); }
+table.cases .kv { display: inline-block; margin: 0 6px 2px 0; font-family: var(--mono); font-size: 12px; background: var(--sunken); border-radius: 5px; padding: 0 6px; }
+table.cases .kv i { font-style: normal; color: var(--muted); margin-right: 5px; }
+table.cases tr.case-detail td { background: var(--bg); padding: 8px 14px 12px; }
+.plist { list-style: none; margin: 0; padding: 8px 12px; }
+.plist li { display: flex; gap: 8px; padding: 7px 8px; border-radius: 8px; cursor: pointer; }
+.plist li:hover { background: var(--accent-soft); }
+
+/* S2: list and detail */
+.st-bar { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin: 0 0 8px; }
+.st.st-wide { max-width: 1180px; }
+.st-cols { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.st-list { position: sticky; top: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px; max-height: calc(100vh - 160px); overflow: auto; }
+.st .lst { list-style: none; margin: 0; padding: 0; }
+.st .lst-item { display: flex; gap: 6px; align-items: center; padding: 7px 8px; border-radius: 8px; cursor: pointer; font-size: 13.5px; }
+.st .lst-item:hover { background: var(--sunken); }
+.st .lst-item.sel { background: var(--accent-soft); font-weight: 600; }
+.st .lst-item.over { box-shadow: 0 -2px 0 var(--accent); }
+.st .lst-item .grip { color: var(--muted); cursor: grab; width: 12px; font-size: 11px; }
+.st .lst-item .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st .lst-item .lbl i { color: var(--muted); font-weight: 400; }
+.st .lst-item .cnt { font-size: 11px; color: var(--muted); background: var(--sunken); border-radius: 999px; padding: 0 8px; }
+.st-list .add { padding: 6px 4px 2px; }
+.st-detail .block { margin-top: 0; }
+@media (max-width: 900px) { .st-cols { grid-template-columns: minmax(0, 1fr); } .st-list { position: static; max-height: 40vh; } }
