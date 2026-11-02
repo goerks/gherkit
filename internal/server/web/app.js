@@ -22,7 +22,8 @@
       name: 'Name', description: 'Beschreibung', tagsHint: 'Tags (mit Leerzeichen getrennt)', addScenario: '+ Szenario', addOutline: '+ Szenario-Vorlage',
       addBackground: '+ Hintergrund', addRule: '+ Regel', addStep: '+ Schritt', addExamples: '+ Beispiele', table: 'Tabelle', docstring: 'DocString',
       row: '+ Zeile', col: '+ Spalte', newFileName: 'Dateiname für das neue Feature (z. B. login.feature):', discard: 'Ungespeicherte Änderungen verwerfen?',
-      folderFeatures: '{n} Features', fmtFailed: 'Formatieren nicht möglich: Syntaxfehler', comments: 'Kommentare'
+      folderFeatures: '{n} Features', fmtFailed: 'Formatieren nicht möglich: Syntaxfehler', comments: 'Kommentare',
+      tagFilter: 'Nach Tag filtern', clearFilter: 'Filter aufheben', noMatch: 'Kein Szenario mit diesem Tag.'
     },
     en: {
       vCode: 'Code', vDoc: 'Document', vStruct: 'Structure', vSplit: 'Split', format: 'Format', save: 'Save',
@@ -36,7 +37,8 @@
       name: 'Name', description: 'Description', tagsHint: 'Tags (space separated)', addScenario: '+ Scenario', addOutline: '+ Scenario Outline',
       addBackground: '+ Background', addRule: '+ Rule', addStep: '+ Step', addExamples: '+ Examples', table: 'Table', docstring: 'DocString',
       row: '+ Row', col: '+ Column', newFileName: 'File name for the new feature (e.g. login.feature):', discard: 'Discard unsaved changes?',
-      folderFeatures: '{n} features', fmtFailed: 'Cannot format: syntax errors', comments: 'Comments'
+      folderFeatures: '{n} features', fmtFailed: 'Cannot format: syntax errors', comments: 'Comments',
+      tagFilter: 'Filter by tag', clearFilter: 'Clear filter', noMatch: 'No scenario with this tag.'
     }
   };
   var lang = 'de';
@@ -76,7 +78,7 @@
   // ---------- state ----------
   var S = {
     root: '', files: [], path: '', text: '', saved: '', parsed: null, lastGood: null, diags: [],
-    variant: 'code', dialect: null, dialectCode: '', steps: [], edit: null
+    variant: 'code', dialect: null, dialectCode: '', steps: [], edit: null, tagFilter: ''
   };
 
   function setStatus(msg, cls) { var s = $('status'); s.textContent = msg || ''; s.className = 'status ' + (cls || ''); }
@@ -110,7 +112,7 @@
   function openFile(path) {
     if (dirty() && !confirm(t('discard'))) return Promise.resolve();
     return api('GET', '/api/file?path=' + encodeURIComponent(path)).then(function (f) {
-      S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null; S.lastGood = null; S.parsed = null;
+      S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null; S.lastGood = null; S.parsed = null; S.tagFilter = '';
       persist(); renderFiles(); showVariant(); setSource(S.text, true); updateDirty();
       return reparse();
     });
@@ -211,15 +213,16 @@
     if (!S.path) return;
     var lines = src.value.split('\n');
     var tokens = S.parsed ? S.parsed.tokens : [];
-    var bad = new Set(), sev = {};
+    var bad = new Set(), sev = {}, msgs = {};
     S.diags.forEach(function (d) {
+      (msgs[d.line] = msgs[d.line] || []).push(d.message);
       if (d.severity === 'error') bad.add(d.line);
       var c = d.severity === 'error' ? 'err' : d.severity === 'warning' ? 'warn' : 'info';
       if (!sev[d.line] || c === 'err') sev[d.line] = c;
     });
     hl.innerHTML = HL.highlight(lines, tokens, bad);
     var g = '';
-    for (var i = 1; i <= lines.length; i++) g += '<div class="' + (sev[i] || '') + '">' + i + '</div>';
+    for (var i = 1; i <= lines.length; i++) g += '<div class="' + (sev[i] || '') + '"' + (msgs[i] ? ' title="' + esc(msgs[i].join('\n')) + '"' : '') + '>' + i + '</div>';
     gutter.innerHTML = g;
   }
   function jumpTo(line) {
@@ -247,12 +250,66 @@
       if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); accept(cur || items[0]); return; }
       if (e.key === 'Escape') { hideComplete(); return; }
     }
-    if (e.key === 'Tab') {
+    var plain = !e.ctrlKey && !e.metaKey && !e.altKey;
+    if (e.key === 'Tab' && plain) {
       e.preventDefault();
-      document.execCommand ? document.execCommand('insertText', false, '  ') : src.setRangeText('  ', src.selectionStart, src.selectionEnd, 'end');
-      src.dispatchEvent(new Event('input'));
+      var multi = src.value.slice(src.selectionStart, src.selectionEnd).indexOf('\n') >= 0;
+      if (e.shiftKey || multi) transformLines(function (l) { return e.shiftKey ? l.replace(/^ {1,2}/, '') : (l.trim() ? '  ' + l : l); });
+      else insertText('  ');
+    } else if (e.key === 'Enter' && plain && !e.shiftKey) {
+      e.preventDefault();
+      var p = src.selectionStart, v = src.value, ls = v.lastIndexOf('\n', p - 1) + 1, cur = v.slice(ls, p);
+      insertText('\n' + cur.match(/^\s*/)[0] + (isHeader(cur.trim()) ? '  ' : ''));
+    } else if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key === '/') {
+      e.preventDefault(); toggleComment();
     }
   });
+  function insertText(text) {
+    src.focus();
+    if (!document.execCommand || !document.execCommand('insertText', false, text)) {
+      src.setRangeText(text, src.selectionStart, src.selectionEnd, 'end'); src.dispatchEvent(new Event('input'));
+    }
+  }
+  // Is this line a block header such as "Scenario: …" (next line is indented one level deeper)?
+  function isHeader(line) {
+    var d = S.dialect || {}, found = false;
+    ['feature', 'rule', 'background', 'scenario', 'scenarioOutline', 'examples'].forEach(function (k) {
+      (d[k] || []).forEach(function (w) { if (line.indexOf(w + ':') === 0) found = true; });
+    });
+    return found;
+  }
+  // Apply fn to every line touched by the selection, keep the selection on them.
+  function transformLines(fn) {
+    var v = src.value, a = v.lastIndexOf('\n', src.selectionStart - 1) + 1, b = v.indexOf('\n', src.selectionEnd);
+    if (b < 0) b = v.length;
+    var out = v.slice(a, b).split('\n').map(fn).join('\n');
+    src.focus(); src.setSelectionRange(a, b); insertText(out);
+    src.setSelectionRange(a, a + out.length);
+  }
+  function toggleComment() {
+    var v = src.value, a = v.lastIndexOf('\n', src.selectionStart - 1) + 1, b = v.indexOf('\n', src.selectionEnd);
+    if (b < 0) b = v.length;
+    var lines = v.slice(a, b).split('\n'), body = lines.filter(function (l) { return l.trim(); });
+    var allCommented = body.length > 0 && body.every(function (l) { return /^\s*#/.test(l); });
+    var indent = Math.min.apply(null, body.map(function (l) { return l.match(/^\s*/)[0].length; }).concat([1e9]));
+    transformLines(function (l) {
+      if (!l.trim()) return l;
+      return allCommented ? l.replace(/^(\s*)# ?/, '$1') : l.slice(0, indent) + '# ' + l.slice(indent);
+    });
+  }
+  // In Split, mark the document block that belongs to the cursor line.
+  var syncDocSoon = debounce(syncDocToCursor, 80);
+  function syncDocToCursor() {
+    if (S.variant !== 'split') return;
+    var line = src.value.slice(0, src.selectionStart).split('\n').length, best = null, bestLine = 0;
+    $('view-doc').querySelectorAll('[id^="n-"]').forEach(function (n) {
+      var l = +n.id.slice(2); if (l <= line && l >= bestLine) { best = n; bestLine = l; }
+    });
+    var old = $('view-doc').querySelector('.cur'); if (old && old !== best) old.classList.remove('cur');
+    if (best) { best.classList.add('cur'); best.scrollIntoView({ block: 'nearest' }); }
+  }
+  src.addEventListener('keyup', syncDocSoon);
+  src.addEventListener('click', syncDocSoon);
   src.addEventListener('blur', function () { setTimeout(hideComplete, 150); });
   src.addEventListener('click', hideComplete);
 
@@ -349,12 +406,20 @@
     if (S.parsed && S.parsed.errors.length) out += '<p class="broken">' + esc(t('brokenDoc')) + '</p>';
     if (!res || !res.document || !res.document.feature) { view.innerHTML = out + '</div>'; return; }
     var f = res.document.feature, comments = (res.document.comments || []).slice();
+    var flt = S.tagFilter;
     function cm(line) {
       var h = '';
-      while (comments.length && comments[0].location.line < line) { h += '<div class="comment">' + esc(comments.shift().text.trim()) + '</div>'; }
+      while (comments.length && comments[0].location.line < line) { var c = comments.shift(); if (!flt) h += '<div class="comment">' + esc(c.text.trim()) + '</div>'; }
       return h;
     }
-    function tags(ts) { return ts && ts.length ? '<div class="tags">' + ts.map(function (x) { return '<span class="tag">' + esc(x.name) + '</span>'; }).join('') + '</div>' : ''; }
+    function names(ts) { return (ts || []).map(function (x) { return x.name; }); }
+    function tags(ts) { return ts && ts.length ? '<div class="tags">' + ts.map(function (x) { return '<button class="tag' + (x.name === flt ? ' on' : '') + '" data-tag="' + esc(x.name) + '" title="' + esc(t('tagFilter')) + '">' + esc(x.name) + '</button>'; }).join('') + '</div>' : ''; }
+    // A scenario is shown when the filter matches its own, its Examples', its Rule's or the Feature's tags.
+    function shown(s, inherited) {
+      if (!flt) return true;
+      var all = inherited.concat(names(s.tags)); (s.examples || []).forEach(function (e) { all = all.concat(names(e.tags)); });
+      return all.indexOf(flt) >= 0;
+    }
     function editBtn(loc) { return '<button class="edit" data-line="' + loc.line + '">✎ ' + esc(t('edit')) + '</button>'; }
     function table(rows, cls, head) {
       return '<table class="' + (cls || '') + '">' + rows.map(function (r, i) {
@@ -377,9 +442,10 @@
       return cm(b.location.line) + '<div class="card bg" id="n-' + b.location.line + '">' + editBtn(b.location) + '<div class="kind">' + esc(b.keyword) + '</div>' +
         (b.name ? '<h3>' + esc(b.name) + '</h3>' : '') + (b.description ? '<div class="desc">' + md(b.description) + '</div>' : '') + steps(b.steps) + '</div>';
     }
-    function scenario(s) {
-      var line = (s.tags[0] || s).location.line, n = picklesFor(s.id);
-      var h = cm(line) + '<div class="card" id="n-' + s.location.line + '">' + editBtn(s.location) + '<div class="kind">' + esc(s.keyword) + '</div><h3>' + HL.stepText(s.name, { str: 'str', ph: 'ph', num: '' }) + '</h3>' + tags(s.tags) +
+    function scenario(s, inherited) {
+      var line = (s.tags[0] || s).location.line, n = picklesFor(s.id), pre = cm(line);
+      if (!shown(s, inherited)) return '';
+      var h = pre + '<div class="card" id="n-' + s.location.line + '">' + editBtn(s.location) + '<div class="kind">' + esc(s.keyword) + '</div><h3>' + HL.stepText(s.name, { str: 'str', ph: 'ph', num: '' }) + '</h3>' + tags(s.tags) +
         (s.description ? '<div class="desc">' + md(s.description) + '</div>' : '') + steps(s.steps);
       (s.examples || []).forEach(function (ex) {
         var rows = (ex.tableHeader ? [ex.tableHeader] : []).concat(ex.tableBody || []);
@@ -393,21 +459,39 @@
     if (f.description) out += '<div class="desc">' + md(f.description) + '</div>';
     var c = counts(res);
     out += '<div class="stats"><span><b>' + c.scenarios + '</b> ' + esc(t('scenarios')) + '</span><span><b>' + c.pickles + '</b> ' + esc(t('testcases')) + '</span><span><b>' + c.steps + '</b> ' + esc(t('steps')) + '</span><span>' + esc(t('language')) + ' <b>' + esc(f.language) + '</b></span></div>';
+    var all = {};
+    function collect(ts) { names(ts).forEach(function (n) { all[n] = (all[n] || 0) + 1; }); }
+    collect(f.tags);
+    f.children.forEach(function (ch) {
+      var sc = ch.scenario ? [ch.scenario] : ch.rule ? (collect(ch.rule.tags), ch.rule.children.map(function (c) { return c.scenario; }).filter(Boolean)) : [];
+      sc.forEach(function (s) { collect(s.tags); (s.examples || []).forEach(function (e) { collect(e.tags); }); });
+    });
+    var tagNames = Object.keys(all).sort();
+    if (tagNames.length) {
+      out += '<div class="tagbar" aria-label="' + esc(t('tagFilter')) + '">' + tagNames.map(function (n) {
+        return '<button class="tag' + (n === flt ? ' on' : '') + '" data-tag="' + esc(n) + '">' + esc(n) + ' <small>' + all[n] + '</small></button>';
+      }).join('') + (flt ? '<button class="clear" data-tag="">✕ ' + esc(t('clearFilter')) + '</button>' : '') + '</div>';
+    }
+    var visible = 0, ftags = names(f.tags);
     f.children.forEach(function (ch) {
       if (ch.background) out += bg(ch.background);
-      if (ch.scenario) out += scenario(ch.scenario);
+      if (ch.scenario) { var o = scenario(ch.scenario, ftags); if (o) visible++; out += o; }
       if (ch.rule) {
-        var r = ch.rule;
+        var r = ch.rule, inh = ftags.concat(names(r.tags)), body = '';
+        r.children.forEach(function (rc) { if (rc.background) body += bg(rc.background); if (rc.scenario) { var o2 = scenario(rc.scenario, inh); if (o2) visible++; body += o2; } });
+        if (flt && body.indexOf('class="card"') < 0) return;
         out += cm((r.tags[0] || r).location.line) + '<section class="rule" id="n-' + r.location.line + '"><div class="kind">' + esc(r.keyword) + '</div><h2>' + esc(r.name) + '</h2>' + tags(r.tags) + (r.description ? '<div class="desc">' + md(r.description) + '</div>' : '');
-        r.children.forEach(function (rc) { if (rc.background) out += bg(rc.background); if (rc.scenario) out += scenario(rc.scenario); });
-        out += '</section>';
+        out += body + '</section>';
       }
     });
+    if (flt && !visible) out += '<p class="broken">' + esc(t('noMatch')) + '</p>';
     out += cm(1e9) + '</div>';
     view.innerHTML = out;
   }
   $('view-doc').addEventListener('click', function (e) {
-    var b = e.target.closest('button.edit'); if (b) jumpTo(+b.dataset.line);
+    var b = e.target.closest('button.edit'); if (b) { jumpTo(+b.dataset.line); return; }
+    var tg = e.target.closest('[data-tag]');
+    if (tg) { S.tagFilter = tg.dataset.tag === S.tagFilter ? '' : tg.dataset.tag; renderDoc(); }
   });
 
   function counts(res) {

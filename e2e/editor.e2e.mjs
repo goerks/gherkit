@@ -120,3 +120,59 @@ test('another folder can be opened while the editor runs', async () => {
   assert.match(await page.textContent('#ws-path'), /other$/);
   await page.close();
 });
+
+test('code view keeps indentation on Enter, indents blocks and toggles comments', async () => {
+  const page = await open('code', 'shop/checkout.feature');
+  await page.click('#src');
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type('\n\n  Scenario: Editing\n');
+  // after a block header the next line is indented one level deeper
+  await page.keyboard.type('Given a');
+  assert.match(await page.inputValue('#src'), /\n  Scenario: Editing\n    Given a$/);
+  // the next step keeps the indentation
+  await page.keyboard.type('\nWhen b');
+  assert.match(await page.inputValue('#src'), /\n    Given a\n    When b$/);
+  // comment out both steps and back
+  await page.keyboard.press('Shift+Home');
+  await page.keyboard.press('Shift+ArrowUp');
+  await page.keyboard.press('Control+/');
+  assert.match(await page.inputValue('#src'), /\n    # Given a\n    # When b$/);
+  await page.keyboard.press('Control+/');
+  assert.match(await page.inputValue('#src'), /\n    Given a\n    When b$/);
+  // Shift+Tab outdents the selected lines
+  await page.keyboard.press('Shift+Tab');
+  assert.match(await page.inputValue('#src'), /\n  Given a\n  When b$/);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('gutter marker explains the problem on hover', async () => {
+  const page = await open('code', 'shop/broken.feature');
+  await page.waitForSelector('.gutter .err');
+  assert.match(await page.getAttribute('.gutter .err', 'title'), /inconsistent cell count/);
+  await page.close();
+});
+
+test('document view filters scenarios by tag', async () => {
+  const page = await open('doc', 'shop/checkout.feature');
+  await page.waitForSelector('.doc .tagbar');
+  const all = await page.locator('.doc .card:not(.bg)').count();
+  await page.locator('.doc .tagbar button[data-tag="@discount"]').click();
+  const some = await page.locator('.doc .card:not(.bg)').count();
+  assert.ok(some > 0 && some < all, `filtered ${some} of ${all}`);
+  await page.locator('.doc .tagbar .clear').click();
+  assert.equal(await page.locator('.doc .card:not(.bg)').count(), all);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('split view marks the document block of the cursor line', async () => {
+  const page = await open('split', 'shop/checkout.feature');
+  await page.waitForSelector('.doc h1');
+  await page.click('#src');
+  await page.keyboard.press('Control+End');
+  await page.waitForSelector('.doc .cur');
+  await page.keyboard.press('Control+Home');
+  await page.waitForFunction(() => document.querySelector('.doc .cur')?.tagName === 'H1');
+  await page.close();
+});

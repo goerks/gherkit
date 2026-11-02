@@ -191,3 +191,13 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
   .panel { display: none; }
   .main.split { flex-direction: column; }
 }
+
+/* Document: tag filter, Split: cursor sync */
+.doc .tag { border: 0; cursor: pointer; }
+.doc .tag:hover { outline: 1px solid var(--k-tag); }
+.doc .tag.on { background: var(--k-tag); color: var(--surface); }
+.doc .tagbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 12px; }
+.doc .tagbar small { opacity: .7; }
+.doc .tagbar .clear { border: 0; background: none; color: var(--muted); font-size: 12px; }
+.doc .cur { box-shadow: 0 0 0 2px var(--accent); border-radius: 6px; }
+.doc li.cur { box-shadow: none; background: var(--accent-soft); }
