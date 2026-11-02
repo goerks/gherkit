@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="{{.Language}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+<style>
+:root{--bg:#fbfbfa;--fg:#1d1d1b;--muted:#6b6b66;--line:#e4e3de;--card:#fff;--pass:#2e7d32;--fail:#c62828;--skip:#8d8d86;--pend:#b26a00;--accent:#2f6fde}
+@media (prefers-color-scheme:dark){:root{--bg:#161615;--fg:#ecebe6;--muted:#a3a29b;--line:#34332f;--card:#1f1f1d;--pass:#66bb6a;--fail:#ef5350;--skip:#9e9e98;--pend:#ffb74d;--accent:#7aa7ff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1000px;margin:0 auto;padding:32px 16px}
+h1{font-size:26px;margin:0 0 4px}.muted{color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:24px 0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.tile b{display:block;font-size:24px}
+.bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--line);margin-top:8px}
+.bar span{display:block}.s-passed{background:var(--pass)}.s-failed{background:var(--fail)}.s-skipped{background:var(--skip)}.s-pending,.s-undefined{background:var(--pend)}
+details.feature{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:12px 0;padding:0 16px}
+details.feature>summary{cursor:pointer;padding:14px 0;font-weight:600;list-style:none;display:flex;gap:10px;align-items:center}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.tag{display:inline-block;font-size:12px;color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:0 8px;margin-right:4px}
+.scenario{border-top:1px solid var(--line);padding:10px 0}
+.scenario h3{font-size:15px;margin:0 0 6px;display:flex;gap:8px;align-items:center}
+ol.steps{list-style:none;margin:0;padding:0 0 0 18px}
+ol.steps li{padding:2px 0}
+.kw{font-weight:600}.st-failed{color:var(--fail)}.st-skipped,.st-pending,.st-undefined{color:var(--muted)}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;overflow:auto;font-size:13px}
+pre.err{border-color:var(--fail);color:var(--fail);white-space:pre-wrap}
+table{border-collapse:collapse;margin:4px 0;font-size:13px}td{border:1px solid var(--line);padding:2px 8px}
+.desc{white-space:pre-line;color:var(--muted);margin:0 0 8px}
+</style>
+</head>
+<body><main>
+<h1>{{.Title}}</h1>
+<div class="muted">{{t "generated"}} {{date .Generated}} · {{t "duration"}} {{duration .Summary.Duration}}</div>
+
+<div class="tiles">
+  <div class="tile"><span class="muted">{{t "features"}}</span><b>{{.Summary.Features}}</b></div>
+  {{with .Summary.Scenarios}}
+  <div class="tile"><span class="muted">{{t "scenarios"}}</span><b>{{.Passed}} / {{.Total}}</b>
+    <div class="bar"><span class="s-passed" style="width:{{percent .Passed .Total}}"></span><span class="s-failed" style="width:{{percent .Failed .Total}}"></span><span class="s-pending" style="width:{{percent .Pending .Total}}"></span><span class="s-undefined" style="width:{{percent .Undefined .Total}}"></span><span class="s-skipped" style="width:{{percent .Skipped .Total}}"></span></div>
+  </div>
+  <div class="tile"><span class="muted">{{t "failed"}}</span><b class="st-failed">{{.Failed}}</b></div>
+  {{end}}
+  {{with .Summary.Steps}}<div class="tile"><span class="muted">{{t "steps"}}</span><b>{{.Passed}} / {{.Total}}</b></div>{{end}}
+</div>
+
+{{range .Features}}
+<details class="feature" {{if ne .Counts.Status "passed"}}open{{end}}>
+  <summary><span class="dot s-{{.Counts.Status}}"></span>{{.Keyword}}: {{.Name}} <span class="muted">· {{.Counts.Passed}}/{{.Counts.Total}} · {{.URI}}</span></summary>
+  {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
+  {{if .Description}}<p class="desc">{{.Description}}</p>{{end}}
+  {{range .Scenarios}}
+  <div class="scenario" id="{{.ID}}">
+    <h3><span class="dot s-{{.Status}}"></span>{{.Keyword}}: {{.Name}} <span class="muted">({{t .Status}} · {{duration .Duration}})</span></h3>
+    {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
+    <ol class="steps">
+    {{range .Steps}}
+      <li class="st-{{.Status}}"><span class="kw">{{.Keyword}}</span> {{.Text}}
+        {{if .Rows}}<table>{{range .Rows}}<tr>{{range .}}<td>{{.}}</td>{{end}}</tr>{{end}}</table>{{end}}
+        {{if .DocString}}<pre>{{.DocString}}</pre>{{end}}
+        {{if .Error}}<pre class="err">{{.Error}}</pre>{{end}}
+      </li>
+    {{end}}
+    </ol>
+  </div>
+  {{end}}
+</details>
+{{end}}
+</main></body>
+</html>

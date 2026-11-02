@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gherkit editor</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='3' width='20' height='26' rx='10' fill='%235a9e3c'/%3E%3Ccircle cx='13' cy='11' r='1.6' fill='%23e8f5df'/%3E%3Ccircle cx='19' cy='17' r='1.6' fill='%23e8f5df'/%3E%3Ccircle cx='13' cy='22' r='1.6' fill='%23e8f5df'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo" aria-hidden="true"></span>gherkit</div>
+  <button id="ws-btn" class="ws" title="Ordner wechseln" data-i18n-title="switchFolder"><span class="ws-icon">▸</span><span id="ws-path">…</span></button>
+  <nav class="variants" role="tablist" aria-label="Editor-Variante">
+    <button role="tab" data-variant="code" data-i18n="vCode">Code</button>
+    <button role="tab" data-variant="doc" data-i18n="vDoc">Dokument</button>
+    <button role="tab" data-variant="struct" data-i18n="vStruct">Struktur</button>
+    <button role="tab" data-variant="split" data-i18n="vSplit">Split</button>
+  </nav>
+  <div class="actions">
+    <span id="status" class="status" aria-live="polite"></span>
+    <button id="fmt-btn" data-i18n="format">Formatieren</button>
+    <button id="save-btn" class="primary" data-i18n="save">Speichern</button>
+    <select id="ui-lang" aria-label="UI language"><option value="de">DE</option><option value="en">EN</option></select>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="side">
+    <div class="side-head">
+      <input id="filter" type="search" placeholder="Filter…" data-i18n-ph="filter" aria-label="Filter">
+      <button id="new-btn" title="Neues Feature" data-i18n-title="newFeature">＋</button>
+    </div>
+    <ul id="files" class="files" aria-label="Features"></ul>
+  </aside>
+
+  <main id="main" class="main">
+    <div id="empty" class="empty"></div>
+    <section id="view-code" class="view code-view" hidden>
+      <div class="editor" id="editor">
+        <div class="gutter" id="gutter" aria-hidden="true"></div>
+        <div class="code-wrap">
+          <pre class="hl" id="hl" aria-hidden="true"></pre>
+          <textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Gherkin source"></textarea>
+          <ul id="complete" class="complete" hidden role="listbox"></ul>
+        </div>
+      </div>
+    </section>
+    <section id="view-doc" class="view doc-view" hidden></section>
+    <section id="view-struct" class="view struct-view" hidden></section>
+  </main>
+
+  <aside class="panel">
+    <section>
+      <h2 data-i18n="problems">Probleme</h2>
+      <ul id="problems" class="problems"></ul>
+    </section>
+    <section>
+      <h2 data-i18n="outline">Gliederung</h2>
+      <ul id="outline" class="outline"></ul>
+    </section>
+    <section>
+      <h2 data-i18n="facts">Kennzahlen</h2>
+      <dl id="facts" class="facts"></dl>
+    </section>
+  </aside>
+</div>
+
+<dialog id="folder-dlg">
+  <form method="dialog" class="dlg">
+    <h2 data-i18n="openFolder">Ordner öffnen</h2>
+    <div class="row"><input id="folder-input" aria-label="Pfad"><button id="folder-up" type="button" title="Übergeordneter Ordner">↑</button></div>
+    <ul id="folder-list" class="folder-list"></ul>
+    <div class="row end"><button value="cancel" data-i18n="cancel">Abbrechen</button><button id="folder-open" class="primary" value="ok" data-i18n="openThis">Diesen Ordner öffnen</button></div>
+  </form>
+</dialog>
+
+<script src="highlight.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

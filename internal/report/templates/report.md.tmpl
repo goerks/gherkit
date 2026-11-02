@@ -1,0 +1,16 @@
+# {{.Title}}
+
+{{t "generated"}}: {{date .Generated}} · {{t "duration"}}: {{duration .Summary.Duration}}
+
+| {{t "features"}} | {{t "scenarios"}} | {{t "passed"}} | {{t "failed"}} | {{t "steps"}} |
+| --- | --- | --- | --- | --- |
+| {{.Summary.Features}} | {{.Summary.Scenarios.Total}} | {{.Summary.Scenarios.Passed}} | {{.Summary.Scenarios.Failed}} | {{.Summary.Steps.Passed}}/{{.Summary.Steps.Total}} |
+{{range .Features}}
+## {{.Keyword}}: {{.Name}}
+
+`{{.URI}}` · {{.Counts.Passed}}/{{.Counts.Total}} {{t "passed"}}
+{{range .Scenarios}}
+- **{{.Name}}** — {{t .Status}}{{range .Steps}}{{if eq .Status "failed"}}
+  - ✗ {{.Keyword}} {{.Text}}: `{{.Error}}`{{end}}{{end}}
+{{- end}}
+{{end}}
