@@ -118,6 +118,8 @@ test('another folder can be opened while the editor runs', async () => {
   await page.click('#folder-open');
   await page.waitForFunction(() => window.gherkit.files.includes('elsewhere.feature'));
   assert.match(await page.textContent('#ws-path'), /other$/);
+  // the server is shared by all tests: go back to the examples copy
+  await page.evaluate((root) => fetch('/api/workspace', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ root }) }).then((r) => { if (!r.ok) throw new Error('reset failed'); }), join(dir, 'ws'));
   await page.close();
 });
 
