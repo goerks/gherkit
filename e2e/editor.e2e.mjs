@@ -385,7 +385,9 @@ test('code view: the coloured text always matches the source, also right after E
   const same = () => page.evaluate(() => {
     const shown = [...document.querySelectorAll('#hl .ln')].map((l) => l.textContent);
     const source = document.getElementById('src').value.split('\n').map((l) => (l === '' ? ' ' : l));
-    return JSON.stringify(shown) === JSON.stringify(source);
+    if (shown.length !== source.length) return 'line count ' + shown.length + ' vs ' + source.length;
+    for (let i = 0; i < source.length; i++) if (shown[i] !== source[i]) return 'line ' + (i + 1) + ': shown ' + JSON.stringify(shown[i]) + ' but source ' + JSON.stringify(source[i]);
+    return true;
   });
   assert.equal(await same(), true, 'overlay differs from the source before the edit');
   for (let i = 0; i < 3; i++) {
