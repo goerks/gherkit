@@ -108,6 +108,37 @@ jobs:
           path: build/editor-shots/
           if-no-files-found: ignore
 
+  java-runner:
+    name: java adapter (Maven, Cucumber-JVM)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: runner-examples/java/pom.xml
+      - run: make build
+      - name: gherkit run with the Java adapter
+        run: bin/gherkit run --adapter java --dir runner-examples/java -o build/java/cucumber.json --report build/java/report.html --title "Java example"
+      - name: A failing scenario makes gherkit run exit with 1
+        shell: bash
+        run: |
+          set +e
+          bin/gherkit run --adapter java --dir runner-examples/java -e CUCUMBER_FILTER_TAGS=@fails -o build/java/failing.json
+          code=$?
+          echo "exit code: $code"
+          test "$code" -eq 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: java-adapter-report
+          path: build/java/
+
   release-check:
     name: goreleaser config
     runs-on: ubuntu-latest

@@ -68,11 +68,12 @@ on the command line (quoted); the runner also gets the path in the environment v
 | Adapter | Command | Notes |
 | --- | --- | --- |
 | `go` | `go test -count=1 -args -godog.format=cucumber:{output}` | godog; the suite must bind the godog flags (`godog.BindCommandLineFlags`). Use `--cmd` if your suite names them differently. |
+| `java` | `mvn -B -ntp test` (or `./mvnw`, `./gradlew test --rerun-tasks`, `gradle test --rerun-tasks`) | Cucumber-JVM on the JUnit Platform. gherkit sets `CUCUMBER_PLUGIN=json:{output}` (and `CUCUMBER_FEATURES` when feature paths are given), so the project needs no extra configuration. Detected from `pom.xml`, `build.gradle(.kts)` or `gradlew`. See [`runner-examples/java`](../runner-examples/java). |
 | custom (`--cmd` only) | your command | Any runner that can write Cucumber JSON. |
 
 | Flag | |
 | --- | --- |
-| `--adapter <name>` | `go` or `auto` (default: detect from the project) |
+| `--adapter <name>` | `go`, `java` or `auto` (default: detect from the project) |
 | `--cmd <template>` | replaces the adapter's command |
 | `--dir <folder>` | working directory of the runner (default `.`) |
 | `-o, --out <file>` | keep the Cucumber JSON (default: temporary file) |

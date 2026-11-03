@@ -27,6 +27,9 @@ type Adapter struct {
 	// the Cucumber JSON file to write, {features} by the feature paths given
 	// on the command line (quoted, separated by spaces).
 	Command string
+	// Resolve picks the command from the project when Command is empty (for
+	// example Maven or Gradle for Java).
+	Resolve func(dir string) string
 	// Env holds extra environment variables. Values can use {output} and
 	// {features_csv} (the feature paths, unquoted, separated by commas). A
 	// variable that is empty after expanding is not set.
@@ -43,6 +46,34 @@ var presets = []Adapter{
 		Command:     "go test -count=1 -args -godog.format=cucumber:{output}",
 		Detect:      func(dir string) bool { return exists(dir, "go.mod") },
 	},
+	{
+		Name:        "java",
+		Description: "Cucumber-JVM with Maven or Gradle (JUnit Platform engine); results via CUCUMBER_PLUGIN",
+		Resolve:     javaCommand,
+		Env:         map[string]string{"CUCUMBER_PLUGIN": "json:{output}", "CUCUMBER_FEATURES": "{features_csv}"},
+		Detect:      func(dir string) bool { return exists(dir, "pom.xml", "build.gradle", "build.gradle.kts", "gradlew") },
+	},
+}
+
+// javaCommand chooses the build tool of a Java project: Maven first, then
+// Gradle; a wrapper script in the project is preferred over the installed tool.
+func javaCommand(dir string) string {
+	wrapper := func(name string) string {
+		if runtime.GOOS == "windows" {
+			return name
+		}
+		return "./" + name
+	}
+	switch {
+	case exists(dir, "pom.xml") && exists(dir, "mvnw"):
+		return wrapper("mvnw") + " -B -ntp test"
+	case exists(dir, "pom.xml"):
+		return "mvn -B -ntp test"
+	case exists(dir, "gradlew"):
+		return wrapper("gradlew") + " test --rerun-tasks"
+	default:
+		return "gradle test --rerun-tasks"
+	}
 }
 
 // Names lists the available adapters.
@@ -127,6 +158,9 @@ func expand(tpl string, vars map[string]string) string {
 // runner could not be started at all.
 func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 	tpl := a.Command
+	if tpl == "" && a.Resolve != nil {
+		tpl = a.Resolve(req.Dir)
+	}
 	if req.Command != "" {
 		tpl = req.Command
 	}
@@ -137,12 +171,7 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 	res := Result{FeaturesIgnored: len(req.Features) > 0 && !strings.Contains(tpl, "{features}")}
 	res.Command = expand(tpl, map[string]string{"output": Quote(req.Output), "features": strings.Join(quoted, " ")})
 
-	var c *exec.Cmd
-	if runtime.GOOS == "windows" {
-		c = exec.CommandContext(ctx, "cmd", "/C", res.Command)
-	} else {
-		c = exec.CommandContext(ctx, "sh", "-c", res.Command)
-	}
+	c := shellCmd(ctx, res.Command)
 	c.Dir = req.Dir
 	env := append(os.Environ(), "GHERKIT_RESULTS="+req.Output)
 	keys := make([]string, 0, len(a.Env))

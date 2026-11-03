@@ -40,7 +40,7 @@ identical pickles; the 12 files of `testdata/bad` are rejected with positioned e
 | `init`, `ci` | 📋 M2 | |
 | `steps sync` (step catalogue from runner dry-run) | 📋 M1 | Cucumber Messages `StepDefinition` |
 | `glossary` | 📋 M1 | `glossary/*.yaml`, hover, lint rule |
-| `run` with adapters | 🚧 M2 | ✅ Go (godog) and any `--cmd`; 📋 Java, TypeScript |
+| `run` with adapters | 🚧 M2 | ✅ Go (godog), Java (Cucumber-JVM) and any `--cmd`; 📋 TypeScript |
 | `coverage` (steps, glossary, Jira) | 📋 M3 | |
 | `jira` links and Xray upload | 📋 M3 | |
 | `lsp` language server | 📋 M1 | |

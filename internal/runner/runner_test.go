@@ -95,8 +95,38 @@ func TestDetect(t *testing.T) {
 	if _, ok := Lookup("go"); !ok {
 		t.Fatal("go adapter missing")
 	}
+	jdir := t.TempDir()
+	os.WriteFile(filepath.Join(jdir, "pom.xml"), []byte("<project/>"), 0o644)
+	if a, ok := Detect(jdir); !ok || a.Name != "java" {
+		t.Fatalf("Detect(pom.xml) = %v, %v; want java", a.Name, ok)
+	}
 	if _, ok := Lookup("nope"); ok {
 		t.Fatal("unknown adapter found")
+	}
+}
+
+func TestJavaCommand(t *testing.T) {
+	dir := t.TempDir()
+	if c := javaCommand(dir); !strings.HasPrefix(c, "gradle ") {
+		t.Errorf("no project files: %q", c)
+	}
+	os.WriteFile(filepath.Join(dir, "pom.xml"), []byte("<project/>"), 0o644)
+	if c := javaCommand(dir); !strings.HasPrefix(c, "mvn ") {
+		t.Errorf("maven project: %q", c)
+	}
+	os.WriteFile(filepath.Join(dir, "mvnw"), []byte(""), 0o644)
+	if c := javaCommand(dir); !strings.Contains(c, "mvnw") {
+		t.Errorf("maven wrapper preferred: %q", c)
+	}
+	gdir := t.TempDir()
+	os.WriteFile(filepath.Join(gdir, "gradlew"), []byte(""), 0o644)
+	if c := javaCommand(gdir); !strings.Contains(c, "gradlew test") {
+		t.Errorf("gradle wrapper: %q", c)
+	}
+	// the Java adapter tells Cucumber-JVM where to write the JSON through the environment
+	a, _ := Lookup("java")
+	if a.Env["CUCUMBER_PLUGIN"] != "json:{output}" {
+		t.Errorf("CUCUMBER_PLUGIN = %q", a.Env["CUCUMBER_PLUGIN"])
 	}
 }
 
