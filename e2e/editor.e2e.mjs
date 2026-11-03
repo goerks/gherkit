@@ -317,6 +317,23 @@ test('split: the preview lists test cases and problems', async () => {
   await broken.close();
 });
 
+test('saving keeps the Windows line endings of a file', async () => {
+  const file = join(dir, 'ws', 'crlf.feature');
+  writeFileSync(file, 'Feature: Win\r\n\r\n  Scenario: S\r\n    Given x\r\n');
+  const page = await open('code', 'crlf.feature');
+  await page.click('#src');
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type('    And zz');
+  await page.keyboard.press('Control+s');
+  await page.waitForFunction(() => document.getElementById('status').textContent.includes('saved'));
+  const disk = readFileSync(file, 'utf8');
+  assert.match(disk, /And zz/);
+  assert.ok(disk.includes('\r\n'), 'still has CRLF');
+  assert.ok(!/(^|[^\r])\n/.test(disk), 'no bare LF: ' + JSON.stringify(disk));
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 // Screenshots for the docs: GHERKIT_SHOTS=<dir> npm test
 test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
   mkdirSync(process.env.GHERKIT_SHOTS, { recursive: true });
