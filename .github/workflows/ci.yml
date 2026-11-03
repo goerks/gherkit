@@ -160,6 +160,45 @@ jobs:
           name: java-adapter-report
           path: build/java/
 
+  site:
+    name: static site (GitHub Pages)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build the site
+        run: scripts/build-site.sh build/site
+      - name: Check the site
+        shell: bash
+        run: |
+          set -e
+          test -s build/site/index.html
+          test -f build/site/.nojekyll
+          for f in gherkit-windows-amd64 gherkit-windows-arm64 gherkit-linux-amd64 gherkit-linux-arm64 gherkit-darwin-amd64 gherkit-darwin-arm64; do
+            test -s "build/site/downloads/$f.zip"
+            unzip -tq "build/site/downloads/$f.zip"
+          done
+          unzip -tq build/site/downloads/standard-set.zip
+          # every download linked from the page exists
+          for l in $(grep -o 'href="downloads/[^"]*"' build/site/index.html | sed 's/href="//; s/"$//'); do
+            test -s "build/site/$l" || { echo "missing: $l"; exit 1; }
+          done
+          # no placeholder is left in the page
+          ! grep -q '{{' build/site/index.html
+          # the Linux download works
+          mkdir -p /tmp/dl && unzip -q build/site/downloads/gherkit-linux-amd64.zip -d /tmp/dl
+          /tmp/dl/gherkit --version
+          /tmp/dl/gherkit parse /tmp/dl/examples/shop/checkout.feature > /dev/null
+          /tmp/dl/gherkit dialects | head -3
+          (cd build/site/downloads && sha256sum -c SHA256SUMS.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: build/site/
+          retention-days: 7
+
   release-check:
     name: goreleaser config
     runs-on: ubuntu-latest
@@ -177,7 +216,7 @@ jobs:
   verify:
     name: verification summary
     if: always()
-    needs: [test, windows-binary, dogfood, e2e, java-runner, release-check]
+    needs: [test, windows-binary, dogfood, e2e, java-runner, release-check, site]
     runs-on: ubuntu-latest
     steps:
       - name: What the pipeline verified
@@ -189,6 +228,7 @@ jobs:
           BROWSER: ${{ needs.e2e.result }}
           JAVA: ${{ needs.java-runner.result }}
           RELEASE: ${{ needs.release-check.result }}
+          SITE: ${{ needs.site.result }}
         run: |
           mark() { if [ "$1" = success ]; then echo "✅ passed"; else echo "❌ $1"; fi; }
           {
@@ -202,7 +242,8 @@ jobs:
             echo "| Windows binary | gherkit.exe builds, fmt/lint work on a CRLF checkout, \`gherkit run\` starts a runner through cmd.exe | $(mark "$WINDOWS") |"
             echo "| Java adapter | Maven and Cucumber-JVM run through \`gherkit run\`; a failing scenario gives exit code 1 | $(mark "$JAVA") |"
             echo "| Release config | goreleaser builds all platforms | $(mark "$RELEASE") |"
+            echo "| Static site | The GitHub Pages site builds, every download is complete and the Linux download runs | $(mark "$SITE") |"
           } >> "$GITHUB_STEP_SUMMARY"
-          for r in "$UNIT" "$WINDOWS" "$ACCEPT" "$BROWSER" "$JAVA" "$RELEASE"; do
+          for r in "$UNIT" "$WINDOWS" "$ACCEPT" "$BROWSER" "$JAVA" "$RELEASE" "$SITE"; do
             [ "$r" = success ] || exit 1
           done
