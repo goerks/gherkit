@@ -54,7 +54,7 @@ var presets = []Adapter{
 		// variables. JAVA_TOOL_OPTIONS reaches every JVM the build starts,
 		// including the forked test JVM of Maven and Gradle's test workers.
 		Env:    map[string]string{"JAVA_TOOL_OPTIONS": `-Dcucumber.plugin="json:{output}"`},
-		Detect:      func(dir string) bool { return exists(dir, "pom.xml", "build.gradle", "build.gradle.kts", "gradlew") },
+		Detect: func(dir string) bool { return exists(dir, "pom.xml", "build.gradle", "build.gradle.kts", "gradlew") },
 	},
 }
 
