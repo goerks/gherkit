@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -19,6 +21,7 @@ import (
 	"github.com/goerks/gherkit/internal/lint"
 	"github.com/goerks/gherkit/internal/parse"
 	"github.com/goerks/gherkit/internal/report"
+	"github.com/goerks/gherkit/internal/runner"
 	"github.com/goerks/gherkit/internal/server"
 	"github.com/goerks/gherkit/internal/workspace"
 	"github.com/spf13/cobra"
@@ -78,7 +81,7 @@ func NewRoot(stdout, stderr io.Writer) *cobra.Command {
 	root.SetOut(stdout)
 	root.SetErr(stderr)
 	root.SetVersionTemplate("gherkit {{.Version}} (" + Commit + ")\n")
-	root.AddCommand(fmtCmd(), lintCmd(), reportCmd(), editCmd(), dialectsCmd(), parseCmd())
+	root.AddCommand(fmtCmd(), lintCmd(), reportCmd(), runCmd(), editCmd(), dialectsCmd(), parseCmd())
 	return root
 }
 
@@ -228,25 +231,8 @@ func reportCmd() *cobra.Command {
 				return &ExitError{ExitUsage, err.Error()}
 			}
 			r.Title, r.Language = title, lang
-			if formatName == "" {
-				formatName = "html"
-				if strings.HasSuffix(out, ".md") {
-					formatName = "md"
-				} else if strings.HasSuffix(out, ".json") {
-					formatName = "json"
-				}
-			}
-			w := cmd.OutOrStdout()
-			if out != "" && out != "-" {
-				f, err := os.Create(out)
-				if err != nil {
-					return err
-				}
-				defer f.Close()
-				w = f
-			}
-			if err := report.Render(w, r, formatName, tmpl); err != nil {
-				return &ExitError{ExitUsage, err.Error()}
+			if err := renderReport(cmd.OutOrStdout(), r, out, formatName, tmpl); err != nil {
+				return err
 			}
 			s := r.Summary.Scenarios
 			fmt.Fprintf(cmd.ErrOrStderr(), "%d scenario(s): %d passed, %d failed, %d other\n", s.Total, s.Passed, s.Failed, s.Total-s.Passed-s.Failed)
@@ -262,6 +248,172 @@ func reportCmd() *cobra.Command {
 	c.Flags().StringVar(&title, "title", "", "report title")
 	c.Flags().StringVar(&lang, "lang", "en", "report language (en, de)")
 	c.Flags().BoolVar(&failOnFailed, "fail-on-failed", false, "exit 1 if a scenario failed")
+	return c
+}
+
+// renderReport writes the report to out (stdout when empty or "-"). The format
+// defaults to the extension of out, else HTML.
+func renderReport(stdout io.Writer, r *report.Report, out, formatName, tmpl string) error {
+	if formatName == "" {
+		formatName = "html"
+		if strings.HasSuffix(out, ".md") {
+			formatName = "md"
+		} else if strings.HasSuffix(out, ".json") {
+			formatName = "json"
+		}
+	}
+	w := stdout
+	if out != "" && out != "-" {
+		f, err := os.Create(out)
+		if err != nil {
+			return &ExitError{ExitUsage, err.Error()}
+		}
+		defer f.Close()
+		w = f
+	}
+	if err := report.Render(w, r, formatName, tmpl); err != nil {
+		return &ExitError{ExitUsage, err.Error()}
+	}
+	return nil
+}
+
+func runCmd() *cobra.Command {
+	var adapterName, command, dir, out, reportOut, formatName, tmpl, title, lang string
+	var env []string
+	var failOnFailed bool
+	var timeout time.Duration
+	c := &cobra.Command{
+		Use:   "run [features...]",
+		Short: "Run the project's test runner and report its results",
+		Long: `Starts the test runner of the project through an adapter, reads the Cucumber JSON it writes and prints a summary. gherkit does not execute step code itself.
+
+The command is a template: {output} is replaced by the path of the Cucumber JSON file, {features} by the feature paths given here (quoted). The environment variable GHERKIT_RESULTS holds the same path. Without --adapter and --cmd the adapter is detected from the project (go.mod).
+
+Adapters: ` + strings.Join(runner.Names(), ", ") + `.`,
+		Example: `  gherkit run                                   # detect the stack, run, summarise
+  gherkit run --report build/report.html        # also write an HTML report
+  gherkit run --cmd "npx cucumber-js --format json:{output} {features}" features`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if dir == "" {
+				dir = "."
+			}
+			if st, err := os.Stat(dir); err != nil || !st.IsDir() {
+				return &ExitError{ExitUsage, fmt.Sprintf("--dir %q is not a folder", dir)}
+			}
+			var ad runner.Adapter
+			switch {
+			case adapterName != "" && adapterName != "auto":
+				a, ok := runner.Lookup(adapterName)
+				if !ok {
+					return &ExitError{ExitUsage, fmt.Sprintf("unknown adapter %q (available: %s)", adapterName, strings.Join(runner.Names(), ", "))}
+				}
+				ad = a
+			case command != "":
+				ad = runner.Adapter{Name: "custom"}
+			default:
+				a, ok := runner.Detect(dir)
+				if !ok {
+					return &ExitError{ExitUsage, fmt.Sprintf("no adapter detected in %s: use --adapter (%s) or --cmd \"<command with {output}>\"", dir, strings.Join(runner.Names(), ", "))}
+				}
+				ad = a
+			}
+			if ad.Command == "" && ad.Resolve == nil && command == "" {
+				return &ExitError{ExitUsage, "adapter " + ad.Name + " has no command: use --cmd"}
+			}
+
+			results := out
+			if results == "" {
+				f, err := os.CreateTemp("", "gherkit-results-*.json")
+				if err != nil {
+					return err
+				}
+				f.Close()
+				defer os.Remove(f.Name())
+				results = f.Name()
+			}
+			results, err := filepath.Abs(results)
+			if err != nil {
+				return err
+			}
+			if err := os.MkdirAll(filepath.Dir(results), 0o755); err != nil {
+				return err
+			}
+			os.Remove(results) // never read a stale result
+			var features []string
+			for _, f := range args {
+				abs, err := filepath.Abs(f)
+				if err != nil {
+					return err
+				}
+				features = append(features, abs)
+			}
+
+			ctx := cmd.Context()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
+			defer stop()
+			if timeout > 0 {
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithTimeout(ctx, timeout)
+				defer cancel()
+			}
+
+			stderr := cmd.ErrOrStderr()
+			res, err := runner.Run(ctx, ad, runner.Request{
+				Dir: dir, Features: features, Output: results, Command: command, Env: env,
+				Stdout: cmd.OutOrStdout(), Stderr: stderr,
+			})
+			if err != nil {
+				return &ExitError{ExitUsage, "cannot start the runner: " + err.Error()}
+			}
+			if res.FeaturesIgnored {
+				fmt.Fprintln(stderr, "note: feature paths were given, but the command has no {features}; the runner chooses the features itself")
+			}
+
+			f, openErr := os.Open(results)
+			if openErr != nil {
+				msg := fmt.Sprintf("the runner exited with code %d and wrote no results (expected Cucumber JSON in %s)", res.ExitCode, results)
+				if res.ExitCode == 0 {
+					return &ExitError{ExitUsage, msg + ": check the command and its {output}"}
+				}
+				return &ExitError{ExitFailed, msg}
+			}
+			defer f.Close()
+			r, err := report.FromCucumberJSON(f)
+			if err != nil {
+				return &ExitError{ExitUsage, "cannot read the results: " + err.Error()}
+			}
+			r.Title, r.Language = title, lang
+			if reportOut != "" {
+				if err := renderReport(cmd.OutOrStdout(), r, reportOut, formatName, tmpl); err != nil {
+					return err
+				}
+			}
+			s := r.Summary.Scenarios
+			fmt.Fprintf(stderr, "%d scenario(s): %d passed, %d failed, %d other (%s)\n", s.Total, s.Passed, s.Failed, s.Total-s.Passed-s.Failed, res.Duration.Round(time.Millisecond))
+			if res.ExitCode != 0 && s.Failed == 0 {
+				return &ExitError{ExitFailed, fmt.Sprintf("the runner exited with code %d", res.ExitCode)}
+			}
+			if failOnFailed && s.Failed > 0 {
+				return &ExitError{ExitFailed, ""}
+			}
+			return nil
+		},
+	}
+	c.Flags().StringVar(&adapterName, "adapter", "auto", "runner adapter: "+strings.Join(runner.Names(), ", ")+" or auto (detect)")
+	c.Flags().StringVar(&command, "cmd", "", "shell command template replacing the adapter's command ({output}, {features})")
+	c.Flags().StringVar(&dir, "dir", ".", "working directory of the runner")
+	c.Flags().StringVarP(&out, "out", "o", "", "keep the Cucumber JSON results in this file (default: temporary)")
+	c.Flags().StringArrayVarP(&env, "env", "e", nil, "extra environment variable KEY=VALUE for the runner (repeatable)")
+	c.Flags().DurationVar(&timeout, "timeout", 0, "stop the runner after this time (e.g. 10m)")
+	c.Flags().StringVar(&reportOut, "report", "", "also write a report to this file (.html, .md or .json)")
+	c.Flags().StringVarP(&formatName, "format", "f", "", "report format: html, md or json (default from --report extension)")
+	c.Flags().StringVarP(&tmpl, "template", "t", "", "custom Go template file for the report")
+	c.Flags().StringVar(&title, "title", "", "report title")
+	c.Flags().StringVar(&lang, "lang", "en", "report language (en, de)")
+	c.Flags().BoolVar(&failOnFailed, "fail-on-failed", true, "exit 1 if a scenario failed (--fail-on-failed=false to only report)")
 	return c
 }
 

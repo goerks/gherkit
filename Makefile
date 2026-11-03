@@ -21,8 +21,7 @@ dogfood: build ## gherkit checks its own specifications
 	$(BIN) lint --strict features
 
 acceptance: build ## Run gherkit's own Gherkin acceptance tests and report them with gherkit
-	go test -count=1 ./acceptance -args -gherkit.cucumber=$(CURDIR)/$(ACCEPT)/cucumber.json
-	$(BIN) report $(ACCEPT)/cucumber.json -o $(ACCEPT)/report.html --title "gherkit acceptance tests" --fail-on-failed
+	$(BIN) run --adapter go --cmd "go test -count=1 ./acceptance -args -gherkit.cucumber={output}" -o $(ACCEPT)/cucumber.json --report $(ACCEPT)/report.html --title "gherkit acceptance tests"
 	$(BIN) report $(ACCEPT)/cucumber.json -o $(ACCEPT)/report.md --title "gherkit acceptance tests"
 	@echo "report: $(ACCEPT)/report.html"
 

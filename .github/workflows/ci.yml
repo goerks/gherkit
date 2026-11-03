@@ -45,6 +45,17 @@ jobs:
           ./dist/gherkit.exe --help
           ./dist/gherkit.exe fmt --check features
           ./dist/gherkit.exe lint --strict features
+      - name: gherkit run starts a runner through cmd.exe
+        shell: bash
+        run: |
+          printf '%s' '[{"uri":"f.feature","keyword":"Feature","name":"F","elements":[{"keyword":"Scenario","name":"ok","type":"scenario","steps":[{"keyword":"Given ","name":"a","line":1,"result":{"status":"passed","duration":1}}]},{"keyword":"Scenario","name":"bad","type":"scenario","steps":[{"keyword":"Given ","name":"b","line":2,"result":{"status":"failed","duration":1}}]}]}]' > results.json
+          set +e
+          ./dist/gherkit.exe run --cmd 'copy results.json {output}' -o "out dir/cucumber.json" --report "out dir/report.html"
+          code=$?
+          echo "exit code: $code"
+          test "$code" -eq 1
+          test -s "out dir/cucumber.json"
+          grep -q "1 / 2" "out dir/report.html"
       - name: Collect download
         shell: bash
         run: |
@@ -69,8 +80,8 @@ jobs:
         run: bin/gherkit fmt --check features
       - name: Lint our own specifications (annotations on the PR)
         run: bin/gherkit lint --strict -o github features
-      - name: Run acceptance tests
-        run: go test -count=1 ./acceptance -args -gherkit.cucumber=$PWD/build/acceptance/cucumber.json
+      - name: Run acceptance tests with gherkit run
+        run: bin/gherkit run --adapter go --cmd "go test -count=1 ./acceptance -args -gherkit.cucumber={output}" -o build/acceptance/cucumber.json
       - name: Report with gherkit
         if: always()
         run: |
@@ -83,8 +94,12 @@ jobs:
           path: build/acceptance/
 
   e2e:
-    name: browser tests
-    runs-on: ubuntu-latest
+    name: browser tests · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -93,20 +108,57 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: make build
-      - working-directory: e2e
+      - name: Build gherkit
+        shell: bash
+        env:
+          CGO_ENABLED: "0"
+        run: go build -trimpath -o "bin/gherkit$([ "$RUNNER_OS" = Windows ] && echo .exe)" ./cmd/gherkit
+      - name: Browser tests of the editor
+        shell: bash
+        working-directory: e2e
         run: |
           npm install
-          npx playwright install --with-deps chromium
+          if [ "$RUNNER_OS" = Linux ]; then npx playwright install --with-deps chromium; else npx playwright install chromium; fi
           npm test
         env:
           GHERKIT_SHOTS: ${{ github.workspace }}/build/editor-shots
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: editor-screenshots
+          name: editor-screenshots-${{ matrix.os }}
           path: build/editor-shots/
           if-no-files-found: ignore
+
+  java-runner:
+    name: java adapter (Maven, Cucumber-JVM)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: runner-examples/java/pom.xml
+      - run: make build
+      - name: gherkit run with the Java adapter
+        run: bin/gherkit run --adapter java --dir runner-examples/java -o build/java/cucumber.json --report build/java/report.html --title "Java example"
+      - name: A failing scenario makes gherkit run exit with 1
+        shell: bash
+        run: |
+          set +e
+          bin/gherkit run --adapter java --dir runner-examples/java --cmd "mvn -B -ntp test -Dcucumber.filter.tags=@fails" -o build/java/failing.json
+          code=$?
+          echo "exit code: $code"
+          test "$code" -eq 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: java-adapter-report
+          path: build/java/
 
   release-check:
     name: goreleaser config
@@ -121,3 +173,36 @@ jobs:
       - uses: goreleaser/goreleaser-action@v6
         with:
           args: build --snapshot --clean
+
+  verify:
+    name: verification summary
+    if: always()
+    needs: [test, windows-binary, dogfood, e2e, java-runner, release-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: What the pipeline verified
+        shell: bash
+        env:
+          UNIT: ${{ needs.test.result }}
+          WINDOWS: ${{ needs.windows-binary.result }}
+          ACCEPT: ${{ needs.dogfood.result }}
+          BROWSER: ${{ needs.e2e.result }}
+          JAVA: ${{ needs.java-runner.result }}
+          RELEASE: ${{ needs.release-check.result }}
+        run: |
+          mark() { if [ "$1" = success ]; then echo "✅ passed"; else echo "❌ $1"; fi; }
+          {
+            echo "### What this run verified"
+            echo
+            echo "| Check | What it proves | Result |"
+            echo "| --- | --- | --- |"
+            echo "| Unit tests (Linux, macOS, Windows) | Parser, formatter (official corpus, CRLF), linter, report, runner adapters, editor API | $(mark "$UNIT") |"
+            echo "| Acceptance (gherkit tests gherkit) | Behaviour through the real binary; the suite itself runs through \`gherkit run\` with the Go adapter | $(mark "$ACCEPT") |"
+            echo "| Browser tests (Linux, Windows) | Editor in Chromium: automatic indentation, Structure, Split, test cases tab, saving, CRLF | $(mark "$BROWSER") |"
+            echo "| Windows binary | gherkit.exe builds, fmt/lint work on a CRLF checkout, \`gherkit run\` starts a runner through cmd.exe | $(mark "$WINDOWS") |"
+            echo "| Java adapter | Maven and Cucumber-JVM run through \`gherkit run\`; a failing scenario gives exit code 1 | $(mark "$JAVA") |"
+            echo "| Release config | goreleaser builds all platforms | $(mark "$RELEASE") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for r in "$UNIT" "$WINDOWS" "$ACCEPT" "$BROWSER" "$JAVA" "$RELEASE"; do
+            [ "$r" = success ] || exit 1
+          done

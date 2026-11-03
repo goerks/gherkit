@@ -111,8 +111,8 @@ func initScenario(sc *godog.ScenarioContext) {
 	sc.Step(`^a Cucumber JSON result with (\d+) passed and (\d+) failed scenarios?$`, w.cucumberResult)
 
 	// cli
-	sc.Step(`^I run "([^"]+)"$`, w.run)
-	sc.Step(`^ich "([^"]+)" ausführe$`, w.run)
+	sc.Step(`^I run "((?:[^"\\]|\\.)*)"$`, w.run)
+	sc.Step(`^ich "((?:[^"\\]|\\.)*)" ausführe$`, w.run)
 	sc.Step(`^the exit code is (\d+)$`, w.exitCode)
 	sc.Step(`^ist der Exit-Code (\d+)$`, w.exitCode)
 	sc.Step(`^the output contains "([^"]*)"$`, w.outputContains)
@@ -272,7 +272,7 @@ func splitArgs(s string) []string {
 }
 
 func (w *world) run(cmdline string) error {
-	args := splitArgs(cmdline)
+	args := splitArgs(unquote(cmdline))
 	if len(args) == 0 || args[0] != "gherkit" {
 		return fmt.Errorf("only gherkit commands can be run, got %q", cmdline)
 	}

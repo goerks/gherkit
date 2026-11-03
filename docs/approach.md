@@ -33,6 +33,9 @@ This page records the approach agreed when starting gherkit.
 | Acceptance | `features/*.feature` + `acceptance/` | gherkit's behaviour as a user sees it, against the **real binary** (CLI and editor API) | `make acceptance` |
 | Browser | `e2e/editor.e2e.mjs` | All editor variants in Chromium: highlighting, completion, saving, structure edits, translation, folder switch | `make e2e` |
 | Dogfooding | CI | `gherkit fmt --check` and `gherkit lint --strict` on our own specs; `gherkit report` renders our results | `make dogfood` |
+| Platforms and runners | CI | Browser tests on Linux and Windows, `gherkit.exe` smoke test, `gherkit run` with the Go and Java adapters | CI only |
+
+The full list of checks and what each one proves is in [testing.md](testing.md).
 
 Rule of thumb: a user-visible behaviour gets an acceptance scenario; edge cases go to unit tests.
 
