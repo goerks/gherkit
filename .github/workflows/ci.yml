@@ -96,12 +96,16 @@ jobs:
   e2e:
     name: browser tests · ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write # TEMPORARY: lets the screenshot step push to the PR branch
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -128,6 +132,16 @@ jobs:
           name: editor-screenshots-${{ matrix.os }}
           path: build/editor-shots/
           if-no-files-found: ignore
+      - name: Refresh docs screenshots (TEMPORARY)
+        if: matrix.os == 'ubuntu-latest' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        shell: bash
+        run: |
+          cp build/editor-shots/*.png docs/img/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/img/editor-*.png
+          git commit -m "docs: refresh editor screenshots" || exit 0
+          git push origin "HEAD:${{ github.head_ref }}"
 
   java-runner:
     name: java adapter (Maven, Cucumber-JVM)
