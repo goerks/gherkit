@@ -74,10 +74,11 @@ footer { padding: 40px 0 60px; color: var(--muted); font-size: 13px; }
   <h1>Gherkin schreiben, prüfen und ausführen lassen</h1>
   <p class="lede">gherkit ist ein einzelnes Programm für den ganzen Gherkin-Workflow: formatieren, prüfen, im Browser bearbeiten und Testergebnisse als Report darstellen. Ohne Installation von Laufzeiten, für alle Runner.</p>
 
-  <p class="status"><b>Im Aufbau.</b> <span>Die Browser-Demo entsteht Schritt für Schritt. Schon jetzt läuft die echte CLI als Terminal auf dieser Seite; der Editor im Browser folgt als Nächstes.</span></p>
+  <p class="status"><b>Im Aufbau.</b> <span>Die Browser-Demo entsteht Schritt für Schritt. Die echte CLI läuft als Terminal auf dieser Seite und der Editor läuft im Browser. Als Nächstes folgt das Ausführen von Szenarien.</span></p>
 
   <section id="demo">
     <h2>Ausprobieren im Browser</h2>
+    <p class="sub"><a class="btn" href="editor/" id="open-editor">Editor öffnen</a> &nbsp;Oder die CLI direkt im Terminal ausprobieren:</p>
     <p class="sub">Das ist die echte gherkit-CLI, im Browser ausgeführt. Sie arbeitet auf einem virtuellen Ordner mit Beispieldateien. Ihre Eingaben bleiben in Ihrem Browser und werden nicht übertragen.</p>
     <div id="demo-box" class="demo-box">
       <div id="demo-start-row" class="demo-start">
@@ -148,15 +149,21 @@ gherkit report results.json -o report.html</code></pre>
   var chips = document.getElementById('demo-chips'), startRow = document.getElementById('demo-start-row'), running = null;
   btn.addEventListener('click', function () {
     btn.disabled = true;
-    var s = document.createElement('script'); s.src = 'js/terminal.js';
-    s.onload = function () {
+    var srcs = ['js/zip.js', 'js/demo.js', 'js/terminal.js'], i = 0;
+    function next() {
+      if (i === srcs.length) return go();
+      var s = document.createElement('script'); s.src = srcs[i++]; s.onload = next;
+      s.onerror = function () { btn.disabled = false; status.textContent = 'Die Demo konnte nicht geladen werden.'; };
+      document.head.appendChild(s);
+    }
+    function go() {
       term.hidden = false;
-      GherkitDemo.start(term, '', function (t) { status.textContent = t; }).then(function (t) {
-        running = t; startRow.hidden = true; chips.hidden = false; t.input.focus();
+      GherkitDemo.boot('', function (t) { status.textContent = t; }).then(function () {
+        running = GherkitTerminal.create(term, {});
+        startRow.hidden = true; chips.hidden = false; running.input.focus();
       }, function (e) { term.hidden = true; btn.disabled = false; status.textContent = 'Die Demo konnte nicht starten: ' + (e && e.message || e); });
-    };
-    s.onerror = function () { btn.disabled = false; status.textContent = 'Die Demo konnte nicht geladen werden.'; };
-    document.head.appendChild(s);
+    }
+    next();
   });
   chips.addEventListener('click', function (e) { var c = e.target.closest('[data-cmd]'); if (c && running) running.run(c.dataset.cmd); });
 })();

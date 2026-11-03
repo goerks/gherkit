@@ -1,5 +1,5 @@
-// The browser demo: loads gherkit as WebAssembly, seeds the virtual folder with the standard set and offers a small
-// terminal. "gherkit ..." runs the real CLI; a few helpers (ls, cat, cd, ...) work on the same virtual folder.
+// The terminal of the browser demo. "gherkit ..." runs the real CLI (WebAssembly, see demo.js); a few helpers
+// (ls, cat, cd, ...) work on the same virtual folder.
 (function (g) {
   'use strict';
   const fsx = g.memfs;
@@ -18,34 +18,10 @@
     return out;
   }
 
-  async function loadWasm(base, status) {
-    await new Promise((res, rej) => { const s = document.createElement('script'); s.src = base + 'wasm_exec.js'; s.onload = res; s.onerror = () => rej(new Error('wasm_exec.js konnte nicht geladen werden')); document.head.appendChild(s); });
-    status('Lade gherkit …');
-    const r = await fetch(base + 'gherkit.wasm.gz');
-    if (!r.ok) throw new Error('gherkit.wasm.gz: HTTP ' + r.status);
-    if (typeof DecompressionStream === 'undefined') throw new Error('Dieser Browser ist zu alt (DecompressionStream fehlt). Bitte einen aktuellen Browser verwenden.');
-    const bytes = await new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
-    status('Starte gherkit …');
-    const go = new g.Go();
-    const { instance } = await WebAssembly.instantiate(bytes, go.importObject);
-    go.run(instance); // runs until the page is closed
-    for (let i = 0; i < 200 && !g.gherkitReady; i++) await new Promise((r2) => setTimeout(r2, 25));
-    if (!g.gherkitReady) throw new Error('gherkit hat nicht gestartet');
-  }
-
-  async function seed(base, force) {
-    const r = await fetch(base + 'standard-set.json');
-    if (!r.ok) throw new Error('standard-set.json: HTTP ' + r.status);
-    const set = await r.json();
-    if (force) { try { fsx.remove(HOME); } catch (e) { } }
-    fsx.mkdir(HOME);
-    for (const [p, text] of Object.entries(set.files)) fsx.writeFile(HOME + '/' + p, text);
-    fsx.chdir(HOME);
-    return Object.keys(set.files).length;
-  }
-
   // ---- terminal -------------------------------------------------------------------------------------------
-  function create(mount, base) {
+  // opts.afterCommand(line) is called after every command, for example to refresh an editor.
+  function create(mount, opts) {
+    opts = opts || {};
     mount.innerHTML = '';
     const out = document.createElement('div'); out.className = 'term-out'; out.setAttribute('role', 'log'); out.setAttribute('aria-live', 'polite');
     const row = document.createElement('div'); row.className = 'term-row';
@@ -103,7 +79,7 @@
         return;
       }
       if (cmd === 'echo') return print(words.slice(1).join(' '));
-      if (cmd === 'reset') { const n = await seed(base, true); print('Standardset wiederhergestellt (' + n + ' Dateien).'); setPrompt(); return; }
+      if (cmd === 'reset') { const n = await g.GherkitDemo.reset(); print('Standardset wiederhergestellt (' + n + ' Dateien).'); setPrompt(); return; }
       if (helpers[cmd]) return helpers[cmd](words.slice(1));
       print('Befehl nicht gefunden: ' + cmd + '  (mit "help" sehen Sie, was möglich ist)', 'err');
     }
@@ -115,6 +91,7 @@
         const line = input.value; input.value = ''; if (line.trim()) { history.push(line); hpos = history.length; }
         busy = true; input.disabled = true;
         try { await exec(line); } catch (err) { print('Fehler: ' + (err && err.message || err), 'err'); }
+        if (opts.afterCommand) { try { await opts.afterCommand(line); } catch (err) { } }
         busy = false; input.disabled = false; setPrompt(); input.focus();
       }
     });
@@ -123,17 +100,5 @@
     return { run: async (line) => { input.value = line; input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); }, print, input };
   }
 
-  g.GherkitDemo = {
-    // Loads everything and shows the terminal in `mount`. `status(text)` reports progress.
-    async start(mount, base, status) {
-      status = status || function () { };
-      status('Lade Standardset …');
-      const n = await seed(base, false);
-      await loadWasm(base, status);
-      status('');
-      const term = create(mount, base);
-      term.print('gherkit läuft in Ihrem Browser. ' + n + ' Beispieldateien liegen im Ordner ~ (mit "ls" ansehen, mit "help" geht es los).', 'info');
-      return term;
-    },
-  };
+  g.GherkitTerminal = { create };
 })(globalThis);
