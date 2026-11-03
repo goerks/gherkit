@@ -111,3 +111,75 @@ test('own files can be created, formatted and reported in the virtual folder', a
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+async function openEditor() {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, locale: 'de-CH', acceptDownloads: true });
+  page.errors = [];
+  page.on('pageerror', (e) => page.errors.push(e.message));
+  await page.goto(base + 'editor/');
+  await page.waitForSelector('#files a[data-path]', { timeout: 60000 });
+  return page;
+}
+
+test('the editor runs in the browser on the standard set and keeps changes across reloads', async () => {
+  const page = await openEditor();
+  const files = await page.$$eval('#files a[data-path]', (as) => as.map((a) => a.dataset.path));
+  assert.ok(files.includes('shop/checkout.feature') && files.includes('de/anmeldung.feature'), 'standard set is listed: ' + files);
+  assert.match(await page.textContent('.demo-badge'), /Demo/);
+  assert.equal(await page.locator('#ws-btn').isDisabled(), true, 'no folder picker in the demo');
+
+  await page.click('#files a[data-path="shop/checkout.feature"]');
+  await page.click('[data-variant="code"]');
+  await page.waitForFunction(() => document.getElementById('src').value.includes('Checkout'));
+  await page.fill('#src', (await page.inputValue('#src')) + '\n\n  Scenario: Eigenes Szenario\n    Given ein Gast\n');
+  await page.click('#save-btn');
+  await page.waitForFunction(() => !window.gherkit || !window.gherkit.text || window.gherkit.text === window.gherkit.saved);
+  await page.waitForTimeout(500);
+
+  await page.reload();
+  await page.waitForSelector('#files a[data-path]');
+  await page.click('#files a[data-path="shop/checkout.feature"]');
+  await page.waitForFunction(() => document.getElementById('src').value.includes('Eigenes Szenario'));
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('the terminal below the editor shares its files', async () => {
+  const page = await openEditor();
+  await page.click('#dock-toggle');
+  await page.waitForSelector('#term-input');
+  await page.fill('#term-input', 'echo "Feature: Aus dem Terminal" > terminal.feature');
+  await page.press('#term-input', 'Enter');
+  await page.waitForSelector('#files a[data-path="terminal.feature"]', { timeout: 15000 });
+  await page.fill('#term-input', 'rm terminal.feature');
+  await page.press('#term-input', 'Enter');
+  await page.waitForFunction(() => !document.querySelector('#files a[data-path="terminal.feature"]'), null, { timeout: 15000 });
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('export, import and reset work on the editor page', async () => {
+  const page = await openEditor();
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#demo-export')]);
+  assert.equal(dl.suggestedFilename(), 'gherkit-demo.zip');
+  const path = await dl.path();
+  const zip = readFileSync(path);
+  assert.equal(zip.subarray(0, 2).toString(), 'PK', 'a ZIP file');
+
+  await page.setInputFiles('#demo-import-input', [{ name: 'importiert.feature', mimeType: 'text/plain', buffer: Buffer.from('Feature: Importiert\n\n  Scenario: S\n    Given x\n') }]);
+  page.once('dialog', (d) => d.accept());
+  await page.waitForSelector('#files a[data-path="importiert.feature"]', { timeout: 15000 });
+
+  page.on('dialog', (d) => d.accept());
+  await page.click('#demo-reset');
+  await page.waitForSelector('#files a[data-path="shop/checkout.feature"]', { timeout: 30000 });
+  await page.waitForFunction(() => !document.querySelector('#files a[data-path="importiert.feature"]'));
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('the landing page links to the editor', async () => {
+  const page = await open();
+  assert.equal(await page.getAttribute('#open-editor', 'href'), 'editor/');
+  await page.close();
+});

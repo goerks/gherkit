@@ -1360,4 +1360,17 @@
     if (S.files.length) return openFile(S.files[0]);
   });
   window.gherkit = S; // handy for debugging and browser tests
+  // Lets the page around the editor (the browser demo) tell it that files changed outside, for example in the terminal.
+  window.gherkitApp = {
+    refresh: function () {
+      return loadWorkspace().then(function () {
+        if (!S.path) return;
+        if (S.files.indexOf(S.path) < 0) {
+          S.path = ''; S.text = S.saved = ''; S.parsed = S.lastGood = null; S.diags = []; S.edit = null;
+          showVariant(); renderProblems(); renderOutline(); renderFacts(); return;
+        }
+        if (!dirty()) return openFile(S.path);
+      });
+    }
+  };
 })();
