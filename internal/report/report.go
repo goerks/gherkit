@@ -105,6 +105,12 @@ type Scenario struct {
 	Steps       []*Step
 	Status      string
 	Duration    time.Duration
+	// Manual is set for scenarios a person tested (ADR 0009); the fields
+	// below come from the run metadata.
+	Manual      bool
+	Tester      string
+	Environment string
+	Build       string
 }
 
 // Step with its result.
@@ -119,6 +125,11 @@ type Step struct {
 	MediaType string
 	Rows      [][]string
 	Location  string
+	// Manual information: the comment of the tester, evidence files (paths
+	// relative to the results file) and whether the step was blocked.
+	Comment  string
+	Evidence []string
+	Blocked  bool
 }
 
 // cucumber JSON (the de-facto exchange format written by godog, cucumber-jvm, cucumber-js, ...)
@@ -142,6 +153,12 @@ type cjElement struct {
 	Type        string   `json:"type"`
 	Tags        []cjTag  `json:"tags"`
 	Steps       []cjStep `json:"steps"`
+	Gherkit     *struct {
+		Manual      bool   `json:"manual"`
+		Tester      string `json:"tester"`
+		Environment string `json:"environment"`
+		Build       string `json:"build"`
+	} `json:"gherkit"`
 }
 type cjStep struct {
 	Keyword   string `json:"keyword"`
@@ -162,6 +179,11 @@ type cjStep struct {
 		Duration     int64  `json:"duration"`
 		ErrorMessage string `json:"error_message"`
 	} `json:"result"`
+	Gherkit *struct {
+		Status   string   `json:"status"`
+		Comment  string   `json:"comment"`
+		Evidence []string `json:"evidence"`
+	} `json:"gherkit"`
 }
 
 // FromCucumberJSON reads one or more Cucumber JSON result files.
@@ -179,6 +201,9 @@ func FromCucumberJSON(readers ...io.Reader) (*Report, error) {
 					continue
 				}
 				s := &Scenario{ID: el.ID, Keyword: el.Keyword, Name: el.Name, Description: strings.TrimSpace(el.Description), Line: el.Line, Tags: tags(el.Tags), Status: Passed}
+				if el.Gherkit != nil && el.Gherkit.Manual {
+					s.Manual, s.Tester, s.Environment, s.Build = true, el.Gherkit.Tester, el.Gherkit.Environment, el.Gherkit.Build
+				}
 				for _, cs := range el.Steps {
 					st := &Step{Keyword: strings.TrimSpace(cs.Keyword), Text: cs.Name, Line: cs.Line, Status: cs.Result.Status, Duration: time.Duration(cs.Result.Duration), Error: cs.Result.ErrorMessage, Location: cs.Match.Location}
 					if cs.DocString != nil {
@@ -186,6 +211,9 @@ func FromCucumberJSON(readers ...io.Reader) (*Report, error) {
 					}
 					for _, row := range cs.Rows {
 						st.Rows = append(st.Rows, row.Cells)
+					}
+					if cs.Gherkit != nil {
+						st.Comment, st.Evidence, st.Blocked = cs.Gherkit.Comment, cs.Gherkit.Evidence, cs.Gherkit.Status == "blocked"
 					}
 					if st.Status == "" {
 						st.Status = Skipped
@@ -319,8 +347,8 @@ func Funcs(lang string) map[string]any {
 }
 
 var texts = map[string]map[string]string{
-	"en": {"title": "Acceptance test report", "features": "Features", "scenarios": "Scenarios", "steps": "Steps", "passed": "passed", "failed": "failed", "skipped": "skipped", "pending": "pending", "undefined": "undefined", "duration": "Duration", "generated": "Generated", "status": "Status", "summary": "Summary"},
-	"de": {"title": "Abnahmetest-Report", "features": "Features", "scenarios": "Szenarien", "steps": "Schritte", "passed": "erfolgreich", "failed": "fehlgeschlagen", "skipped": "übersprungen", "pending": "ausstehend", "undefined": "undefiniert", "duration": "Dauer", "generated": "Erstellt", "status": "Status", "summary": "Zusammenfassung"},
+	"en": {"title": "Acceptance test report", "features": "Features", "scenarios": "Scenarios", "steps": "Steps", "passed": "passed", "failed": "failed", "skipped": "skipped", "pending": "pending", "undefined": "undefined", "duration": "Duration", "generated": "Generated", "status": "Status", "summary": "Summary", "manual": "manual", "blocked": "blocked", "tester": "Tester", "environment": "Environment", "build": "Build", "comment": "Comment", "evidence": "Evidence"},
+	"de": {"title": "Abnahmetest-Report", "features": "Features", "scenarios": "Szenarien", "steps": "Schritte", "passed": "erfolgreich", "failed": "fehlgeschlagen", "skipped": "übersprungen", "pending": "ausstehend", "undefined": "undefiniert", "duration": "Dauer", "generated": "Erstellt", "status": "Status", "summary": "Zusammenfassung", "manual": "manuell", "blocked": "blockiert", "tester": "Testende Person", "environment": "Umgebung", "build": "Build", "comment": "Kommentar", "evidence": "Nachweis"},
 }
 
 // T translates a report text; unknown languages fall back to English.

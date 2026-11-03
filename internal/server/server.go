@@ -29,8 +29,9 @@ var Version = "dev"
 
 // Server serves the editor for one (switchable) workspace.
 type Server struct {
-	mu sync.RWMutex
-	ws *workspace.Workspace
+	mu    sync.RWMutex
+	ws    *workspace.Workspace
+	runMu sync.Mutex // serialises changes to manual runs
 }
 
 // New creates a server for the given root folder.
@@ -71,6 +72,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/steps", s.steps)
 	mux.HandleFunc("GET /api/dialects", s.dialects)
 	mux.HandleFunc("GET /api/dialects/{code}", s.dialect)
+	s.registerManual(mux)
 	sub, _ := fs.Sub(webFS, "web")
 	mux.Handle("/", http.FileServer(http.FS(sub)))
 	return guard(mux)

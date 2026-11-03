@@ -10,7 +10,8 @@
 
 `{{.URI}}` · {{.Counts.Passed}}/{{.Counts.Total}} {{t "passed"}}
 {{range .Scenarios}}
-- **{{.Name}}** — {{t .Status}}{{range .Steps}}{{if eq .Status "failed"}}
-  - ✗ {{.Keyword}} {{.Text}}: `{{.Error}}`{{end}}{{end}}
+- **{{.Name}}** — {{t .Status}}{{if .Manual}} ({{t "manual"}}, {{t "tester"}}: {{.Tester}}){{end}}{{range .Steps}}{{if eq .Status "failed"}}
+  - ✗ {{.Keyword}} {{.Text}}: `{{.Error}}`{{end}}{{if .Blocked}}
+  - ⛔ {{.Keyword}} {{.Text}} ({{t "blocked"}}): {{.Comment}}{{end}}{{end}}
 {{- end}}
 {{end}}
