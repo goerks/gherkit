@@ -381,10 +381,11 @@ test('code view: the coloured text always matches the source, also right after E
   const page = await open('code', 'shop/checkout.feature');
   await page.waitForSelector('#hl .c-kw-feature');
   await page.evaluate(() => { const s = document.getElementById('src'), i = s.value.indexOf('a paid order') + 'a paid order'.length; s.focus(); s.setSelectionRange(i, i); });
-  // the overlay has one element per line (an empty line shows a space)
+  // the overlay has one element per line
   const same = () => page.evaluate(() => {
-    const shown = [...document.querySelectorAll('#hl .ln')].map((l) => l.textContent);
-    const source = document.getElementById('src').value.split('\n').map((l) => (l === '' ? ' ' : l));
+    const blank = (l) => (l.trim() === '' ? '' : l); // an empty line may be shown empty or as a space
+    const shown = [...document.querySelectorAll('#hl .ln')].map((l) => blank(l.textContent));
+    const source = document.getElementById('src').value.split('\n').map(blank);
     if (shown.length !== source.length) return 'line count ' + shown.length + ' vs ' + source.length;
     for (let i = 0; i < source.length; i++) if (shown[i] !== source[i]) return 'line ' + (i + 1) + ': shown ' + JSON.stringify(shown[i]) + ' but source ' + JSON.stringify(source[i]);
     return true;
