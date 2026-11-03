@@ -24,7 +24,7 @@
       row: '+ Zeile', col: '+ Spalte', newFileName: 'Dateiname für das neue Feature (z. B. login.feature):', discard: 'Ungespeicherte Änderungen verwerfen?',
       folderFeatures: '{n} Features', fmtFailed: 'Formatieren nicht möglich: Syntaxfehler', comments: 'Kommentare',
       tagFilter: 'Nach Tag filtern', clearFilter: 'Filter aufheben', noMatch: 'Kein Szenario mit diesem Tag.',
-      copy: 'Kopie', leftForm: 'Formular', tabDoc: 'Dokument', tabProblems: 'Probleme', tabCases: 'Testfälle', casesSummary: '{n} Testfälle aus {m} Szenarien', caseNo: 'Nr.', caseEx: 'Beispiele', caseVals: 'Werte', noCases: 'Keine Testfälle.', layoutCards: 'Karten', layoutList: 'Liste', layoutLabel: 'Darstellung', ruleHint: 'Die Szenarien dieser Regel stehen in der Liste links.', badOrder: 'Reihenfolge nicht erlaubt: Hintergrund steht zuerst, Szenarien vor den Regeln.', noName: '(ohne Namen)', featureItem: 'Funktionalität', openCase: 'Testfall ein-/ausklappen', leftCode: 'Code', splitLeftLabel: 'Linke Seite', stepHint: 'Enter: nächster Schritt · Alt+↑/↓: Schlüsselwort wechseln', chipTags: '+ Tags', chipDesc: '+ Beschreibung', kwTitle: 'Schlüsselwort wechseln (Klick, Umschalt+Klick rückwärts)', pasteHint: 'Aus Excel einfügen: Tabellenbereich kopieren und hier einfügen', duplicate: 'Duplizieren', fold: 'Auf-/zuklappen', splitHandle: 'Breite anpassen', nSteps: '{n} Schritte', nBlocks: '{n} Blöcke'
+      copy: 'Kopie', leftForm: 'Formular', leftFormTitle: 'Formular (Alt+1)', leftCodeTitle: 'Code (Alt+2)', leftCodeHint: 'Vorschläge beim Tippen · Enter und Tab rücken ein', tabDoc: 'Dokument', tabProblems: 'Probleme', tabCases: 'Testfälle', casesSummary: '{n} Testfälle aus {m} Szenarien', caseNo: 'Nr.', caseEx: 'Beispiele', caseVals: 'Werte', noCases: 'Keine Testfälle.', layoutCards: 'Karten', layoutList: 'Liste', layoutLabel: 'Darstellung', ruleHint: 'Die Szenarien dieser Regel stehen in der Liste links.', badOrder: 'Reihenfolge nicht erlaubt: Hintergrund steht zuerst, Szenarien vor den Regeln.', noName: '(ohne Namen)', featureItem: 'Funktionalität', openCase: 'Testfall ein-/ausklappen', leftCode: 'Code', splitLeftLabel: 'Linke Seite', stepHint: 'Enter: nächster Schritt · Alt+↑/↓: Schlüsselwort wechseln', chipTags: '+ Tags', chipDesc: '+ Beschreibung', kwTitle: 'Schlüsselwort wechseln (Klick, Umschalt+Klick rückwärts)', pasteHint: 'Aus Excel einfügen: Tabellenbereich kopieren und hier einfügen', duplicate: 'Duplizieren', fold: 'Auf-/zuklappen', splitHandle: 'Breite anpassen', nSteps: '{n} Schritte', nBlocks: '{n} Blöcke'
     },
     en: {
       vCode: 'Code', vDoc: 'Document', vStruct: 'Structure', vSplit: 'Split', format: 'Format', save: 'Save',
@@ -40,7 +40,7 @@
       row: '+ Row', col: '+ Column', newFileName: 'File name for the new feature (e.g. login.feature):', discard: 'Discard unsaved changes?',
       folderFeatures: '{n} features', fmtFailed: 'Cannot format: syntax errors', comments: 'Comments',
       tagFilter: 'Filter by tag', clearFilter: 'Clear filter', noMatch: 'No scenario with this tag.',
-      copy: 'copy', leftForm: 'Form', tabDoc: 'Document', tabProblems: 'Problems', tabCases: 'Test cases', casesSummary: '{n} test cases from {m} scenarios', caseNo: 'No.', caseEx: 'Examples', caseVals: 'Values', noCases: 'No test cases.', layoutCards: 'Cards', layoutList: 'List', layoutLabel: 'Layout', ruleHint: 'The scenarios of this rule are in the list on the left.', badOrder: 'Order not allowed: Background comes first, scenarios before rules.', noName: '(no name)', featureItem: 'Feature', openCase: 'Toggle test case', leftCode: 'Code', splitLeftLabel: 'Left pane', stepHint: 'Enter: next step · Alt+↑/↓: change keyword', chipTags: '+ Tags', chipDesc: '+ Description', kwTitle: 'Change keyword (click, Shift+click backwards)', pasteHint: 'Paste from Excel: copy a cell range and paste it here', duplicate: 'Duplicate', fold: 'Collapse/expand', splitHandle: 'Adjust width', nSteps: '{n} steps', nBlocks: '{n} blocks'
+      copy: 'copy', leftForm: 'Form', leftFormTitle: 'Form (Alt+1)', leftCodeTitle: 'Code (Alt+2)', leftCodeHint: 'Suggestions while typing · Enter and Tab indent', tabDoc: 'Document', tabProblems: 'Problems', tabCases: 'Test cases', casesSummary: '{n} test cases from {m} scenarios', caseNo: 'No.', caseEx: 'Examples', caseVals: 'Values', noCases: 'No test cases.', layoutCards: 'Cards', layoutList: 'List', layoutLabel: 'Layout', ruleHint: 'The scenarios of this rule are in the list on the left.', badOrder: 'Order not allowed: Background comes first, scenarios before rules.', noName: '(no name)', featureItem: 'Feature', openCase: 'Toggle test case', leftCode: 'Code', splitLeftLabel: 'Left pane', stepHint: 'Enter: next step · Alt+↑/↓: change keyword', chipTags: '+ Tags', chipDesc: '+ Description', kwTitle: 'Change keyword (click, Shift+click backwards)', pasteHint: 'Paste from Excel: copy a cell range and paste it here', duplicate: 'Duplicate', fold: 'Collapse/expand', splitHandle: 'Adjust width', nSteps: '{n} steps', nBlocks: '{n} blocks'
     }
   };
   var lang = 'de';
@@ -120,6 +120,7 @@
     if (dirty() && !confirm(t('discard'))) return Promise.resolve();
     return api('GET', '/api/file?path=' + encodeURIComponent(path)).then(function (f) {
       S.path = f.path; S.text = f.content; S.saved = f.content; S.edit = null; S.lastGood = null; S.parsed = null; S.tagFilter = ''; S.folded = {}; S.opened = {}; S.caseOpen = ''; S.sel = '';
+      var remembered = readLeftMap()[leftKey()]; if (remembered === 'form' || remembered === 'code') S.splitLeft = remembered;
       persist(); renderFiles(); showVariant(); setSource(S.text, true); updateDirty();
       return reparse();
     });
@@ -178,7 +179,8 @@
     $('view-code').hidden = !has || !codeActive();
     $('view-doc').hidden = !has || !(v === 'doc' || v === 'split');
     $('view-struct').hidden = !has || !structActive();
-    $('split-left').hidden = !(v === 'split' && has);
+    $('left-head').hidden = !(v === 'split' && has);
+    $('left-code-tools').hidden = S.splitLeft !== 'code';
     document.querySelectorAll('#split-left button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.left === S.splitLeft)); });
     $('main').classList.toggle('split', v === 'split' && has);
     $('split-handle').hidden = !(v === 'split' && has);
@@ -192,12 +194,65 @@
     S.variant = v; persist(); showVariant();
   }
   // Split: choose what the left half shows (form or code); the right half is always the preview.
+  // The choice is remembered per file; the last choice is also the default for files without one.
+  function leftKey() { return S.root + '|' + S.path; }
+  function readLeftMap() { try { return JSON.parse(localStorage.getItem('gherkit.splitLeftByFile') || '{}') || {}; } catch (e) { return {}; } }
+  function rememberLeft(side) {
+    try {
+      localStorage.setItem('gherkit.splitLeft', side);
+      if (!S.path) return;
+      var m = readLeftMap(), keys;
+      m[leftKey()] = side; keys = Object.keys(m);
+      if (keys.length > 300) delete m[keys[0]];
+      localStorage.setItem('gherkit.splitLeftByFile', JSON.stringify(m));
+    } catch (e) { }
+  }
+  // Positions in document order: every block and step with its path (c1, c1.s2, c2.c0.s1) and first line.
+  function positions(doc) {
+    var out = [], f = doc && doc.feature;
+    if (!f) return out;
+    function start(n) { var l = n.location.line; (n.tags || []).forEach(function (t) { if (t.location.line < l) l = t.location.line; }); return l; }
+    function block(b, p) { out.push({ path: p, line: start(b) }); (b.steps || []).forEach(function (s, k) { out.push({ path: p + '.s' + k, line: s.location.line }); }); }
+    f.children.forEach(function (c, i) {
+      var p = 'c' + i;
+      if (c.background) block(c.background, p);
+      if (c.scenario) block(c.scenario, p);
+      if (c.rule) {
+        out.push({ path: p, line: start(c.rule) });
+        c.rule.children.forEach(function (rc, j) { var q = p + '.c' + j; if (rc.background) block(rc.background, q); if (rc.scenario) block(rc.scenario, q); });
+      }
+    });
+    return out;
+  }
+  function currentDoc() { var r = S.parsed && !S.parsed.errors.length ? S.parsed : S.lastGood; return r && r.document; }
+  function pathAtLine(line) { var best = ''; positions(currentDoc()).forEach(function (x) { if (x.line <= line) best = x.path; }); return best; }
+  function lineOfPath(path) { var hit = 0; positions(currentDoc()).forEach(function (x) { if (x.path === path) hit = x.line; }); return hit; }
+  function focusLine(line) {
+    var lines = src.value.split('\n'), pos = 0;
+    for (var i = 0; i < line - 1 && i < lines.length; i++) pos += lines[i].length + 1;
+    var end = pos + (lines[line - 1] || '').length;
+    src.focus(); src.setSelectionRange(end, end);
+    $('view-code').scrollTop = Math.max(0, (line - 6) * lineH);
+    syncDocSoon();
+  }
+  // Split: choose what the left half shows (form or code); the right half is always the preview.
+  // The place you are working at is taken along: the focused form step becomes the code cursor line and the other way round.
   function setLeft(side) {
-    if (side === S.splitLeft) return;
-    if (S.splitLeft === 'form') S.edit = null;
-    S.splitLeft = side;
-    try { localStorage.setItem('gherkit.splitLeft', side); } catch (e) { }
-    showVariant();
+    if (side === S.splitLeft) return Promise.resolve();
+    var from = S.splitLeft, line = 0, path = '', prep;
+    if (from === 'form') {
+      prep = syncNow().then(function () { if (S.curPath) line = lineOfPath(S.curPath); });
+    } else {
+      var caretLine = src.value.slice(0, src.selectionStart).split('\n').length;
+      prep = reparse().then(function () { path = pathAtLine(caretLine); });
+    }
+    return prep.then(function () {
+      if (from === 'form') S.edit = null;
+      S.splitLeft = side; rememberLeft(side);
+      showVariant();
+      if (side === 'code' && line) focusLine(line);
+      if (side === 'form' && path) focusForm(path);
+    });
   }
   document.querySelectorAll('#split-left button').forEach(function (b) { b.addEventListener('click', function () { setLeft(b.dataset.left); }); });
   function persist() {
@@ -245,7 +300,10 @@
     gutter.innerHTML = g;
   }
   function jumpTo(line) {
-    if (!codeActive()) { if (S.variant === 'split') setLeft('code'); else setVariant('code'); }
+    if (!codeActive()) {
+      if (S.variant === 'split') { setLeft('code').then(function () { jumpTo(line); }); return; }
+      setVariant('code');
+    }
     var lines = src.value.split('\n'), pos = 0;
     for (var i = 0; i < line - 1 && i < lines.length; i++) pos += lines[i].length + 1;
     src.focus(); src.setSelectionRange(pos, pos + (lines[line - 1] || '').length);
@@ -696,7 +754,7 @@
     markPath(p);
     var blk = $('view-struct').querySelector('[data-path="' + p + '"]');
     if (!blk) return;
-    var inp = blk.querySelector('input[aria-label="step"]') || blk.querySelector('input');
+    var isStep = /\.s\d+$/.test(p), inp = isStep ? blk.querySelector('input[aria-label="step"]') : (blk.querySelector('.block-head input') || blk.querySelector('input'));
     if (inp) inp.focus();
     blk.scrollIntoView({ block: 'nearest' });
   }
@@ -802,16 +860,17 @@
   }
 
   // ---------- structure view ----------
-  var syncSoon = debounce(function () {
-    if (!S.edit) return;
-    api('POST', '/api/render', S.edit).then(function (r) {
+  function syncNow() {
+    if (!S.edit) return Promise.resolve();
+    return api('POST', '/api/render', S.edit).then(function (r) {
       S.text = r.content; S.parsed = r.parsed; if (!r.parsed.errors.length) S.lastGood = r.parsed;
       setSource(S.text, true); updateDirty();
       api('POST', '/api/lint', { path: S.path, content: S.text }).then(function (l) { S.diags = l.diagnostics || []; renderProblems(); renderCodeHL(); if (S.variant === 'split') renderDoc(); });
       renderOutline(); renderFacts();
       if (S.variant === 'split') renderDoc();
     });
-  }, 250);
+  }
+  var syncSoon = debounce(syncNow, 250);
   function changed() { syncSoon(); }
 
   function kwOptions(kind) { return ((S.dialect || {})[kind] || []).slice(); }
@@ -1245,11 +1304,13 @@
   document.querySelectorAll('.variants button').forEach(function (b) { b.addEventListener('click', function () { setVariant(b.dataset.variant); }); });
   $('save-btn').addEventListener('click', save);
   $('fmt-btn').addEventListener('click', formatSource);
+  $('left-fmt').addEventListener('click', formatSource);
   $('filter').addEventListener('input', renderFiles);
   $('ui-lang').addEventListener('change', function (e) { lang = e.target.value; try { localStorage.setItem('gherkit.lang', lang); } catch (x) { } applyI18n(); showVariant(); renderProblems(); renderFacts(); });
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); }
     if (e.altKey && e.shiftKey && (e.key === 'F' || e.key === 'f')) { e.preventDefault(); formatSource(); }
+    if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && S.variant === 'split' && S.path && (e.code === 'Digit1' || e.code === 'Digit2')) { e.preventDefault(); setLeft(e.code === 'Digit1' ? 'form' : 'code'); }
   });
   window.addEventListener('hashchange', function () {
     var p = new URLSearchParams(location.hash.slice(1)), v = p.get('variant'), f = p.get('file');

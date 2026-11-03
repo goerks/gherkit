@@ -18,7 +18,6 @@
     <button role="tab" data-variant="split" data-i18n="vSplit">Split</button>
   </nav>
   <div class="actions">
-    <div id="split-left" class="seg" role="group" aria-label="Linke Seite" data-i18n-title="splitLeftLabel" hidden><button data-left="form" data-i18n="leftForm">Formular</button><button data-left="code" data-i18n="leftCode">Code</button></div>
     <span id="status" class="status" aria-live="polite"></span>
     <button id="fmt-btn" data-i18n="format">Formatieren</button>
     <button id="save-btn" class="primary" data-i18n="save">Speichern</button>
@@ -37,17 +36,30 @@
 
   <main id="main" class="main">
     <div id="empty" class="empty"></div>
-    <section id="view-code" class="view code-view" hidden>
-      <div class="editor" id="editor">
-        <div class="gutter" id="gutter" aria-hidden="true"></div>
-        <div class="code-wrap">
-          <pre class="hl" id="hl" aria-hidden="true"></pre>
-          <textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Gherkin source"></textarea>
-          <ul id="complete" class="complete" hidden role="listbox"></ul>
+    <div id="left-pane" class="left-pane">
+      <div id="left-head" class="phead" hidden>
+        <div id="split-left" class="seg" role="group" aria-label="Linke Seite" data-i18n-title="splitLeftLabel">
+          <button data-left="form" data-i18n="leftForm" data-i18n-title="leftFormTitle" title="Formular (Alt+1)">Formular</button>
+          <button data-left="code" data-i18n="leftCode" data-i18n-title="leftCodeTitle" title="Code (Alt+2)">Code</button>
         </div>
+        <span class="sp"></span>
+        <span id="left-code-tools" class="left-tools" hidden>
+          <span class="hint" data-i18n="leftCodeHint">Vorschläge beim Tippen · Enter und Tab rücken ein</span>
+          <button id="left-fmt" data-i18n="format">Formatieren</button>
+        </span>
       </div>
-    </section>
-    <section id="view-struct" class="view struct-view" hidden></section>
+      <section id="view-code" class="view code-view" hidden>
+        <div class="editor" id="editor">
+          <div class="gutter" id="gutter" aria-hidden="true"></div>
+          <div class="code-wrap">
+            <pre class="hl" id="hl" aria-hidden="true"></pre>
+            <textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Gherkin source"></textarea>
+            <ul id="complete" class="complete" hidden role="listbox"></ul>
+          </div>
+        </div>
+      </section>
+      <section id="view-struct" class="view struct-view" hidden></section>
+    </div>
     <div id="split-handle" class="split-handle" role="separator" aria-orientation="vertical" tabindex="0" title="Breite anpassen" data-i18n-title="splitHandle" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50" hidden></div>
     <section id="view-doc" class="view doc-view" hidden></section>
   </main>

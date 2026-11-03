@@ -334,6 +334,42 @@ test('saving keeps the Windows line endings of a file', async () => {
   await page.close();
 });
 
+test('split: headers line up, the position travels with the switch, Alt+1 and Alt+2, a choice per file', async () => {
+  const page = await open('split', 'shop/checkout.feature');
+  await page.waitForSelector('.st .block.scenario');
+  await page.waitForSelector('.rtabs');
+  // both halves have a header of the same height
+  const heights = await page.evaluate(() => [document.getElementById('left-head').getBoundingClientRect().height, document.querySelector('.rtabs').getBoundingClientRect().height]);
+  assert.equal(heights[0], heights[1], 'headers have the same height');
+  // form -> code: the focused step becomes the cursor line
+  const step = page.locator('.st .block.scenario').first().locator('input[aria-label="step"]').nth(1);
+  const text = await step.inputValue();
+  await step.click();
+  await page.keyboard.press('Alt+2');
+  await page.waitForSelector('#view-code:not([hidden])');
+  await page.waitForFunction((t) => {
+    const s = document.getElementById('src'), before = s.value.slice(0, s.selectionStart);
+    const line = before.slice(before.lastIndexOf('\n') + 1) + s.value.slice(s.selectionStart).split('\n')[0];
+    return document.activeElement === s && line.includes(t);
+  }, text);
+  // code -> form: the cursor line becomes the focused step
+  await page.evaluate(() => { const s = document.getElementById('src'), i = s.value.indexOf('an empty shopping cart'); s.focus(); s.setSelectionRange(i, i); });
+  await page.keyboard.press('Alt+1');
+  await page.waitForFunction(() => (document.activeElement.value || '').includes('an empty shopping cart'));
+  // the choice is remembered per file: code here, form in the other file
+  await page.keyboard.press('Alt+2');
+  await page.waitForSelector('#view-code:not([hidden])');
+  await page.click('#files a[data-path="shop/broken.feature"]');
+  await page.waitForFunction(() => window.gherkit.path === 'shop/broken.feature');
+  await page.keyboard.press('Alt+1');
+  await page.waitForSelector('#view-struct:not([hidden])');
+  await page.click('#files a[data-path="shop/checkout.feature"]');
+  await page.waitForFunction(() => window.gherkit.path === 'shop/checkout.feature');
+  await page.waitForSelector('#view-code:not([hidden])');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 // Screenshots for the docs: GHERKIT_SHOTS=<dir> npm test
 test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
   mkdirSync(process.env.GHERKIT_SHOTS, { recursive: true });
@@ -347,6 +383,18 @@ test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
       await page.locator('.st .block.scenario').first().locator('input[aria-label="step"]').last().click();
     }
     await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, name + '.png') });
+    await page.close();
+  }
+  // V1: Split with the code on the left (completion open)
+  {
+    const page = await open('split', 'shop/checkout.feature');
+    await page.click('#split-left [data-left="code"]');
+    await page.waitForSelector('#view-code:not([hidden])');
+    await page.click('#src');
+    await page.keyboard.press('Control+End');
+    await page.keyboard.type('    And the inv');
+    await page.waitForSelector('#complete:not([hidden]) li');
+    await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, 'editor-split-code.png') });
     await page.close();
   }
   // S2: list layout

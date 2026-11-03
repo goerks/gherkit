@@ -58,9 +58,10 @@ input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px s
 .view { flex: 1; overflow: auto; min-height: 0; }
 .main.split { flex-direction: row; }
 .main.split .view { flex: 1 1 50%; }
-.main.split #view-code, .main.split #view-struct { flex: 0 0 var(--split, 50%); min-width: 0; }
+.left-pane { display: contents; }
+.main.split .left-pane { display: flex; flex-direction: column; flex: 0 0 var(--split, 50%); min-width: 0; border-right: 1px solid var(--line); }
+.main.split .left-pane > .view { flex: 1 1 0; min-height: 0; }
 .main.split #view-doc { flex: 1 1 0; min-width: 0; }
-.main.split #view-code { border-right: 1px solid var(--line); }
 .empty { margin: auto; color: var(--muted); text-align: center; padding: 40px; }
 .panel h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin: 12px 0 6px; }
 .problems, .outline { list-style: none; margin: 0; padding: 0; font-size: 13px; }
@@ -192,7 +193,8 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
   .side { max-height: 30vh; border-right: 0; border-bottom: 1px solid var(--line); }
   .panel { display: none; }
   .main.split { flex-direction: column; }
-  .main.split #view-code, .main.split #view-struct, .main.split #view-doc { flex: 1 1 50%; }
+  .main.split .left-pane, .main.split #view-doc { flex: 1 1 50%; }
+  .main.split .left-pane { border-right: 0; border-bottom: 1px solid var(--line); }
   .split-handle { display: none; }
 }
 
@@ -245,8 +247,8 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 
 /* P2: preview tabs, test cases, problems */
 .doc-view.has-tabs { padding: 0; }
-.rtabs { position: sticky; top: 0; z-index: 2; display: flex; gap: 2px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
-.rtabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 9px 14px; color: var(--muted); }
+.rtabs { position: sticky; top: 0; z-index: 2; display: flex; gap: 2px; padding: 0 12px; height: 42px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.rtabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 0 14px; color: var(--muted); }
 .rtabs button[aria-selected="true"] { color: var(--fg); font-weight: 600; border-bottom-color: var(--accent); }
 .rtabs .count, .case-group .count { display: inline-block; min-width: 20px; text-align: center; font-size: 11px; font-weight: 600; border-radius: 999px; padding: 0 6px; background: var(--sunken); color: var(--muted); }
 .rbody { padding: 24px clamp(16px, 4vw, 48px); }
@@ -290,3 +292,10 @@ table.cases tr.case-detail td { background: var(--bg); padding: 8px 14px 12px; }
   .step:hover .tools, .step:focus-within .tools { opacity: 1; }
   .step-hint { padding-left: 102px; }
 }
+
+/* V1: both halves of Split have a header of the same height */
+.phead { flex: none; height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.phead .sp { flex: 1; }
+.left-tools { display: inline-flex; align-items: center; gap: 10px; }
+.left-tools button { font-size: 12px; padding: 2px 10px; }
+.left-tools .hint { color: var(--muted); font-size: 12px; }
