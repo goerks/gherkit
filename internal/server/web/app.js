@@ -292,7 +292,7 @@
   function renderCodeHL() {
     if (!S.path) return;
     var lines = src.value.split('\n');
-    var tokens = S.parsed ? S.parsed.tokens : [];
+    var tokens = S.hlFor === S.parsed && S.hlTokens ? S.hlTokens : (S.parsed ? S.parsed.tokens : []);
     var bad = new Set(), sev = {}, msgs = {};
     S.diags.forEach(function (d) {
       (msgs[d.line] = msgs[d.line] || []).push(d.message);
@@ -316,7 +316,25 @@
     $('view-code').scrollTop = Math.max(0, (line - 4) * lineH);
   }
 
+  // Until the parser has answered, the colours of the old text would be applied to the new lines (garbled
+  // keywords after pressing Enter). Move the tokens of unchanged lines along with the edit instead; the
+  // lines that changed stay plain for a moment.
+  function shiftTokens(prev, next) {
+    var base = S.hlFor === S.parsed && S.hlTokens ? S.hlTokens : (S.parsed ? S.parsed.tokens : null);
+    if (!base || !base.length) return;
+    var a = prev.split('\n'), b = next.split('\n'), delta = b.length - a.length;
+    if (delta === 0) return;
+    var min = Math.min(a.length, b.length), p = 0, s = 0;
+    while (p < min && a[p] === b[p]) p++;
+    while (s < min - p && a[a.length - 1 - s] === b[b.length - 1 - s]) s++;
+    S.hlTokens = base.filter(function (t) { return t.line <= p || t.line > a.length - s; }).map(function (t) {
+      if (t.line <= p) return t;
+      var m = {}; for (var k in t) m[k] = t[k]; m.line = t.line + delta; return m;
+    });
+    S.hlFor = S.parsed;
+  }
   src.addEventListener('input', function () {
+    shiftTokens(S.text, src.value);
     S.text = src.value; S.edit = null; sizeEditor(); renderCodeHL(); updateDirty(); reparseSoon(); suggest();
     if (S.variant === 'split') renderDocSoon();
   });

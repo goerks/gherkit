@@ -377,6 +377,21 @@ test('split: headers line up, the position travels with the switch, Alt+1 and Al
   await page.close();
 });
 
+test('code view: the coloured text always matches the source, also right after Enter', async () => {
+  const page = await open('code', 'shop/checkout.feature');
+  await page.waitForSelector('#hl .c-kw-feature');
+  await page.evaluate(() => { const s = document.getElementById('src'), i = s.value.indexOf('a paid order') + 'a paid order'.length; s.focus(); s.setSelectionRange(i, i); });
+  const same = () => page.evaluate(() => document.getElementById('hl').textContent.replace(/\n$/, '') === document.getElementById('src').value.replace(/\n$/, ''));
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press('Enter');
+    assert.equal(await same(), true, 'overlay differs from the source right after Enter ' + (i + 1));
+  }
+  await page.keyboard.type('And x');
+  assert.equal(await same(), true, 'overlay differs while typing');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 // Screenshots for the docs: GHERKIT_SHOTS=<dir> npm test
 test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
   mkdirSync(process.env.GHERKIT_SHOTS, { recursive: true });
