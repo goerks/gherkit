@@ -6,6 +6,7 @@
   const S_IFDIR = 0o40000, S_IFREG = 0o100000;
   const enc = new TextEncoder(), dec = new TextDecoder();
   const root = { dir: true, kids: new Map(), mtime: Date.now(), mode: 0o755 };
+  root.kids.set('tmp', { dir: true, kids: new Map(), mtime: Date.now(), mode: 0o777 }); // os.TempDir()
   let cwd = '/', dirty = false, onChange = null;
   const fds = new Map(); let nextFd = 3;
   let outBuf = '';

@@ -74,7 +74,7 @@ footer { padding: 40px 0 60px; color: var(--muted); font-size: 13px; }
   <h1>Gherkin schreiben, prüfen und ausführen lassen</h1>
   <p class="lede">gherkit ist ein einzelnes Programm für den ganzen Gherkin-Workflow: formatieren, prüfen, im Browser bearbeiten und Testergebnisse als Report darstellen. Ohne Installation von Laufzeiten, für alle Runner.</p>
 
-  <p class="status"><b>Im Aufbau.</b> <span>Die Browser-Demo entsteht Schritt für Schritt. Die echte CLI läuft als Terminal auf dieser Seite und der Editor läuft im Browser. Als Nächstes folgt das Ausführen von Szenarien.</span></p>
+  <p class="status"><b>Im Aufbau.</b> <span>Die Browser-Demo entsteht Schritt für Schritt. Die echte CLI läuft als Terminal auf dieser Seite und der Editor läuft im Browser. Szenarien lassen sich mit dem eingebauten Demo-Runner ausführen.</span></p>
 
   <section id="demo">
     <h2>Ausprobieren im Browser</h2>
@@ -90,6 +90,7 @@ footer { padding: 40px 0 60px; color: var(--muted); font-size: 13px; }
         <button type="button" class="chip" data-cmd="ls">ls</button>
         <button type="button" class="chip" data-cmd="gherkit lint --strict .">gherkit lint --strict .</button>
         <button type="button" class="chip" data-cmd="gherkit fmt --check .">gherkit fmt --check .</button>
+        <button type="button" class="chip" data-cmd="gherkit run --adapter demo . --report report.html">gherkit run --adapter demo .</button>
         <button type="button" class="chip" data-cmd="gherkit parse shop/checkout.feature">gherkit parse shop/checkout.feature</button>
         <button type="button" class="chip" data-cmd="gherkit dialects">gherkit dialects</button>
         <button type="button" class="chip" data-cmd="help">help</button>

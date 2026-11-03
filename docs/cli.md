@@ -73,7 +73,7 @@ on the command line (quoted); the runner also gets the path in the environment v
 
 | Flag | |
 | --- | --- |
-| `--adapter <name>` | `go`, `java` or `auto` (default: detect from the project) |
+| `--adapter <name>` | `go`, `java`, `demo` (built-in demo runner, never detected) or `auto` (default: detect from the project) |
 | `--cmd <template>` | replaces the adapter's command |
 | `--dir <folder>` | working directory of the runner (default `.`) |
 | `-o, --out <file>` | keep the Cucumber JSON (default: temporary file) |

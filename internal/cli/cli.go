@@ -317,7 +317,7 @@ Adapters: ` + strings.Join(runner.Names(), ", ") + `.`,
 				}
 				ad = a
 			}
-			if ad.Command == "" && ad.Resolve == nil && command == "" {
+			if ad.Command == "" && ad.Resolve == nil && ad.InProcess == nil && command == "" {
 				return &ExitError{ExitUsage, "adapter " + ad.Name + " has no command: use --cmd"}
 			}
 
