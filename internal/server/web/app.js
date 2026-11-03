@@ -237,7 +237,13 @@
   }
   // Split: choose what the left half shows (form or code); the right half is always the preview.
   // The place you are working at is taken along: the focused form step becomes the code cursor line and the other way round.
+  // Switches run one after the other, so a quick second switch (Alt+1 then Alt+2) starts from the state the first one left.
+  var leftQueue = Promise.resolve();
   function setLeft(side) {
+    leftQueue = leftQueue.then(function () { return switchLeft(side); }).catch(function () { });
+    return leftQueue;
+  }
+  function switchLeft(side) {
     if (side === S.splitLeft) return Promise.resolve();
     var from = S.splitLeft, line = 0, path = '', prep;
     if (from === 'form') {
