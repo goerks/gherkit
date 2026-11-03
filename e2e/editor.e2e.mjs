@@ -397,9 +397,10 @@ test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
     const page = await open('split', 'shop/checkout.feature');
     await page.click('#split-left [data-left="code"]');
     await page.waitForSelector('#view-code:not([hidden])');
-    await page.click('#src');
-    await page.keyboard.press('Control+End');
-    await page.keyboard.type('    And the inv');
+    // new step after "a paid order": Enter indents by itself, then the suggestions open
+    await page.evaluate(() => { const s = document.getElementById('src'), i = s.value.indexOf('a paid order') + 'a paid order'.length; s.focus(); s.setSelectionRange(i, i); });
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('And the inv');
     await page.waitForSelector('#complete:not([hidden]) li');
     await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, 'editor-split-code.png') });
     await page.close();
