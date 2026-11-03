@@ -48,9 +48,12 @@ var presets = []Adapter{
 	},
 	{
 		Name:        "java",
-		Description: "Cucumber-JVM with Maven or Gradle (JUnit Platform engine); results via CUCUMBER_PLUGIN",
+		Description: "Cucumber-JVM with Maven or Gradle (JUnit Platform engine); results via -Dcucumber.plugin in JAVA_TOOL_OPTIONS",
 		Resolve:     javaCommand,
-		Env:         map[string]string{"CUCUMBER_PLUGIN": "json:{output}", "CUCUMBER_FEATURES": "{features_csv}"},
+		// The JUnit Platform engine reads system properties, not environment
+		// variables. JAVA_TOOL_OPTIONS reaches every JVM the build starts,
+		// including the forked test JVM of Maven and Gradle's test workers.
+		Env:    map[string]string{"JAVA_TOOL_OPTIONS": `-Dcucumber.plugin="json:{output}"`},
 		Detect:      func(dir string) bool { return exists(dir, "pom.xml", "build.gradle", "build.gradle.kts", "gradlew") },
 	},
 }
@@ -181,6 +184,9 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 	sort.Strings(keys)
 	for _, k := range keys {
 		v := expand(a.Env[k], map[string]string{"output": req.Output, "features_csv": strings.Join(req.Features, ",")})
+		if k == "JAVA_TOOL_OPTIONS" && os.Getenv(k) != "" {
+			v = os.Getenv(k) + " " + v // keep the options the user already set
+		}
 		if v != "" {
 			env = append(env, k+"="+v)
 		}

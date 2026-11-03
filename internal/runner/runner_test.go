@@ -123,10 +123,10 @@ func TestJavaCommand(t *testing.T) {
 	if c := javaCommand(gdir); !strings.Contains(c, "gradlew test") {
 		t.Errorf("gradle wrapper: %q", c)
 	}
-	// the Java adapter tells Cucumber-JVM where to write the JSON through the environment
+	// the Java adapter tells Cucumber-JVM where to write the JSON through a system property
 	a, _ := Lookup("java")
-	if a.Env["CUCUMBER_PLUGIN"] != "json:{output}" {
-		t.Errorf("CUCUMBER_PLUGIN = %q", a.Env["CUCUMBER_PLUGIN"])
+	if !strings.Contains(a.Env["JAVA_TOOL_OPTIONS"], "-Dcucumber.plugin=") || !strings.Contains(a.Env["JAVA_TOOL_OPTIONS"], "{output}") {
+		t.Errorf("JAVA_TOOL_OPTIONS = %q", a.Env["JAVA_TOOL_OPTIONS"])
 	}
 }
 

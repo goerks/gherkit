@@ -129,7 +129,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          bin/gherkit run --adapter java --dir runner-examples/java -e CUCUMBER_FILTER_TAGS=@fails -o build/java/failing.json
+          bin/gherkit run --adapter java --dir runner-examples/java --cmd "mvn -B -ntp test -Dcucumber.filter.tags=@fails" -o build/java/failing.json
           code=$?
           echo "exit code: $code"
           test "$code" -eq 1
