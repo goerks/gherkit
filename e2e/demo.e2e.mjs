@@ -183,3 +183,21 @@ test('the landing page links to the editor', async () => {
   assert.equal(await page.getAttribute('#open-editor', 'href'), 'editor/');
   await page.close();
 });
+
+test('the demo runner executes the standard set and writes a report', async () => {
+  const page = await open();
+  await startDemo(page);
+  let t = await run(page, 'gherkit run --adapter demo . --report report.html');
+  assert.match(t, /✓ shop\/checkout\.feature:\d+ Invoice is sent as PDF/);
+  assert.match(t, /✓ de\/anmeldung\.feature:\d+ Erfolgreiche Anmeldung/);
+  assert.match(t, /broken\.feature: syntax errors/);
+  assert.match(t, /9 scenario\(s\): 8 passed, 1 failed/);
+  assert.match(t, /\[exit 1\]/, 'a failing scenario gives exit code 1');
+  t = await run(page, 'ls');
+  assert.match(t, /report\.html/);
+  await run(page, 'cd shop');
+  t = await run(page, 'gherkit run --adapter demo checkout.feature');
+  assert.match(t, /5 scenario\(s\): 5 passed, 0 failed/);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

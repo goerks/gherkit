@@ -22,14 +22,14 @@ page (HTML, JS)  ──►  gherkit.wasm.gz  ──►  the CLI, compiled with G
 
 ## What it cannot do
 
-- Start test runners (Maven, `go test`): a browser cannot start processes. `gherkit run` needs the downloadable CLI.
+- Start test runners (Maven, `go test`): a browser cannot start processes. `gherkit run` with these adapters needs the downloadable CLI. The built-in `--adapter demo` (`internal/demorun`) runs scenarios against a small simulated shop and login; steps it does not know are reported as undefined.
 - Share files between browsers or devices: files exist in the page only.
 - Open folders of your computer.
 
 ## Steps
 
 1. GitHub Pages pipeline, downloads and landing page (done)
-2. The CLI in the browser: terminal on a virtual folder (this page)
-3. The editor in the browser with the standard set, saving in the browser, reset, export and import
-4. Demo runner (`gherkit run --adapter demo`) with report
+2. The CLI in the browser: terminal on a virtual folder (done)
+3. The editor in the browser with the standard set, saving in the browser, reset, export and import (done)
+4. Demo runner (`gherkit run --adapter demo`) with report (done)
 5. Polish and tests against the built site

@@ -138,3 +138,31 @@ func TestQuote(t *testing.T) {
 		t.Errorf("a path with a space must be quoted, got %q", q)
 	}
 }
+
+func TestDemoAdapterRunsInProcess(t *testing.T) {
+	a, ok := Lookup("demo")
+	if !ok || a.InProcess == nil {
+		t.Fatal("demo adapter missing")
+	}
+	if _, ok := Detect(t.TempDir()); ok {
+		t.Fatal("demo must never be detected automatically")
+	}
+	dir := t.TempDir()
+	feature := "Feature: F\n\n  Scenario: S\n    Given an empty shopping cart\n    When the customer starts the checkout\n    Then the message \"Your cart is empty\" is shown\n"
+	if err := os.WriteFile(filepath.Join(dir, "a.feature"), []byte(feature), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(dir, "r.json")
+	res, err := Run(context.Background(), a, Request{Dir: dir, Output: out, Stdout: io.Discard, Stderr: io.Discard})
+	if err != nil || res.ExitCode != 0 {
+		t.Fatalf("Run = %+v, %v", res, err)
+	}
+	// a folder given as feature path is searched for features
+	res, err = Run(context.Background(), a, Request{Dir: dir, Features: []string{dir}, Output: out, Stdout: io.Discard, Stderr: io.Discard})
+	if err != nil || res.ExitCode != 0 {
+		t.Fatalf("Run with a folder = %+v, %v", res, err)
+	}
+	if _, err := os.Stat(out); err != nil {
+		t.Fatalf("no results written: %v", err)
+	}
+}
