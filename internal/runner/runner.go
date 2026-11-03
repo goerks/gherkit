@@ -69,12 +69,24 @@ var presets = []Adapter{
 }
 
 func demoRun(req Request) (int, error) {
-	features := req.Features
-	if len(features) == 0 {
-		var err error
-		if features, err = demorun.FindFeatures(req.Dir); err != nil {
-			return 0, err
+	// Feature paths can be files or folders; without any, the whole working directory is searched.
+	paths := req.Features
+	if len(paths) == 0 {
+		paths = []string{req.Dir}
+	}
+	var features []string
+	for _, p := range paths {
+		if st, err := os.Stat(p); err == nil && st.IsDir() {
+			found, err := demorun.FindFeatures(p)
+			if err != nil {
+				return 0, err
+			}
+			for _, f := range found {
+				features = append(features, filepath.Join(p, filepath.FromSlash(f)))
+			}
+			continue
 		}
+		features = append(features, p)
 	}
 	out, err := demorun.Run(req.Dir, features, req.Output, req.Stdout, req.Stderr)
 	if err != nil {

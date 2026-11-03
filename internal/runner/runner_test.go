@@ -157,6 +157,11 @@ func TestDemoAdapterRunsInProcess(t *testing.T) {
 	if err != nil || res.ExitCode != 0 {
 		t.Fatalf("Run = %+v, %v", res, err)
 	}
+	// a folder given as feature path is searched for features
+	res, err = Run(context.Background(), a, Request{Dir: dir, Features: []string{dir}, Output: out, Stdout: io.Discard, Stderr: io.Discard})
+	if err != nil || res.ExitCode != 0 {
+		t.Fatalf("Run with a folder = %+v, %v", res, err)
+	}
 	if _, err := os.Stat(out); err != nil {
 		t.Fatalf("no results written: %v", err)
 	}
