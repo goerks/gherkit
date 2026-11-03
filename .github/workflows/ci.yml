@@ -24,6 +24,38 @@ jobs:
       - run: go vet ./...
       - run: go test -cover ./internal/...
 
+  windows-binary:
+    name: windows binary
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build gherkit.exe
+        shell: bash
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          v="dev-${GITHUB_SHA::7}"
+          go build -trimpath -ldflags "-s -w -X github.com/goerks/gherkit/internal/cli.Version=$v -X github.com/goerks/gherkit/internal/cli.Commit=${GITHUB_SHA::7}" -o dist/gherkit.exe ./cmd/gherkit
+      - name: Smoke test
+        shell: bash
+        run: |
+          ./dist/gherkit.exe --help
+          ./dist/gherkit.exe fmt --check features
+          ./dist/gherkit.exe lint --strict features
+      - name: Collect download
+        shell: bash
+        run: |
+          cp -r examples dist/examples
+          printf '%s\r\n' 'gherkit.exe edit examples' > dist/editor.cmd
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gherkit-windows-amd64
+          path: dist/
+          retention-days: 14
+
   dogfood:
     name: acceptance (gherkit tests gherkit)
     runs-on: ubuntu-latest
@@ -67,6 +99,14 @@ jobs:
           npm install
           npx playwright install --with-deps chromium
           npm test
+        env:
+          GHERKIT_SHOTS: ${{ github.workspace }}/build/editor-shots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-screenshots
+          path: build/editor-shots/
+          if-no-files-found: ignore
 
   release-check:
     name: goreleaser config

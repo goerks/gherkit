@@ -1,4 +1,4 @@
-# Editor variants (decision pending)
+# Editor variants (decided for M1, see [ADR 0007](adr/0007-editor-variants-m1.md))
 
 `gherkit edit [folder]` contains four variants that can be switched in the top bar (and via
 `#variant=code|doc|struct|split`). All four are working on real files so they can be tried
@@ -63,5 +63,22 @@ Code and Document side by side, the document updates while typing.
 | Structure view as main view for business users, with glossary side panel | medium | if business users write themselves |
 | Spreadsheet mode for Examples tables (paste from Excel) | small | useful addition to C |
 
-**Please decide:** which variants go into M1, and whether the Code view stays a lightweight
-textarea or moves to CodeMirror 6.
+**Decision (2026-11-02):** all four variants stay in M1, Code and Document are polished first, and the Code view
+stays a lightweight textarea. CodeMirror 6 is reconsidered when large files become common.
+
+## Implemented for M1
+
+| Variant | Addition | Screenshot |
+| --- | --- | --- |
+| Structure | **Calm cards:** tags and description appear as chips until used, keywords are colored pills (click or Alt+Up/Down), Enter adds the next step | ![Structure](img/editor-struct.png) |
+| Structure | **List and detail:** scenario list with test case counts, edit one block at a time, reorder by drag and drop (Background first, scenarios before rules) | ![Structure list](img/editor-struct-list.png) |
+| Split | **Form and preview:** form (or code) on the left, preview on the right, the focused step is marked, a click in the preview focuses it in the form | ![Split](img/editor-split.png) |
+| Split | **Test cases tab:** every test case generated from scenario outlines, expandable into readable steps; a Problems tab next to the Document tab | ![Split test cases](img/editor-split-cases.png) |
+
+### Automatic indentation (Code view)
+
+Enter and Tab keep the file on the formatter's grid, so nobody has to count spaces:
+
+- **Enter** puts the finished line at its place (Feature 0, Rule and Scenario 2, in a Rule 4, steps and Examples one level deeper, table rows and doc strings one more) and starts the next line where the next line usually goes: after `Scenario:` the first step, after a step the next step, after `Examples:` the table. On an empty line it leaves the block and removes trailing spaces.
+- **Tab** moves the current line onto its place. On an empty line it walks through the levels, **Shift+Tab** walks back. With several lines selected it indents or outdents all of them by two.
+- Inside a doc string nothing is moved. **Ctrl+/** comments the selected lines out and back in.

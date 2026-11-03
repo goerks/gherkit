@@ -18,6 +18,7 @@
     <button role="tab" data-variant="split" data-i18n="vSplit">Split</button>
   </nav>
   <div class="actions">
+    <div id="split-left" class="seg" role="group" aria-label="Linke Seite" data-i18n-title="splitLeftLabel" hidden><button data-left="form" data-i18n="leftForm">Formular</button><button data-left="code" data-i18n="leftCode">Code</button></div>
     <span id="status" class="status" aria-live="polite"></span>
     <button id="fmt-btn" data-i18n="format">Formatieren</button>
     <button id="save-btn" class="primary" data-i18n="save">Speichern</button>
@@ -46,8 +47,9 @@
         </div>
       </div>
     </section>
-    <section id="view-doc" class="view doc-view" hidden></section>
     <section id="view-struct" class="view struct-view" hidden></section>
+    <div id="split-handle" class="split-handle" role="separator" aria-orientation="vertical" tabindex="0" title="Breite anpassen" data-i18n-title="splitHandle" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50" hidden></div>
+    <section id="view-doc" class="view doc-view" hidden></section>
   </main>
 
   <aside class="panel">
