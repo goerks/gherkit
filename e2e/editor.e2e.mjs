@@ -367,7 +367,12 @@ test('split: headers line up, the position travels with the switch, Alt+1 and Al
   await page.waitForSelector('#view-struct:not([hidden])');
   await page.click('#files a[data-path="shop/checkout.feature"]');
   await page.waitForFunction(() => window.gherkit.path === 'shop/checkout.feature');
-  await page.waitForSelector('#view-code:not([hidden])');
+  try {
+    await page.waitForSelector('#view-code:not([hidden])', { timeout: 5000 });
+  } catch (e) {
+    const state = await page.evaluate(() => ({ left: window.gherkit.splitLeft, variant: window.gherkit.variant, path: window.gherkit.path, root: window.gherkit.root, map: localStorage.getItem('gherkit.splitLeftByFile'), codeHidden: document.getElementById('view-code').hidden, structHidden: document.getElementById('view-struct').hidden }));
+    throw new Error('code view not shown after returning to the file: ' + JSON.stringify(state));
+  }
   assert.deepEqual(page.errors, []);
   await page.close();
 });
