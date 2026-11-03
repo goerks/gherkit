@@ -334,6 +334,88 @@ test('saving keeps the Windows line endings of a file', async () => {
   await page.close();
 });
 
+test('split: headers line up, the position travels with the switch, Alt+1 and Alt+2, a choice per file', async () => {
+  const page = await open('split', 'shop/checkout.feature');
+  await page.waitForSelector('.st .block.scenario');
+  await page.waitForSelector('.rtabs');
+  // both halves have a header of the same height
+  const heights = await page.evaluate(() => [document.getElementById('left-head').getBoundingClientRect().height, document.querySelector('.rtabs').getBoundingClientRect().height]);
+  assert.equal(heights[0], heights[1], 'headers have the same height');
+  // form -> code: the focused step becomes the cursor line
+  const step = page.locator('.st .block.scenario').first().locator('input[aria-label="step"]').nth(1);
+  const text = await step.inputValue();
+  await step.click();
+  await page.keyboard.press('Alt+2');
+  await page.waitForSelector('#view-code:not([hidden])');
+  await page.waitForFunction((t) => {
+    const s = document.getElementById('src'), before = s.value.slice(0, s.selectionStart);
+    const line = before.slice(before.lastIndexOf('\n') + 1) + s.value.slice(s.selectionStart).split('\n')[0];
+    return document.activeElement === s && line.includes(t);
+  }, text);
+  // code -> form: the cursor line becomes the focused step
+  await page.evaluate(() => { const s = document.getElementById('src'), i = s.value.indexOf('an empty shopping cart'); s.focus(); s.setSelectionRange(i, i); });
+  await page.keyboard.press('Alt+1');
+  await page.waitForFunction(() => (document.activeElement.value || '').includes('an empty shopping cart'));
+  // looking at the form and switching must not make the file dirty (also true for CRLF files)
+  assert.equal(await page.evaluate(() => window.gherkit.text === window.gherkit.saved), true, 'file is not dirty');
+  // the choice is remembered per file: code here, form in the other file
+  await page.keyboard.press('Alt+2');
+  await page.waitForSelector('#view-code:not([hidden])');
+  await page.click('#files a[data-path="shop/broken.feature"]');
+  await page.waitForFunction(() => window.gherkit.path === 'shop/broken.feature');
+  await page.keyboard.press('Alt+1');
+  await page.waitForSelector('#view-struct:not([hidden])');
+  await page.click('#files a[data-path="shop/checkout.feature"]');
+  await page.waitForFunction(() => window.gherkit.path === 'shop/checkout.feature');
+  try {
+    await page.waitForSelector('#view-code:not([hidden])', { timeout: 5000 });
+  } catch (e) {
+    const state = await page.evaluate(() => ({ left: window.gherkit.splitLeft, variant: window.gherkit.variant, path: window.gherkit.path, root: window.gherkit.root, map: localStorage.getItem('gherkit.splitLeftByFile'), codeHidden: document.getElementById('view-code').hidden, structHidden: document.getElementById('view-struct').hidden }));
+    throw new Error('code view not shown after returning to the file: ' + JSON.stringify(state));
+  }
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('code view: the coloured text always matches the source, also right after Enter', async () => {
+  const page = await open('code', 'shop/checkout.feature');
+  await page.waitForSelector('#hl .c-kw-feature');
+  await page.evaluate(() => { const s = document.getElementById('src'), i = s.value.indexOf('a paid order') + 'a paid order'.length; s.focus(); s.setSelectionRange(i, i); });
+  // the overlay has one element per line
+  const same = () => page.evaluate(() => {
+    const blank = (l) => (l.trim() === '' ? '' : l); // an empty line may be shown empty or as a space
+    const shown = [...document.querySelectorAll('#hl .ln')].map((l) => blank(l.textContent));
+    const source = document.getElementById('src').value.split('\n').map(blank);
+    if (shown.length !== source.length) return 'line count ' + shown.length + ' vs ' + source.length;
+    for (let i = 0; i < source.length; i++) if (shown[i] !== source[i]) return 'line ' + (i + 1) + ': shown ' + JSON.stringify(shown[i]) + ' but source ' + JSON.stringify(source[i]);
+    return true;
+  });
+  assert.equal(await same(), true, 'overlay differs from the source before the edit');
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press('Enter');
+    assert.equal(await same(), true, 'overlay differs from the source right after Enter ' + (i + 1));
+  }
+  await page.keyboard.type('And x');
+  assert.equal(await same(), true, 'overlay differs while typing');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('code view: a file longer than the screen is shown completely when scrolled', async () => {
+  const page = await open('code', 'shop/checkout.feature');
+  await page.waitForSelector('#hl .ln');
+  const size = () => page.evaluate(() => { const h = (id) => document.getElementById(id).getBoundingClientRect().height; return { view: h('view-code'), src: h('src'), hl: h('hl'), gutter: h('gutter') }; });
+  const h = await size();
+  assert.ok(h.src > h.view, 'the example file is longer than the view: ' + JSON.stringify(h));
+  // the highlighting and the line numbers are as tall as the text, not only as tall as the visible part
+  assert.ok(Math.abs(h.hl - h.src) < 2 && Math.abs(h.gutter - h.src) < 2, 'overlay and gutter must follow the text: ' + JSON.stringify(h));
+  await page.evaluate(() => { const v = document.getElementById('view-code'); v.scrollTop = v.scrollHeight; });
+  const lastLine = await page.evaluate(() => { const lns = document.querySelectorAll('#hl .ln'), l = lns[lns.length - 1], v = document.getElementById('view-code').getBoundingClientRect(), r = l.getBoundingClientRect(); return { text: l.textContent, inView: r.bottom <= v.bottom + 1 && r.top >= v.top - 1 }; });
+  assert.equal(lastLine.inView, true, 'the last line is visible after scrolling to the end');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 // Screenshots for the docs: GHERKIT_SHOTS=<dir> npm test
 test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
   mkdirSync(process.env.GHERKIT_SHOTS, { recursive: true });
@@ -347,6 +429,19 @@ test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
       await page.locator('.st .block.scenario').first().locator('input[aria-label="step"]').last().click();
     }
     await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, name + '.png') });
+    await page.close();
+  }
+  // V1: Split with the code on the left (completion open)
+  {
+    const page = await open('split', 'shop/checkout.feature');
+    await page.click('#split-left [data-left="code"]');
+    await page.waitForSelector('#view-code:not([hidden])');
+    // new step after "a paid order": Enter indents by itself, then the suggestions open
+    await page.evaluate(() => { const s = document.getElementById('src'), i = s.value.indexOf('a paid order') + 'a paid order'.length; s.focus(); s.setSelectionRange(i, i); });
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('And the inv');
+    await page.waitForSelector('#complete:not([hidden]) li');
+    await page.screenshot({ path: join(process.env.GHERKIT_SHOTS, 'editor-split-code.png') });
     await page.close();
   }
   // S2: list layout
