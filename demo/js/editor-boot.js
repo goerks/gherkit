@@ -24,7 +24,8 @@
     document.body.appendChild(o);
     return { set(t) { const e = $('demo-load-text'); if (e) e.textContent = t || 'Lade …'; }, fail(t) { o.innerHTML = '<b>Die Demo konnte nicht starten</b><span>' + t + '</span><small><a href="../">Zurück zur Startseite</a></small>'; }, done() { o.remove(); } };
   }
-  function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error(src + ' konnte nicht geladen werden')); document.body.appendChild(s); }); }
+  const V = (document.currentScript && document.currentScript.src.split('?')[1]) ? '?' + document.currentScript.src.split('?')[1] : '';
+  function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src + V; s.onload = res; s.onerror = () => rej(new Error(src + ' konnte nicht geladen werden')); document.body.appendChild(s); }); }
   function button(id, text, title) { const b = document.createElement('button'); b.id = id; b.type = 'button'; b.textContent = text; if (title) b.title = title; return b; }
 
   function decorate() {
@@ -67,6 +68,7 @@
   (async function () {
     const o = overlay();
     try {
+      g.GHERKIT_V = V;
       await GherkitDemo.boot('../', (t) => o.set(t));
       GherkitDemo.installFetchBridge();
       decorate();
