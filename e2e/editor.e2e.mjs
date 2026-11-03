@@ -381,7 +381,13 @@ test('code view: the coloured text always matches the source, also right after E
   const page = await open('code', 'shop/checkout.feature');
   await page.waitForSelector('#hl .c-kw-feature');
   await page.evaluate(() => { const s = document.getElementById('src'), i = s.value.indexOf('a paid order') + 'a paid order'.length; s.focus(); s.setSelectionRange(i, i); });
-  const same = () => page.evaluate(() => document.getElementById('hl').textContent.replace(/\n$/, '') === document.getElementById('src').value.replace(/\n$/, ''));
+  // the overlay has one element per line (an empty line shows a space)
+  const same = () => page.evaluate(() => {
+    const shown = [...document.querySelectorAll('#hl .ln')].map((l) => l.textContent);
+    const source = document.getElementById('src').value.split('\n').map((l) => (l === '' ? ' ' : l));
+    return JSON.stringify(shown) === JSON.stringify(source);
+  });
+  assert.equal(await same(), true, 'overlay differs from the source before the edit');
   for (let i = 0; i < 3; i++) {
     await page.keyboard.press('Enter');
     assert.equal(await same(), true, 'overlay differs from the source right after Enter ' + (i + 1));
