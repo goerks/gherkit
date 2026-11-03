@@ -58,7 +58,7 @@ import sys
 s = open(sys.argv[1], encoding="utf-8").read()
 old = '<script src="highlight.js"></script>\n<script src="app.js"></script>'
 assert old in s, "editor index.html changed, adjust build-site.sh"
-new = "\n".join('<script src="../js/%s.js"></script>' % n for n in ("memfs", "zip", "demo", "terminal", "editor-boot"))
+new = "\n".join('<script src="../js/%s.js?v={{VERSION}}"></script>' % n for n in ("memfs", "zip", "demo", "terminal", "editor-boot"))
 s = s.replace(old, new).replace("<title>gherkit editor</title>", "<title>gherkit Demo-Editor</title>")
 open(sys.argv[2], "w", encoding="utf-8").write(s)
 PY

@@ -14,7 +14,7 @@
 
   async function standardSet() {
     if (!standard) {
-      const r = await fetch(base + 'standard-set.json');
+      const r = await fetch(base + 'standard-set.json', { cache: 'no-cache' });
       if (!r.ok) throw new Error('standard-set.json: HTTP ' + r.status);
       standard = (await r.json()).files;
     }
@@ -32,9 +32,9 @@
 
   // ---- WebAssembly --------------------------------------------------------------------------------------------
   async function loadWasm(status) {
-    await new Promise((res, rej) => { const s = document.createElement('script'); s.src = base + 'wasm_exec.js'; s.onload = res; s.onerror = () => rej(new Error('wasm_exec.js konnte nicht geladen werden')); document.head.appendChild(s); });
+    await new Promise((res, rej) => { const s = document.createElement('script'); s.src = base + 'wasm_exec.js' + (g.GHERKIT_V || ''); s.onload = res; s.onerror = () => rej(new Error('wasm_exec.js konnte nicht geladen werden')); document.head.appendChild(s); });
     status('Lade gherkit …');
-    const r = await fetch(base + 'gherkit.wasm.gz');
+    const r = await fetch(base + 'gherkit.wasm.gz', { cache: 'no-cache' });
     if (!r.ok) throw new Error('gherkit.wasm.gz: HTTP ' + r.status);
     if (typeof DecompressionStream === 'undefined') throw new Error('Dieser Browser ist zu alt (DecompressionStream fehlt). Bitte einen aktuellen Browser verwenden.');
     const bytes = await new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();

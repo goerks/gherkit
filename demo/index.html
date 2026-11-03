@@ -67,7 +67,7 @@ footer { padding: 40px 0 60px; color: var(--muted); font-size: 13px; }
 @media (max-width: 600px) { header { padding-top: 28px; } .btn + .btn { margin-left: 0; margin-top: 6px; } }
 </style>
 
-<script src="js/memfs.js"></script>
+<script src="js/memfs.js?v={{VERSION}}"></script>
 <div class="wrap">
   <header><span class="logo" aria-hidden="true"></span><b>gherkit</b><span class="tag">{{VERSION}}</span></header>
 
@@ -150,7 +150,7 @@ gherkit report results.json -o report.html</code></pre>
   var chips = document.getElementById('demo-chips'), startRow = document.getElementById('demo-start-row'), running = null;
   btn.addEventListener('click', function () {
     btn.disabled = true;
-    var srcs = ['js/zip.js', 'js/demo.js', 'js/terminal.js'], i = 0;
+    var v = '?v={{VERSION}}', srcs = ['js/zip.js' + v, 'js/demo.js' + v, 'js/terminal.js' + v], i = 0;
     function next() {
       if (i === srcs.length) return go();
       var s = document.createElement('script'); s.src = srcs[i++]; s.onload = next;
