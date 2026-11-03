@@ -97,7 +97,7 @@ func TestTagsPlaceholder(t *testing.T) {
 	}
 	for _, name := range []string{"go", "java"} {
 		a, _ := Lookup(name)
-		if !strings.Contains(a.Command+a.Env["JAVA_TOOL_OPTIONS"], "{tags}") {
+		if !strings.Contains(a.Command+a.Env["JAVA_TOOL_OPTIONS"], "{tags") {
 			t.Errorf("preset %s does not pass the tag filter", name)
 		}
 	}

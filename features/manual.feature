@@ -18,3 +18,51 @@ Feature: Manual scenarios
       When I run "gherkit run --cmd \"cp results.json {output}; echo {tags} > tags.txt\" --tags @smoke --fail-on-failed=false"
       Then the file "tags.txt" contains "@smoke"
       And the file "tags.txt" does not contain "not @manual"
+
+  Rule: A manual run records what a person observed and exports Cucumber JSON
+
+    Background:
+      Given a file "prices.feature" with:
+        """
+        Feature: Price comparison
+
+          @manual
+          Scenario: Offers are sorted by price
+            Given I have solved the captcha
+            When I search for a health insurance
+            Then the offers are sorted ascending
+
+          Scenario: The API answers
+            Then the API answers with offers
+        """
+      And the editor is running in the current folder
+
+    Scenario: Only test cases tagged @manual are part of the run
+      When I start a manual run as "Anna" for the tag "@manual"
+      Then the response contains "Offers are sorted by price"
+      And the response does not contain "The API answers"
+
+    Scenario: A run needs a tester
+      When I start a manual run as "" for the tag "@manual"
+      Then the editor refuses the request with "tester is required"
+
+    Scenario: A run without matching test cases is refused
+      When I start a manual run as "Anna" for the tag "@nightly"
+      Then the editor refuses the request with "no test cases found"
+
+    Scenario: A failed manual step fails the build and shows up in the report
+      Given I start a manual run as "Anna" for the tag "@manual"
+      And I record "passed" with the comment "" for step 1 of test case 1
+      And I record "failed" with the comment "sorted descending" for step 2 of test case 1
+      And I finish the manual run and keep the result as "manual.json"
+      When I run "gherkit run --cmd \"cp manual.json {output}\" --report report.md"
+      Then the exit code is 1
+      And the error output contains "1 scenario(s): 0 passed, 1 failed"
+      And the file "report.md" contains "sorted descending"
+      And the file "report.md" contains "Tester: Anna"
+
+    Scenario: Steps after a failed step are skipped
+      Given I start a manual run as "Anna" for the tag "@manual"
+      And I record "failed" with the comment "wrong order" for step 2 of test case 1
+      And I finish the manual run and keep the result as "manual.json"
+      Then the file "manual.json" contains "skipped"

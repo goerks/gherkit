@@ -22,8 +22,9 @@ The work is staged. Each stage is useful on its own.
 ### Stage 1: manual scenarios, hybrid per scenario
 - **Marking:** the tag `@manual` on a feature or scenario. It is plain Gherkin, so parser and formatter need no change.
 - **Automated runs skip manual scenarios:** `gherkit run` passes a tag filter to the runner; the default is
-  `not @manual`. Adapter command templates get a `{tags}` placeholder next to `{output}` and `{features}`. A custom
-  `--cmd` stays free to ignore it.
+  `not @manual`. Adapter command templates get a `{tags}` placeholder next to `{output}` and `{features}`. `{tags_godog}`
+  is the same expression in godog's own syntax (`~@manual`), because godog does not understand Cucumber tag
+  expressions and would silently select nothing. A custom `--cmd` stays free to ignore both.
 - **Manual run:** a new "Run" view in the editor walks through the pickles (test cases, outlines already expanded).
   Per step the tester records *passed*, *failed* or *blocked*, a comment and attachments. A failed step marks the
   remaining steps of that test case as skipped, as automated runners do; the tester may override.

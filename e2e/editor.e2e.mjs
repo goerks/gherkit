@@ -5,7 +5,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -513,6 +513,61 @@ test('split (form and preview): edits appear in the preview, clicks sync both wa
   await page.click('#split-left [data-left="code"]');
   await page.waitForSelector('#view-code:not([hidden])');
   assert.match(await page.inputValue('#src'), /confirmed by the customer/);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('manual run: walk through @manual test cases, record a failure with evidence, finish and export', async () => {
+  const page = await open('run', 'vergleich/praemienvergleich.feature');
+  await page.waitForSelector('#rn-start');
+  assert.equal(await page.locator('#rn-error').textContent(), '');
+  // a tester is required
+  await page.fill('#rn-tester', '');
+  await page.click('#rn-start');
+  await page.waitForFunction(() => document.getElementById('rn-error').textContent.length > 0);
+  await page.fill('#rn-tester', 'Anna');
+  await page.fill('#rn-env', 'Test-Stage');
+  await page.click('#rn-start');
+  await page.waitForSelector('.rn-case');
+  // two example rows and one scenario carry @manual; the @api scenarios do not
+  assert.equal(await page.locator('.rn-case').count(), 3);
+
+  // the first case is open: pass the first steps, fail the sorting step
+  for (const n of [0, 1, 2]) await page.locator(`#step-c1-${n} .rs-pass`).click();
+  await page.locator('#step-c1-3 .rs-fail').click();
+  await page.waitForFunction(() => document.activeElement && document.activeElement.classList.contains('rs-comment'));
+  await page.keyboard.type('sorted descending');
+  await page.locator('#step-c1-3 .rs-file').setInputFiles({ name: 'sort order.png', mimeType: 'image/png', buffer: Buffer.from('PNG') });
+  await page.waitForSelector('#step-c1-3 .rn-evidence a');
+  assert.equal(await page.inputValue('#step-c1-3 .rs-comment'), 'sorted descending', 'the comment survives the upload');
+  assert.match(await page.textContent('#rn-progress'), /^4\//);
+  assert.match(await page.textContent('#case-c1 .rn-badge'), /failed/);
+
+  // finish with open steps: the tester is asked first
+  page.once('dialog', (d) => d.accept());
+  await page.click('#rn-finish');
+  await page.waitForSelector('#rn-banner');
+  assert.match(await page.textContent('#rn-banner'), /cucumber\.json/);
+  assert.equal(await page.locator('.rs-pass').count(), 0, 'a finished run is read-only');
+
+  // the exported file is Cucumber JSON that `gherkit report` understands
+  const runs = join(dir, 'ws', '.gherkit', 'runs');
+  const id = readdirSync(runs)[0];
+  const json = JSON.parse(readFileSync(join(runs, id, 'cucumber.json'), 'utf8'));
+  const first = json[0].elements[0];
+  assert.deepEqual(first.steps.map((s) => s.result.status), ['passed', 'passed', 'passed', 'failed', 'skipped', 'skipped']);
+  assert.equal(first.steps[3].result.error_message, 'sorted descending');
+  assert.equal(first.gherkit.tester, 'Anna');
+  assert.equal(readFileSync(join(runs, id, 'evidence', 'c1-s4-sort_order.png'), 'utf8'), 'PNG');
+  const second = json[0].elements[1];
+  assert.ok(second.steps.every((s) => s.result.status === 'undefined'), 'unprocessed steps stay undefined');
+
+  // the run is listed and has a report
+  await page.click('#rn-back');
+  await page.waitForSelector('#rn-runs li .rn-badge');
+  const report = await page.evaluate((i) => fetch(`/api/manual/runs/${i}/report?lang=en`).then((r) => r.text()), id);
+  assert.match(report, /sorted descending/);
+  assert.match(report, /Anna/);
   assert.deepEqual(page.errors, []);
   await page.close();
 });

@@ -43,6 +43,8 @@
       copy: 'copy', leftForm: 'Form', leftFormTitle: 'Form (Alt+1)', leftCodeTitle: 'Code (Alt+2)', tabDoc: 'Document', tabProblems: 'Problems', tabCases: 'Test cases', casesSummary: '{n} test cases from {m} scenarios', caseNo: 'No.', caseEx: 'Examples', caseVals: 'Values', noCases: 'No test cases.', layoutCards: 'Cards', layoutList: 'List', layoutLabel: 'Layout', ruleHint: 'The scenarios of this rule are in the list on the left.', badOrder: 'Order not allowed: Background comes first, scenarios before rules.', noName: '(no name)', featureItem: 'Feature', openCase: 'Toggle test case', leftCode: 'Code', splitLeftLabel: 'Left pane', stepHint: 'Enter: next step · Alt+↑/↓: change keyword', chipTags: '+ Tags', chipDesc: '+ Description', kwTitle: 'Change keyword (click, Shift+click backwards)', pasteHint: 'Paste from Excel: copy a cell range and paste it here', duplicate: 'Duplicate', fold: 'Collapse/expand', splitHandle: 'Adjust width', nSteps: '{n} steps', nBlocks: '{n} blocks'
     }
   };
+  // texts of the Run view (run.js) live next to its code
+  ['de', 'en'].forEach(function (l) { Object.keys(window.GherkitRun.TEXT[l]).forEach(function (k) { TEXT[l][k] = window.GherkitRun.TEXT[l][k]; }); });
   var lang = 'de';
   try { lang = localStorage.getItem('gherkit.lang') || ((navigator.language || 'de').slice(0, 2) === 'de' ? 'de' : 'en'); } catch (e) { }
   function t(k, n) { var s = (TEXT[lang] && TEXT[lang][k]) || TEXT.en[k] || k; return n === undefined ? s : s.replace('{n}', n); }
@@ -174,7 +176,10 @@
   function showVariant() {
     document.querySelectorAll('.variants button').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.variant === S.variant)); });
     var has = !!S.path, v = S.variant;
-    $('empty').hidden = has;
+    $('empty').hidden = has || v === 'run';
+    $('view-run').hidden = v !== 'run';
+    $('main').classList.toggle('running', v === 'run');
+    document.querySelector('.layout').classList.toggle('run-mode', v === 'run');
     $('empty').textContent = S.files.length ? t('noFile') : t('noFiles');
     $('view-code').hidden = !has || !codeActive();
     $('view-doc').hidden = !has || !(v === 'doc' || v === 'split');
@@ -184,6 +189,7 @@
     document.querySelectorAll('#split-left button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.left === S.splitLeft)); });
     $('main').classList.toggle('split', v === 'split' && has);
     $('split-handle').hidden = !(v === 'split' && has);
+    if (v === 'run') { window.GherkitRun.show(); return; }
     if (!has) return;
     if (v === 'doc' || v === 'split') renderDoc();
     if (structActive()) renderStruct();
@@ -1333,7 +1339,7 @@
   $('fmt-btn').addEventListener('click', formatSource);
   $('left-fmt').addEventListener('click', formatSource);
   $('filter').addEventListener('input', renderFiles);
-  $('ui-lang').addEventListener('change', function (e) { lang = e.target.value; try { localStorage.setItem('gherkit.lang', lang); } catch (x) { } applyI18n(); showVariant(); renderProblems(); renderFacts(); });
+  $('ui-lang').addEventListener('change', function (e) { lang = e.target.value; try { localStorage.setItem('gherkit.lang', lang); } catch (x) { } applyI18n(); showVariant(); renderProblems(); renderFacts(); window.GherkitRun.render(); });
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); }
     if (e.altKey && e.shiftKey && (e.key === 'F' || e.key === 'f')) { e.preventDefault(); formatSource(); }
@@ -1341,18 +1347,19 @@
   });
   window.addEventListener('hashchange', function () {
     var p = new URLSearchParams(location.hash.slice(1)), v = p.get('variant'), f = p.get('file');
-    var okV = v && ['code', 'doc', 'struct', 'split'].indexOf(v) >= 0;
+    var okV = v && ['code', 'doc', 'struct', 'split', 'run'].indexOf(v) >= 0;
     if (f && f !== S.path && S.files.indexOf(f) >= 0) { if (okV) S.variant = v; openFile(f); return; }
     if (okV && v !== S.variant) setVariant(v);
   });
   window.addEventListener('beforeunload', function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
 
   // ---------- start ----------
+  window.GherkitRun.init({ t: t, el: el, api: api, S: S, $: $ });
   applyI18n(); measure();
   var params = new URLSearchParams(location.hash.slice(1));
   var stored = null; try { stored = localStorage.getItem('gherkit.variant'); } catch (e) { }
   S.variant = params.get('variant') || stored || 'code';
-  if (['code', 'doc', 'struct', 'split'].indexOf(S.variant) < 0) S.variant = 'code';
+  if (['code', 'doc', 'struct', 'split', 'run'].indexOf(S.variant) < 0) S.variant = 'code';
   loadWorkspace().then(function () {
     showVariant(); renderProblems(); renderFacts();
     var want = params.get('file');

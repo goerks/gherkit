@@ -287,7 +287,7 @@ func runCmd() *cobra.Command {
 		Short: "Run the project's test runner and report its results",
 		Long: `Starts the test runner of the project through an adapter, reads the Cucumber JSON it writes and prints a summary. gherkit does not execute step code itself.
 
-The command is a template: {output} is replaced by the path of the Cucumber JSON file, {features} by the feature paths given here (quoted), {tags} by the tag expression of --tags (quoted). Scenarios tagged @manual are tested by people, not by the runner, so they are excluded by default. The environment variable GHERKIT_RESULTS holds the same path. Without --adapter and --cmd the adapter is detected from the project (go.mod).
+The command is a template: {output} is replaced by the path of the Cucumber JSON file, {features} by the feature paths given here (quoted), {tags} by the Cucumber tag expression of --tags and {tags_godog} by the same in godog syntax (both quoted). Scenarios tagged @manual are tested by people, not by the runner, so they are excluded by default. The environment variable GHERKIT_RESULTS holds the same path. Without --adapter and --cmd the adapter is detected from the project (go.mod).
 
 Adapters: ` + strings.Join(runner.Names(), ", ") + `.`,
 		Example: `  gherkit run                                   # detect the stack, run, summarise

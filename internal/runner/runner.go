@@ -25,8 +25,9 @@ type Adapter struct {
 	Description string
 	// Command is a shell command template. {output} is replaced by the path of
 	// the Cucumber JSON file to write, {features} by the feature paths given
-	// on the command line (quoted, separated by spaces) and {tags} by the
-	// tag expression of the scenarios to run (quoted; see Request.Tags).
+	// on the command line (quoted, separated by spaces), {tags} by the Cucumber
+	// tag expression of the scenarios to run and {tags_godog} by the same
+	// expression in godog's own syntax (both quoted; see Request.Tags).
 	Command string
 	// Resolve picks the command from the project when Command is empty (for
 	// example Maven or Gradle for Java).
@@ -45,7 +46,7 @@ var presets = []Adapter{
 	{
 		Name:        "go",
 		Description: "godog, started with go test (the suite must bind the godog flags, e.g. godog.BindCommandLineFlags)",
-		Command:     "go test -count=1 -args -godog.format=cucumber:{output} -godog.tags={tags}",
+		Command:     "go test -count=1 -args -godog.format=cucumber:{output} -godog.tags={tags_godog}",
 		Detect:      func(dir string) bool { return exists(dir, "go.mod") },
 	},
 	{
@@ -125,7 +126,8 @@ type Request struct {
 	Features []string // feature paths for adapters that take them
 	Output   string   // absolute path of the Cucumber JSON file the runner must write
 	// Tags is a Cucumber tag expression selecting the scenarios the runner
-	// executes, e.g. "not @manual" (ADR 0009). Empty means no filter.
+	// executes, e.g. "not @manual" (ADR 0009). Empty means no filter. godog
+	// has its own syntax; {tags_godog} translates it (see GodogTags).
 	Tags    string
 	Command string   // replaces the adapter's command when set
 	Env     []string // extra KEY=VALUE pairs, applied last
@@ -176,8 +178,12 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 	for _, f := range req.Features {
 		quoted = append(quoted, Quote(f))
 	}
+	godogTags, err := GodogTags(req.Tags)
+	if err != nil && strings.Contains(tpl, "{tags_godog}") {
+		return Result{}, err
+	}
 	res := Result{FeaturesIgnored: len(req.Features) > 0 && !strings.Contains(tpl, "{features}")}
-	res.Command = expand(tpl, map[string]string{"output": Quote(req.Output), "features": strings.Join(quoted, " "), "tags": Quote(req.Tags)})
+	res.Command = expand(tpl, map[string]string{"output": Quote(req.Output), "features": strings.Join(quoted, " "), "tags": Quote(req.Tags), "tags_godog": Quote(godogTags)})
 
 	c := shellCmd(ctx, res.Command)
 	c.Dir = req.Dir
@@ -188,7 +194,7 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		v := expand(a.Env[k], map[string]string{"output": req.Output, "features_csv": strings.Join(req.Features, ","), "tags": req.Tags})
+		v := expand(a.Env[k], map[string]string{"output": req.Output, "features_csv": strings.Join(req.Features, ","), "tags": req.Tags, "tags_godog": godogTags})
 		if k == "JAVA_TOOL_OPTIONS" && os.Getenv(k) != "" {
 			v = os.Getenv(k) + " " + v // keep the options the user already set
 		}
@@ -200,7 +206,7 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 	c.Stdout, c.Stderr = req.Stdout, req.Stderr
 
 	start := time.Now()
-	err := c.Run()
+	err = c.Run()
 	res.Duration = time.Since(start)
 	var ee *exec.ExitError
 	switch {
@@ -215,4 +221,38 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 		return res, err
 	}
 	return res, nil
+}
+
+// GodogTags translates a Cucumber tag expression into godog's syntax: `not @a`
+// becomes `~@a`, `and` becomes `&&`, `or` becomes a comma. godog cannot
+// express parentheses; such an expression is an error (use --cmd instead).
+func GodogTags(expr string) (string, error) {
+	groups := [][]string{{}}
+	neg := false
+	for _, tok := range strings.Fields(expr) {
+		switch low := strings.ToLower(tok); {
+		case strings.ContainsAny(tok, "()"):
+			return "", errors.New("godog cannot filter by an expression with parentheses (" + expr + "): use --tags without them or --cmd")
+		case low == "or":
+			groups = append(groups, []string{})
+		case low == "and":
+		case low == "not":
+			neg = true
+		case strings.HasPrefix(tok, "@"):
+			if neg {
+				tok = "~" + tok
+			}
+			neg = false
+			groups[len(groups)-1] = append(groups[len(groups)-1], tok)
+		default:
+			return "", errors.New("unexpected " + tok + " in the tag expression " + expr + ": tags start with @, operators are and, or, not")
+		}
+	}
+	var parts []string
+	for _, g := range groups {
+		if len(g) > 0 {
+			parts = append(parts, strings.Join(g, "&&"))
+		}
+	}
+	return strings.Join(parts, ","), nil
 }

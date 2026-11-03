@@ -16,6 +16,7 @@
     <button role="tab" data-variant="doc" data-i18n="vDoc">Dokument</button>
     <button role="tab" data-variant="struct" data-i18n="vStruct">Struktur</button>
     <button role="tab" data-variant="split" data-i18n="vSplit">Split</button>
+    <button role="tab" data-variant="run" data-i18n="vRun">Ausführen</button>
   </nav>
   <div class="actions">
     <span id="status" class="status" aria-live="polite"></span>
@@ -61,6 +62,7 @@
     </div>
     <div id="split-handle" class="split-handle" role="separator" aria-orientation="vertical" tabindex="0" title="Breite anpassen" data-i18n-title="splitHandle" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50" hidden></div>
     <section id="view-doc" class="view doc-view" hidden></section>
+    <section id="view-run" class="view run-view" hidden></section>
   </main>
 
   <aside class="panel">
@@ -89,6 +91,7 @@
 </dialog>
 
 <script src="highlight.js"></script>
+<script src="run.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
