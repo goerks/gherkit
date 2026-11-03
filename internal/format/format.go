@@ -27,12 +27,24 @@ var Default = Options{Indent: "  "}
 // Source parses src and returns the formatted text. If the source has
 // syntax errors it is returned unchanged together with the diagnostics,
 // because reformatting a broken document could destroy content.
+//
+// Line endings are kept: a source that uses CRLF (typical for files checked
+// out with Git on Windows) is formatted with CRLF, anything else with LF.
 func Source(src string) (string, []parse.Diagnostic) {
-	res := parse.Source("", src)
+	crlf := strings.Contains(src, "\r\n")
+	norm := src
+	if crlf {
+		norm = strings.ReplaceAll(src, "\r\n", "\n")
+	}
+	res := parse.Source("", norm)
 	if !res.OK() || res.Document == nil {
 		return src, res.Errors
 	}
-	return Document(res.Document, Default), nil
+	out := Document(res.Document, Default)
+	if crlf {
+		out = strings.ReplaceAll(out, "\n", "\r\n")
+	}
+	return out, nil
 }
 
 // Document renders a GherkinDocument as Gherkin text.

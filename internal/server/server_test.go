@@ -170,3 +170,21 @@ func TestStaticUI(t *testing.T) {
 		}
 	}
 }
+
+func TestSaveKeepsWindowsLineEndings(t *testing.T) {
+	ts, dir := newTestServer(t)
+	os.WriteFile(filepath.Join(dir, "win.feature"), []byte("Feature: W\r\n\r\n  Scenario: S\r\n    Given x\r\n"), 0o644)
+	body := `{"path":"win.feature","content":"Feature: W\n\n  Scenario: S\n    Given y\n"}`
+	if code := call(t, ts, "PUT", "/api/file", body, nil); code != 200 {
+		t.Fatalf("save: %d", code)
+	}
+	got, _ := os.ReadFile(filepath.Join(dir, "win.feature"))
+	if want := "Feature: W\r\n\r\n  Scenario: S\r\n    Given y\r\n"; string(got) != want {
+		t.Errorf("existing CRLF file: got %q, want %q", got, want)
+	}
+	call(t, ts, "PUT", "/api/file", `{"path":"new.feature","content":"Feature: N\n"}`, nil)
+	got, _ = os.ReadFile(filepath.Join(dir, "new.feature"))
+	if string(got) != "Feature: N\n" {
+		t.Errorf("new file should stay LF, got %q", got)
+	}
+}

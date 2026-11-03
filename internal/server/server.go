@@ -190,7 +190,13 @@ func (s *Server) putFile(w http.ResponseWriter, r *http.Request) {
 		fail(w, 400, err)
 		return
 	}
-	if err := s.workspace().Write(req.Path, req.Content); err != nil {
+	// Browsers hand text areas back with LF. Keep the Windows line endings of a
+	// file that already uses them, so saving does not rewrite every line.
+	content := req.Content
+	if old, err := s.workspace().Read(req.Path); err == nil && strings.Contains(old, "\r\n") && !strings.Contains(content, "\r") {
+		content = strings.ReplaceAll(content, "\n", "\r\n")
+	}
+	if err := s.workspace().Write(req.Path, content); err != nil {
 		fail(w, 400, err)
 		return
 	}

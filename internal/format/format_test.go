@@ -201,3 +201,22 @@ func TestFeatureScenarioAfterRuleIsPrintedBeforeRules(t *testing.T) {
 		t.Fatalf("structure changed:\n%s", out)
 	}
 }
+
+func TestLineEndingsAreKept(t *testing.T) {
+	lf := "Feature: A\n\n  Scenario: S\n    Given x\n"
+	crlf := strings.ReplaceAll(lf, "\n", "\r\n")
+	for name, src := range map[string]string{"lf": lf, "crlf": crlf} {
+		out, diags := Source(src)
+		if len(diags) > 0 || out != src {
+			t.Errorf("%s: formatted source differs: %q (diags %v)", name, out, diags)
+		}
+		if ok, _, err := Check(src); err != nil || !ok {
+			t.Errorf("%s: Check = %v, %v; want already formatted", name, ok, err)
+		}
+	}
+	messy := "Feature:  A\r\n Scenario: S\r\n  Given x\r\n"
+	out, _ := Source(messy)
+	if out != crlf {
+		t.Errorf("messy CRLF source: got %q, want %q", out, crlf)
+	}
+}
