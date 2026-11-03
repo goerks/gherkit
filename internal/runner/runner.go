@@ -25,13 +25,15 @@ type Adapter struct {
 	Description string
 	// Command is a shell command template. {output} is replaced by the path of
 	// the Cucumber JSON file to write, {features} by the feature paths given
-	// on the command line (quoted, separated by spaces).
+	// on the command line (quoted, separated by spaces) and {tags} by the
+	// tag expression of the scenarios to run (quoted; see Request.Tags).
 	Command string
 	// Resolve picks the command from the project when Command is empty (for
 	// example Maven or Gradle for Java).
 	Resolve func(dir string) string
 	// Env holds extra environment variables. Values can use {output} and
-	// {features_csv} (the feature paths, unquoted, separated by commas). A
+	// {features_csv} (the feature paths, unquoted, separated by commas) and
+	// {tags} (the tag expression, unquoted). A
 	// variable that is empty after expanding is not set.
 	Env map[string]string
 	// Detect reports whether dir looks like a project of this stack.
@@ -43,7 +45,7 @@ var presets = []Adapter{
 	{
 		Name:        "go",
 		Description: "godog, started with go test (the suite must bind the godog flags, e.g. godog.BindCommandLineFlags)",
-		Command:     "go test -count=1 -args -godog.format=cucumber:{output}",
+		Command:     "go test -count=1 -args -godog.format=cucumber:{output} -godog.tags={tags}",
 		Detect:      func(dir string) bool { return exists(dir, "go.mod") },
 	},
 	{
@@ -53,7 +55,7 @@ var presets = []Adapter{
 		// The JUnit Platform engine reads system properties, not environment
 		// variables. JAVA_TOOL_OPTIONS reaches every JVM the build starts,
 		// including the forked test JVM of Maven and Gradle's test workers.
-		Env:    map[string]string{"JAVA_TOOL_OPTIONS": `-Dcucumber.plugin="json:{output}"`},
+		Env:    map[string]string{"JAVA_TOOL_OPTIONS": `-Dcucumber.plugin="json:{output}" -Dcucumber.filter.tags="{tags}"`},
 		Detect: func(dir string) bool { return exists(dir, "pom.xml", "build.gradle", "build.gradle.kts", "gradlew") },
 	},
 }
@@ -122,10 +124,13 @@ type Request struct {
 	Dir      string   // working directory of the runner
 	Features []string // feature paths for adapters that take them
 	Output   string   // absolute path of the Cucumber JSON file the runner must write
-	Command  string   // replaces the adapter's command when set
-	Env      []string // extra KEY=VALUE pairs, applied last
-	Stdout   io.Writer
-	Stderr   io.Writer
+	// Tags is a Cucumber tag expression selecting the scenarios the runner
+	// executes, e.g. "not @manual" (ADR 0009). Empty means no filter.
+	Tags    string
+	Command string   // replaces the adapter's command when set
+	Env     []string // extra KEY=VALUE pairs, applied last
+	Stdout  io.Writer
+	Stderr  io.Writer
 }
 
 // Result describes a finished run.
@@ -172,7 +177,7 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 		quoted = append(quoted, Quote(f))
 	}
 	res := Result{FeaturesIgnored: len(req.Features) > 0 && !strings.Contains(tpl, "{features}")}
-	res.Command = expand(tpl, map[string]string{"output": Quote(req.Output), "features": strings.Join(quoted, " ")})
+	res.Command = expand(tpl, map[string]string{"output": Quote(req.Output), "features": strings.Join(quoted, " "), "tags": Quote(req.Tags)})
 
 	c := shellCmd(ctx, res.Command)
 	c.Dir = req.Dir
@@ -183,7 +188,7 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		v := expand(a.Env[k], map[string]string{"output": req.Output, "features_csv": strings.Join(req.Features, ",")})
+		v := expand(a.Env[k], map[string]string{"output": req.Output, "features_csv": strings.Join(req.Features, ","), "tags": req.Tags})
 		if k == "JAVA_TOOL_OPTIONS" && os.Getenv(k) != "" {
 			v = os.Getenv(k) + " " + v // keep the options the user already set
 		}

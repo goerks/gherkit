@@ -83,6 +83,26 @@ func TestPlaceholders(t *testing.T) {
 	}
 }
 
+func TestTagsPlaceholder(t *testing.T) {
+	a := Adapter{Command: "runner --tags {tags}", Env: map[string]string{"TAGS": "{tags}"}}
+	req := Request{Dir: t.TempDir(), Output: "res.json", Tags: "not @manual", Stdout: io.Discard, Stderr: io.Discard}
+	res, _ := Run(context.Background(), a, req)
+	if !strings.Contains(res.Command, "--tags "+Quote("not @manual")) {
+		t.Errorf("tags not expanded and quoted: %q", res.Command)
+	}
+	req.Tags = ""
+	res, _ = Run(context.Background(), a, req)
+	if !strings.HasSuffix(res.Command, "--tags "+Quote("")) {
+		t.Errorf("empty tags should expand to an empty argument: %q", res.Command)
+	}
+	for _, name := range []string{"go", "java"} {
+		a, _ := Lookup(name)
+		if !strings.Contains(a.Command+a.Env["JAVA_TOOL_OPTIONS"], "{tags}") {
+			t.Errorf("preset %s does not pass the tag filter", name)
+		}
+	}
+}
+
 func TestDetect(t *testing.T) {
 	dir := t.TempDir()
 	if _, ok := Detect(dir); ok {

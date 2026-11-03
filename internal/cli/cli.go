@@ -278,7 +278,7 @@ func renderReport(stdout io.Writer, r *report.Report, out, formatName, tmpl stri
 }
 
 func runCmd() *cobra.Command {
-	var adapterName, command, dir, out, reportOut, formatName, tmpl, title, lang string
+	var adapterName, command, dir, out, reportOut, formatName, tmpl, title, lang, tags string
 	var env []string
 	var failOnFailed bool
 	var timeout time.Duration
@@ -287,7 +287,7 @@ func runCmd() *cobra.Command {
 		Short: "Run the project's test runner and report its results",
 		Long: `Starts the test runner of the project through an adapter, reads the Cucumber JSON it writes and prints a summary. gherkit does not execute step code itself.
 
-The command is a template: {output} is replaced by the path of the Cucumber JSON file, {features} by the feature paths given here (quoted). The environment variable GHERKIT_RESULTS holds the same path. Without --adapter and --cmd the adapter is detected from the project (go.mod).
+The command is a template: {output} is replaced by the path of the Cucumber JSON file, {features} by the feature paths given here (quoted), {tags} by the tag expression of --tags (quoted). Scenarios tagged @manual are tested by people, not by the runner, so they are excluded by default. The environment variable GHERKIT_RESULTS holds the same path. Without --adapter and --cmd the adapter is detected from the project (go.mod).
 
 Adapters: ` + strings.Join(runner.Names(), ", ") + `.`,
 		Example: `  gherkit run                                   # detect the stack, run, summarise
@@ -362,7 +362,7 @@ Adapters: ` + strings.Join(runner.Names(), ", ") + `.`,
 
 			stderr := cmd.ErrOrStderr()
 			res, err := runner.Run(ctx, ad, runner.Request{
-				Dir: dir, Features: features, Output: results, Command: command, Env: env,
+				Dir: dir, Features: features, Output: results, Command: command, Tags: tags, Env: env,
 				Stdout: cmd.OutOrStdout(), Stderr: stderr,
 			})
 			if err != nil {
@@ -403,7 +403,8 @@ Adapters: ` + strings.Join(runner.Names(), ", ") + `.`,
 		},
 	}
 	c.Flags().StringVar(&adapterName, "adapter", "auto", "runner adapter: "+strings.Join(runner.Names(), ", ")+" or auto (detect)")
-	c.Flags().StringVar(&command, "cmd", "", "shell command template replacing the adapter's command ({output}, {features})")
+	c.Flags().StringVar(&command, "cmd", "", "shell command template replacing the adapter's command ({output}, {features}, {tags})")
+	c.Flags().StringVar(&tags, "tags", "not @manual", "Cucumber tag expression of the scenarios the runner executes ({tags}); empty runs everything")
 	c.Flags().StringVar(&dir, "dir", ".", "working directory of the runner")
 	c.Flags().StringVarP(&out, "out", "o", "", "keep the Cucumber JSON results in this file (default: temporary)")
 	c.Flags().StringArrayVarP(&env, "env", "e", nil, "extra environment variable KEY=VALUE for the runner (repeatable)")

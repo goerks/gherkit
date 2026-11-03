@@ -63,18 +63,19 @@ gherkit run --cmd "npx cucumber-js --format json:{output} {features}" features
 ```
 
 The command is a template. `{output}` is the path of the Cucumber JSON file, `{features}` the feature paths given
-on the command line (quoted); the runner also gets the path in the environment variable `GHERKIT_RESULTS`.
+on the command line (quoted) and `{tags}` the tag expression of `--tags` (quoted). The runner also gets the path in the environment variable `GHERKIT_RESULTS`.
 
 | Adapter | Command | Notes |
 | --- | --- | --- |
-| `go` | `go test -count=1 -args -godog.format=cucumber:{output}` | godog; the suite must bind the godog flags (`godog.BindCommandLineFlags`). Use `--cmd` if your suite names them differently. |
-| `java` | `mvn -B -ntp test` (or `./mvnw`, `./gradlew test --rerun-tasks`, `gradle test --rerun-tasks`) | Cucumber-JVM on the JUnit Platform. gherkit adds `-Dcucumber.plugin=json:<file>` through `JAVA_TOOL_OPTIONS`, which reaches the forked test JVM of Maven and the test workers of Gradle, so the project needs no extra configuration. The suite chooses the features itself; use `--cmd` to pass system properties such as `-Dcucumber.filter.tags=@smoke`. Detected from `pom.xml`, `build.gradle(.kts)` or `gradlew`. See [`runner-examples/java`](../runner-examples/java). |
+| `go` | `go test -count=1 -args -godog.format=cucumber:{output} -godog.tags={tags}` | godog; the suite must bind the godog flags (`godog.BindCommandLineFlags`). Use `--cmd` if your suite names them differently. |
+| `java` | `mvn -B -ntp test` (or `./mvnw`, `./gradlew test --rerun-tasks`, `gradle test --rerun-tasks`) | Cucumber-JVM on the JUnit Platform. gherkit adds `-Dcucumber.plugin=json:<file>` and `-Dcucumber.filter.tags=<tags>` (overriding a filter set in the project) through `JAVA_TOOL_OPTIONS`, which reaches the forked test JVM of Maven and the test workers of Gradle, so the project needs no extra configuration. The suite chooses the features itself; use `--cmd` to pass other system properties. Detected from `pom.xml`, `build.gradle(.kts)` or `gradlew`. See [`runner-examples/java`](../runner-examples/java). |
 | custom (`--cmd` only) | your command | Any runner that can write Cucumber JSON. |
 
 | Flag | |
 | --- | --- |
 | `--adapter <name>` | `go`, `java` or `auto` (default: detect from the project) |
 | `--cmd <template>` | replaces the adapter's command |
+| `--tags <expression>` | Cucumber tag expression of the scenarios the runner executes; default `not @manual`, because manual scenarios are tested by people ([ADR 0009](adr/0009-manual-and-hybrid-execution.md)); empty runs everything |
 | `--dir <folder>` | working directory of the runner (default `.`) |
 | `-o, --out <file>` | keep the Cucumber JSON (default: temporary file) |
 | `-e, --env KEY=VALUE` | extra environment variable for the runner (repeatable) |
