@@ -17,6 +17,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/goerks/gherkit/internal/demorun"
 )
 
 // Adapter describes how gherkit starts the runner of one stack.
@@ -39,6 +41,9 @@ type Adapter struct {
 	Env map[string]string
 	// Detect reports whether dir looks like a project of this stack.
 	Detect func(dir string) bool
+	// InProcess runs the scenarios inside gherkit itself instead of starting a command. It returns the exit
+	// code the runner would have had. Used by the built-in demo runner.
+	InProcess func(req Request) (int, error)
 }
 
 // presets in the order they are tried when the adapter is detected.
@@ -59,6 +64,41 @@ var presets = []Adapter{
 		Env:    map[string]string{"JAVA_TOOL_OPTIONS": `-Dcucumber.plugin="json:{output}" -Dcucumber.filter.tags="{tags}"`},
 		Detect: func(dir string) bool { return exists(dir, "pom.xml", "build.gradle", "build.gradle.kts", "gradlew") },
 	},
+	{
+		Name:        "demo",
+		Description: "built-in demo runner with a small simulated shop and login, for trying gherkit out (never detected automatically)",
+		InProcess:   demoRun,
+	},
+}
+
+func demoRun(req Request) (int, error) {
+	// Feature paths can be files or folders; without any, the whole working directory is searched.
+	paths := req.Features
+	if len(paths) == 0 {
+		paths = []string{req.Dir}
+	}
+	var features []string
+	for _, p := range paths {
+		if st, err := os.Stat(p); err == nil && st.IsDir() {
+			found, err := demorun.FindFeatures(p)
+			if err != nil {
+				return 0, err
+			}
+			for _, f := range found {
+				features = append(features, filepath.Join(p, filepath.FromSlash(f)))
+			}
+			continue
+		}
+		features = append(features, p)
+	}
+	out, err := demorun.Run(req.Dir, features, req.Output, req.Stdout, req.Stderr)
+	if err != nil {
+		return 0, err
+	}
+	if out.Failing() {
+		return 1, nil
+	}
+	return 0, nil
 }
 
 // javaCommand chooses the build tool of a Java project: Maven first, then
@@ -167,6 +207,11 @@ func expand(tpl string, vars map[string]string) string {
 // code is not an error: the code is returned in the Result. An error means the
 // runner could not be started at all.
 func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
+	if a.InProcess != nil && req.Command == "" {
+		start := time.Now()
+		code, err := a.InProcess(req)
+		return Result{Command: "(built in: " + a.Name + ")", ExitCode: code, Duration: time.Since(start)}, err
+	}
 	tpl := a.Command
 	if tpl == "" && a.Resolve != nil {
 		tpl = a.Resolve(req.Dir)

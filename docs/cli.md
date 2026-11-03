@@ -73,7 +73,7 @@ on the command line (quoted) and `{tags}` the Cucumber tag expression of `--tags
 
 | Flag | |
 | --- | --- |
-| `--adapter <name>` | `go`, `java` or `auto` (default: detect from the project) |
+| `--adapter <name>` | `go`, `java`, `demo` (built-in demo runner, never detected) or `auto` (default: detect from the project) |
 | `--cmd <template>` | replaces the adapter's command |
 | `--tags <expression>` | Cucumber tag expression of the scenarios the runner executes; default `not @manual`, because manual scenarios are tested by people ([ADR 0009](adr/0009-manual-and-hybrid-execution.md)); empty runs everything |
 | `--dir <folder>` | working directory of the runner (default `.`) |
