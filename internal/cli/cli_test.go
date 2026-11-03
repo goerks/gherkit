@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/goerks/gherkit/internal/runner"
 )
 
 func run(args ...string) (int, string, string) {
@@ -94,5 +96,66 @@ func TestParseDialectsVersion(t *testing.T) {
 	}
 	if code, _, _ := run("nosuchcommand"); code != ExitUsage {
 		t.Fatalf("unknown command: %d", code)
+	}
+}
+
+// TestMain lets the test binary act as a runner for `gherkit run`: it copies
+// the file named by its first argument to the results path.
+func TestMain(m *testing.M) {
+	if os.Getenv("GHERKIT_TEST_RUNNER") == "1" {
+		b, err := os.ReadFile(os.Args[1])
+		if err != nil {
+			os.Exit(2)
+		}
+		if err := os.WriteFile(os.Getenv("GHERKIT_RESULTS"), b, 0o644); err != nil {
+			os.Exit(2)
+		}
+		os.Exit(0)
+	}
+	os.Exit(m.Run())
+}
+
+const twoScenarios = `[{"uri":"f.feature","keyword":"Feature","name":"F","elements":[
+{"keyword":"Scenario","name":"ok","type":"scenario","steps":[{"keyword":"Given ","name":"a","line":1,"result":{"status":"passed","duration":1}}]},
+{"keyword":"Scenario","name":"bad","type":"scenario","steps":[{"keyword":"Given ","name":"b","line":2,"result":{"status":"failed","duration":1}}]}]}]`
+
+func TestRunSummarisesAndFails(t *testing.T) {
+	d := t.TempDir()
+	results := write(t, d, "results.json", twoScenarios)
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"run", "--dir", d, "-e", "GHERKIT_TEST_RUNNER=1", "--cmd", runner.Quote(exe) + " " + runner.Quote(results), "--report", filepath.Join(d, "r.md")}
+	code, _, errOut := run(args...)
+	if code != ExitFailed || !strings.Contains(errOut, "2 scenario(s): 1 passed, 1 failed") {
+		t.Fatalf("a failed scenario should fail the run: %d %q", code, errOut)
+	}
+	if b, err := os.ReadFile(filepath.Join(d, "r.md")); err != nil || !strings.Contains(string(b), "bad") {
+		t.Fatalf("report not written: %q, %v", b, err)
+	}
+	if code, _, _ := run(append(args, "--fail-on-failed=false")...); code != ExitOK {
+		t.Fatalf("--fail-on-failed=false should not fail, got %d", code)
+	}
+}
+
+func TestRunUsageErrors(t *testing.T) {
+	empty := t.TempDir()
+	for name, tc := range map[string]struct {
+		args []string
+		want string
+	}{
+		"no adapter":      {[]string{"run", "--dir", empty}, "no adapter detected"},
+		"unknown adapter": {[]string{"run", "--adapter", "cobol", "--dir", empty}, "unknown adapter"},
+		"missing folder":  {[]string{"run", "--cmd", "x", "--dir", filepath.Join(empty, "nope")}, "not a folder"},
+		"no results":      {[]string{"run", "--dir", empty, "--cmd", "exit 0"}, "wrote no results"},
+	} {
+		code, _, errOut := run(tc.args...)
+		if code != ExitUsage || !strings.Contains(errOut, tc.want) {
+			t.Errorf("%s: got %d %q, want %d containing %q", name, code, errOut, ExitUsage, tc.want)
+		}
+	}
+	if code, _, errOut := run("run", "--dir", empty, "--cmd", "exit 1"); code != ExitFailed || !strings.Contains(errOut, "wrote no results") {
+		t.Errorf("a failing runner without results: %d %q", code, errOut)
 	}
 }

@@ -69,8 +69,8 @@ jobs:
         run: bin/gherkit fmt --check features
       - name: Lint our own specifications (annotations on the PR)
         run: bin/gherkit lint --strict -o github features
-      - name: Run acceptance tests
-        run: go test -count=1 ./acceptance -args -gherkit.cucumber=$PWD/build/acceptance/cucumber.json
+      - name: Run acceptance tests with gherkit run
+        run: bin/gherkit run --adapter go --cmd "go test -count=1 ./acceptance -args -gherkit.cucumber={output}" -o build/acceptance/cucumber.json
       - name: Report with gherkit
         if: always()
         run: |

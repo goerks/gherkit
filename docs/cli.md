@@ -9,7 +9,7 @@ gherkit <command> [flags]
 | Code | Meaning |
 | --- | --- |
 | 0 | OK |
-| 1 | Tests failed (`report --fail-on-failed`) |
+| 1 | Tests failed (`run`, `report --fail-on-failed`), or the runner failed without results |
 | 2 | Problems found: lint errors (or warnings with `--strict`), unformatted files with `fmt --check`, syntax errors in `parse` |
 | 3 | Usage or configuration error (unknown flag, missing file, bad template) |
 
@@ -49,6 +49,40 @@ descriptions keep their relative indentation, comments are kept, `# language:` i
 | `examples-without-placeholder` | warning | Examples column never used |
 | `empty-background` | warning | Background without steps |
 | `unformatted` | info | File differs from `gherkit fmt` output |
+
+### `gherkit run [features…]`
+
+Starts the test runner of the project through an **adapter**, reads the Cucumber JSON it writes and prints a
+summary. gherkit does not execute step code itself ([ADR 0003](adr/0003-runner-agnostic.md), [ADR 0008](adr/0008-runner-adapters.md)).
+
+```sh
+gherkit run                                    # detect the stack (go.mod), run, summarise
+gherkit run --report build/report.html         # also write an HTML report
+gherkit run --adapter go --cmd "go test -count=1 ./acceptance -args -gherkit.cucumber={output}"
+gherkit run --cmd "npx cucumber-js --format json:{output} {features}" features
+```
+
+The command is a template. `{output}` is the path of the Cucumber JSON file, `{features}` the feature paths given
+on the command line (quoted); the runner also gets the path in the environment variable `GHERKIT_RESULTS`.
+
+| Adapter | Command | Notes |
+| --- | --- | --- |
+| `go` | `go test -count=1 -args -godog.format=cucumber:{output}` | godog; the suite must bind the godog flags (`godog.BindCommandLineFlags`). Use `--cmd` if your suite names them differently. |
+| custom (`--cmd` only) | your command | Any runner that can write Cucumber JSON. |
+
+| Flag | |
+| --- | --- |
+| `--adapter <name>` | `go` or `auto` (default: detect from the project) |
+| `--cmd <template>` | replaces the adapter's command |
+| `--dir <folder>` | working directory of the runner (default `.`) |
+| `-o, --out <file>` | keep the Cucumber JSON (default: temporary file) |
+| `-e, --env KEY=VALUE` | extra environment variable for the runner (repeatable) |
+| `--timeout <duration>` | stop the runner after this time, e.g. `10m` |
+| `--report <file>` | also write a report (`.html`, `.md`, `.json`); `-f`, `-t`, `--title`, `--lang` as in `report` |
+| `--fail-on-failed=false` | only report, exit 0 even if a scenario failed |
+
+Exit codes: 0 all fine, 1 a scenario failed or the runner failed without results, 3 the adapter or command is wrong
+(unknown adapter, nothing detected, runner exited 0 but wrote no results).
 
 ### `gherkit report <cucumber.json>…`
 
