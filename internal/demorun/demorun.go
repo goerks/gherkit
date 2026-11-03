@@ -158,6 +158,9 @@ func scenarioLines(f *messages.Feature) map[string]int {
 func Run(dir string, files []string, output string, stdout, stderr io.Writer) (Outcome, error) {
 	var out Outcome
 	var features []cjFeature
+	if abs, err := filepath.Abs(dir); err == nil {
+		dir = abs // so that absolute feature paths can be shown relative to it
+	}
 	for _, rel := range files {
 		path := rel
 		if !filepath.IsAbs(path) {
