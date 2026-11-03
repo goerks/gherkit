@@ -273,12 +273,10 @@
     if (e.key === 'Tab' && plain) {
       e.preventDefault();
       var multi = src.value.slice(src.selectionStart, src.selectionEnd).indexOf('\n') >= 0;
-      if (e.shiftKey || multi) transformLines(function (l) { return e.shiftKey ? l.replace(/^ {1,2}/, '') : (l.trim() ? '  ' + l : l); });
-      else insertText('  ');
+      if (multi) transformLines(function (l) { return e.shiftKey ? l.replace(/^ {1,2}/, '') : (l.trim() ? '  ' + l : l); });
+      else autoTab(e.shiftKey);
     } else if (e.key === 'Enter' && plain && !e.shiftKey) {
-      e.preventDefault();
-      var p = src.selectionStart, v = src.value, ls = v.lastIndexOf('\n', p - 1) + 1, cur = v.slice(ls, p);
-      insertText('\n' + cur.match(/^\s*/)[0] + (isHeader(cur.trim()) ? '  ' : ''));
+      e.preventDefault(); autoEnter();
     } else if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key === '/') {
       e.preventDefault(); toggleComment();
     }
@@ -289,13 +287,122 @@
       src.setRangeText(text, src.selectionStart, src.selectionEnd, 'end'); src.dispatchEvent(new Event('input'));
     }
   }
-  // Is this line a block header such as "Scenario: …" (next line is indented one level deeper)?
-  function isHeader(line) {
-    var d = S.dialect || {}, found = false;
-    ['feature', 'rule', 'background', 'scenario', 'scenarioOutline', 'examples'].forEach(function (k) {
-      (d[k] || []).forEach(function (w) { if (line.indexOf(w + ':') === 0) found = true; });
-    });
-    return found;
+  // ---------- automatic indentation ----------
+  // The layout is the one the formatter prints: Feature 0, Rule and Scenario 2
+  // (4 inside a Rule), steps and Examples one level deeper, tables and doc
+  // strings one more. Enter and Tab put lines on that grid so nobody has to count spaces.
+  function leadingLen(line) { return line.match(/^[ \t]*/)[0].length; }
+  function spaces(n) { return new Array(n + 1).join(' '); }
+  function kindOf(tr) {
+    if (!tr) return 'blank';
+    if (tr[0] === '#') return 'comment';
+    if (tr[0] === '@') return 'tag';
+    if (tr[0] === '|') return 'table';
+    if (/^("""|```)/.test(tr)) return 'doc';
+    var d = S.dialect; if (!d) return 'other';
+    var map = { feature: 'feature', rule: 'rule', background: 'background', scenario: 'scenario', scenarioOutline: 'scenario', examples: 'examples' };
+    for (var k in map) { var ws = d[k] || []; for (var i = 0; i < ws.length; i++) if (tr.indexOf(ws[i] + ':') === 0) return map[k]; }
+    var st = stepKeywords();
+    for (var j = 0; j < st.length; j++) if (st[j].trim() && tr.indexOf(st[j]) === 0) return 'step';
+    return 'other';
+  }
+  // What is known about the document above line `upto`.
+  function contextAt(lines, upto) {
+    var c = { inDoc: false, docDelim: '', docIndent: 0, inRule: false, feature: false };
+    for (var i = 0; i < upto; i++) {
+      var raw = lines[i], tr = raw.trim();
+      if (c.inDoc) { if (tr.indexOf(c.docDelim) === 0) c.inDoc = false; continue; }
+      var k = kindOf(tr);
+      if (k === 'doc') { c.inDoc = true; c.docDelim = tr.slice(0, 3); c.docIndent = leadingLen(raw); }
+      else if (k === 'feature') c.feature = true;
+      else if (k === 'rule') c.inRule = true;
+    }
+    return c;
+  }
+  function blockLevel(c) { return c.inRule ? 2 : 1; }
+  function levelFor(kind, c) {
+    switch (kind) {
+      case 'feature': return 0;
+      case 'rule': return 1;
+      case 'background': case 'scenario': return blockLevel(c);
+      case 'step': case 'examples': return blockLevel(c) + 1;
+      case 'table': case 'doc': return blockLevel(c) + 2;
+      default: return null;
+    }
+  }
+  // Indentation (in spaces) a line belongs to, or null for free text such as descriptions and comments.
+  function canonicalSpaces(lines, i, c) {
+    var k = kindOf(lines[i].trim());
+    if (k === 'tag') {
+      for (var j = i + 1; j < lines.length; j++) {
+        var k2 = kindOf(lines[j].trim());
+        if (k2 === 'blank' || k2 === 'comment' || k2 === 'tag') continue;
+        var lv = levelFor(k2, c); return lv === null ? null : lv * 2;
+      }
+      return c.feature ? blockLevel(c) * 2 : 0;
+    }
+    var l = levelFor(k, c); return l === null ? null : l * 2;
+  }
+  // Indentation of the line that follows line i (what Enter produces).
+  function nextIndentAfter(lines, i) {
+    var c = contextAt(lines, i), raw = lines[i], tr = raw.trim(), cur = leadingLen(raw);
+    if (c.inDoc) return tr.indexOf(c.docDelim) === 0 ? Math.max(0, c.docIndent - 2) : cur;
+    var k = kindOf(tr);
+    if (k === 'doc') return cur;
+    if (k === 'blank') return c.feature ? blockLevel(c) * 2 : 0;
+    var base = canonicalSpaces(lines, i, c); if (base === null) base = cur;
+    switch (k) {
+      case 'feature': return 2;
+      case 'rule': return 4;
+      case 'background': case 'scenario': case 'examples': return base + 2;
+      default: return base;
+    }
+  }
+  function indentStops(c) { return c.feature ? (c.inRule ? [0, 2, 4, 6, 8] : [0, 2, 4, 6]) : [0, 2]; }
+  function lineAt(v, p) {
+    var ls = v.lastIndexOf('\n', p - 1) + 1;
+    return { ls: ls, li: (v.slice(0, ls).match(/\n/g) || []).length };
+  }
+  function setIndent(ls, curLen, target, caret) {
+    src.focus(); src.setSelectionRange(ls, ls + curLen); insertText(spaces(target));
+    var np = caret >= ls + curLen ? caret + target - curLen : ls + target;
+    src.setSelectionRange(np, np);
+  }
+  function autoEnter() {
+    if (!S.dialect || src.selectionStart !== src.selectionEnd) { insertText('\n'); return; }
+    var v = src.value, p = src.selectionStart, at = lineAt(v, p), ls = at.ls, li = at.li;
+    var lines = v.split('\n'), raw = lines[li], lead = leadingLen(raw);
+    if (raw.trim() && p - ls <= lead) { insertText('\n'); return; } // caret in the indentation: just push the line down
+    var c = contextAt(lines, li);
+    if (!c.inDoc) {
+      var want = raw.trim() ? canonicalSpaces(lines, li, c) : 0; // an empty line loses its spaces
+      if (want !== null && want !== lead) { setIndent(ls, lead, want, p); lines = src.value.split('\n'); }
+    }
+    insertText('\n' + spaces(nextIndentAfter(lines, li)));
+  }
+  function autoTab(back) {
+    var v = src.value, p = src.selectionStart, at = lineAt(v, p), ls = at.ls, li = at.li;
+    var lines = v.split('\n'), raw = lines[li], lead = leadingLen(raw), c = contextAt(lines, li);
+    if (!S.dialect || c.inDoc) { // doc string content or unknown language: plain steps of two
+      if (back) transformLines(function (l) { return l.replace(/^ {1,2}/, ''); }); else insertText('  ');
+      return;
+    }
+    var kind = kindOf(raw.trim()), stops = indentStops(c), target;
+    function smaller() { return stops.filter(function (x) { return x < lead; }).pop(); }
+    function larger() { return stops.filter(function (x) { return x > lead; })[0]; }
+    if (kind === 'blank') {
+      var predicted = li > 0 && lines[li - 1].trim() ? nextIndentAfter(lines, li - 1) : (c.feature ? blockLevel(c) * 2 : 0);
+      if (back) target = smaller();
+      else target = lead < predicted ? predicted : larger();
+      if (target === undefined) target = back ? 0 : stops[0];
+    } else if (back) {
+      target = smaller();
+    } else {
+      var want = canonicalSpaces(lines, li, c);
+      if (want !== null && want !== lead) target = want;
+      else if (p - ls <= lead) target = larger();
+    }
+    if (target !== undefined && target !== lead) setIndent(ls, lead, target, p);
   }
   // Apply fn to every line touched by the selection, keep the selection on them.
   function transformLines(fn) {

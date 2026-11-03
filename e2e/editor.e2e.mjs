@@ -123,27 +123,60 @@ test('another folder can be opened while the editor runs', async () => {
   await page.close();
 });
 
-test('code view keeps indentation on Enter, indents blocks and toggles comments', async () => {
-  const page = await open('code', 'shop/checkout.feature');
+test('code view indents by itself: Enter, Tab, Shift+Tab and comments', async () => {
+  writeFileSync(join(dir, 'ws', 'indent.feature'), 'Feature: Indent\n');
+  const page = await open('code', 'indent.feature');
+  const value = () => page.inputValue('#src');
   await page.click('#src');
   await page.keyboard.press('Control+End');
-  await page.keyboard.type('\n\n  Scenario: Editing\n');
-  // after a block header the next line is indented one level deeper
+  // Enter puts the finished line on the grid (a Scenario belongs at 2) and the next one where a step goes
+  await page.keyboard.type('Scenario: Editing');
+  await page.keyboard.press('Enter');
+  assert.equal(await value(), 'Feature: Indent\n  Scenario: Editing\n    ');
   await page.keyboard.type('Given zz');
-  assert.match(await page.inputValue('#src'), /\n  Scenario: Editing\n    Given zz$/);
-  // the next step keeps the indentation
-  await page.keyboard.type('\nWhen yy');
-  assert.match(await page.inputValue('#src'), /\n    Given zz\n    When yy$/);
-  // comment out both steps and back
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('When yy');
+  assert.equal(await value(), 'Feature: Indent\n  Scenario: Editing\n    Given zz\n    When yy');
+  // comment out both steps and back, then outdent and indent the block
   await page.keyboard.press('Shift+Home');
   await page.keyboard.press('Shift+ArrowUp');
   await page.keyboard.press('Control+/');
-  assert.match(await page.inputValue('#src'), /\n    # Given zz\n    # When yy$/);
+  assert.match(await value(), /\n    # Given zz\n    # When yy$/);
   await page.keyboard.press('Control+/');
-  assert.match(await page.inputValue('#src'), /\n    Given zz\n    When yy$/);
-  // Shift+Tab outdents the selected lines
+  assert.match(await value(), /\n    Given zz\n    When yy$/);
   await page.keyboard.press('Shift+Tab');
-  assert.match(await page.inputValue('#src'), /\n  Given zz\n  When yy$/);
+  assert.match(await value(), /\n  Given zz\n  When yy$/);
+  await page.keyboard.press('Tab');
+  assert.match(await value(), /\n    Given zz\n    When yy$/);
+  // a line typed without indentation is moved onto the grid when Enter is pressed
+  await page.keyboard.press('Control+End');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Shift+Home');
+  await page.keyboard.type('Then ww');
+  await page.keyboard.press('Enter');
+  assert.match(await value(), /\n    Then ww\n    $/);
+  // Enter on an empty line leaves the steps: no trailing spaces, back at scenario level
+  await page.keyboard.press('Enter');
+  assert.match(await value(), /\n    Then ww\n\n  $/);
+  // Tab walks through the levels on an empty line, Shift+Tab back
+  await page.keyboard.press('Tab');
+  assert.match(await value(), /ww\n\n    $/);
+  await page.keyboard.press('Shift+Tab');
+  assert.match(await value(), /ww\n\n  $/);
+  // Tab on a line that is off the grid fixes it
+  await page.keyboard.type('    Scenario: Three');
+  assert.match(await value(), /\n      Scenario: Three$/);
+  await page.keyboard.press('Tab');
+  assert.match(await value(), /ww\n\n  Scenario: Three$/);
+  // a Rule is at 2 and what is inside it moves one level deeper
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Rule: R');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Scenario: In rule');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Given qq');
+  await page.keyboard.press('Enter');
+  assert.match(await value(), /\n  Rule: R\n    Scenario: In rule\n      Given qq\n      $/);
   assert.deepEqual(page.errors, []);
   await page.close();
 });

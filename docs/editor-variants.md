@@ -74,3 +74,11 @@ stays a lightweight textarea. CodeMirror 6 is reconsidered when large files beco
 | Structure | **List and detail:** scenario list with test case counts, edit one block at a time, reorder by drag and drop (Background first, scenarios before rules) | ![Structure list](img/editor-struct-list.png) |
 | Split | **Form and preview:** form (or code) on the left, preview on the right, the focused step is marked, a click in the preview focuses it in the form | ![Split](img/editor-split.png) |
 | Split | **Test cases tab:** every test case generated from scenario outlines, expandable into readable steps; a Problems tab next to the Document tab | ![Split test cases](img/editor-split-cases.png) |
+
+### Automatic indentation (Code view)
+
+Enter and Tab keep the file on the formatter's grid, so nobody has to count spaces:
+
+- **Enter** puts the finished line at its place (Feature 0, Rule and Scenario 2, in a Rule 4, steps and Examples one level deeper, table rows and doc strings one more) and starts the next line where the next line usually goes: after `Scenario:` the first step, after a step the next step, after `Examples:` the table. On an empty line it leaves the block and removes trailing spaces.
+- **Tab** moves the current line onto its place. On an empty line it walks through the levels, **Shift+Tab** walks back. With several lines selected it indents or outdents all of them by two.
+- Inside a doc string nothing is moved. **Ctrl+/** comments the selected lines out and back in.
