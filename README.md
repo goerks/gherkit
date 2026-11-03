@@ -66,6 +66,7 @@ in Gherkin, browser tests. Details in [docs/approach.md](docs/approach.md).
 - [How we work](docs/approach.md)
 - [CLI reference](docs/cli.md)
 - [Editor variants](docs/editor-variants.md)
+- [Browser demo](docs/demo.md)
 - [Roadmap](docs/roadmap.md)
 - [Architecture decisions](docs/adr/)
 

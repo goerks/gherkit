@@ -170,6 +170,17 @@ jobs:
           go-version-file: go.mod
       - name: Build the site
         run: scripts/build-site.sh build/site
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Browser test of the site (the CLI runs as WebAssembly)
+        working-directory: e2e
+        env:
+          GHERKIT_SITE: ${{ github.workspace }}/build/site
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+          npm run test:demo
       - name: Check the site
         shell: bash
         run: |
@@ -242,7 +253,7 @@ jobs:
             echo "| Windows binary | gherkit.exe builds, fmt/lint work on a CRLF checkout, \`gherkit run\` starts a runner through cmd.exe | $(mark "$WINDOWS") |"
             echo "| Java adapter | Maven and Cucumber-JVM run through \`gherkit run\`; a failing scenario gives exit code 1 | $(mark "$JAVA") |"
             echo "| Release config | goreleaser builds all platforms | $(mark "$RELEASE") |"
-            echo "| Static site | The GitHub Pages site builds, every download is complete and the Linux download runs | $(mark "$SITE") |"
+            echo "| Static site | The GitHub Pages site builds, every download is complete, the Linux download runs and the CLI works in the browser (WebAssembly, virtual folder, terminal) | $(mark "$SITE") |"
           } >> "$GITHUB_STEP_SUMMARY"
           for r in "$UNIT" "$WINDOWS" "$ACCEPT" "$BROWSER" "$JAVA" "$RELEASE" "$SITE"; do
             [ "$r" = success ] || exit 1

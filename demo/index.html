@@ -21,6 +21,7 @@
   --accent: #8cc56d; --accent-ink: #11160f; --accent-soft: #233420; --warn: #f0b04a; --warn-soft: #33290f; color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 var(--font);
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 a { color: var(--accent); }
@@ -50,17 +51,51 @@ pre code { background: none; padding: 0; }
 .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
 ul.plain { margin: 0; padding-left: 20px; } ul.plain li { margin: 4px 0; }
 .hint { color: var(--muted); font-size: 13px; }
+.demo-box { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.demo-start { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+button.btn { border: 0; cursor: pointer; font-family: inherit; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 4px 0 10px; }
+.chip { font: 12.5px var(--mono); background: var(--sunken); color: var(--fg); border: 1px solid var(--line); border-radius: 999px; padding: 2px 11px; cursor: pointer; }
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.term { background: #14181a; color: #d9e1dc; border-radius: 10px; padding: 12px 14px; height: 380px; overflow: auto; font: 13px/1.5 var(--mono); }
+.term-line { white-space: pre-wrap; word-break: break-word; }
+.term-line.cmd { color: #ffffff; } .term-line.err { color: #ef8f82; } .term-line.dim { color: #8b9892; } .term-line.info { color: #b9c6bf; }
+.term-row { display: flex; gap: 8px; align-items: center; }
+.term-prompt { color: #8cc56d; white-space: nowrap; }
+#term-input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: #ffffff; font: inherit; caret-color: #8cc56d; padding: 0; }
 footer { padding: 40px 0 60px; color: var(--muted); font-size: 13px; }
 @media (max-width: 600px) { header { padding-top: 28px; } .btn + .btn { margin-left: 0; margin-top: 6px; } }
 </style>
 
+<script src="js/memfs.js"></script>
 <div class="wrap">
   <header><span class="logo" aria-hidden="true"></span><b>gherkit</b><span class="tag">{{VERSION}}</span></header>
 
   <h1>Gherkin schreiben, prüfen und ausführen lassen</h1>
   <p class="lede">gherkit ist ein einzelnes Programm für den ganzen Gherkin-Workflow: formatieren, prüfen, im Browser bearbeiten und Testergebnisse als Report darstellen. Ohne Installation von Laufzeiten, für alle Runner.</p>
 
-  <p class="status"><b>Im Aufbau.</b> <span>Die Browser-Demo, in der Sie gherkit direkt auf dieser Seite ausprobieren, entsteht gerade. Heute können Sie die echte CLI mit den Beispielen herunterladen.</span></p>
+  <p class="status"><b>Im Aufbau.</b> <span>Die Browser-Demo entsteht Schritt für Schritt. Schon jetzt läuft die echte CLI als Terminal auf dieser Seite; der Editor im Browser folgt als Nächstes.</span></p>
+
+  <section id="demo">
+    <h2>Ausprobieren im Browser</h2>
+    <p class="sub">Das ist die echte gherkit-CLI, im Browser ausgeführt. Sie arbeitet auf einem virtuellen Ordner mit Beispieldateien. Ihre Eingaben bleiben in Ihrem Browser und werden nicht übertragen.</p>
+    <div id="demo-box" class="demo-box">
+      <div id="demo-start-row" class="demo-start">
+        <button id="demo-start" class="btn" type="button">Demo starten</button>
+        <span id="demo-status" class="hint" role="status" aria-live="polite">Lädt beim Start etwa 3 MB.</span>
+      </div>
+      <div id="demo-chips" class="chips" hidden>
+        <span class="hint">Zum Ausprobieren:</span>
+        <button type="button" class="chip" data-cmd="ls">ls</button>
+        <button type="button" class="chip" data-cmd="gherkit lint --strict .">gherkit lint --strict .</button>
+        <button type="button" class="chip" data-cmd="gherkit fmt --check .">gherkit fmt --check .</button>
+        <button type="button" class="chip" data-cmd="gherkit parse shop/checkout.feature">gherkit parse shop/checkout.feature</button>
+        <button type="button" class="chip" data-cmd="gherkit dialects">gherkit dialects</button>
+        <button type="button" class="chip" data-cmd="help">help</button>
+      </div>
+      <div id="term" class="term" hidden></div>
+    </div>
+  </section>
 
   <section id="downloads">
     <h2>CLI herunterladen</h2>
@@ -106,6 +141,26 @@ gherkit report results.json -o report.html</code></pre>
       <div class="card"><h3>Reports</h3><p>HTML, Markdown oder JSON, mit eigenen Vorlagen und in Deutsch oder Englisch.</p></div>
     </div>
   </section>
+
+  <script>
+(function () {
+  var btn = document.getElementById('demo-start'), status = document.getElementById('demo-status'), term = document.getElementById('term');
+  var chips = document.getElementById('demo-chips'), startRow = document.getElementById('demo-start-row'), running = null;
+  btn.addEventListener('click', function () {
+    btn.disabled = true;
+    var s = document.createElement('script'); s.src = 'js/terminal.js';
+    s.onload = function () {
+      term.hidden = false;
+      GherkitDemo.start(term, '', function (t) { status.textContent = t; }).then(function (t) {
+        running = t; startRow.hidden = true; chips.hidden = false; t.input.focus();
+      }, function (e) { term.hidden = true; btn.disabled = false; status.textContent = 'Die Demo konnte nicht starten: ' + (e && e.message || e); });
+    };
+    s.onerror = function () { btn.disabled = false; status.textContent = 'Die Demo konnte nicht geladen werden.'; };
+    document.head.appendChild(s);
+  });
+  chips.addEventListener('click', function (e) { var c = e.target.closest('[data-cmd]'); if (c && running) running.run(c.dataset.cmd); });
+})();
+</script>
 
   <footer>
     gherkit ist Open Source (Apache-2.0) · Quellcode: <a href="https://github.com/goerks/gherkit">github.com/goerks/gherkit</a> · Stand {{DATE}}, Version {{VERSION}} ({{COMMIT}})
