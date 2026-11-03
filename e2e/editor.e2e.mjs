@@ -356,6 +356,8 @@ test('split: headers line up, the position travels with the switch, Alt+1 and Al
   await page.evaluate(() => { const s = document.getElementById('src'), i = s.value.indexOf('an empty shopping cart'); s.focus(); s.setSelectionRange(i, i); });
   await page.keyboard.press('Alt+1');
   await page.waitForFunction(() => (document.activeElement.value || '').includes('an empty shopping cart'));
+  // looking at the form and switching must not make the file dirty (also true for CRLF files)
+  assert.equal(await page.evaluate(() => window.gherkit.text === window.gherkit.saved), true, 'file is not dirty');
   // the choice is remembered per file: code here, form in the other file
   await page.keyboard.press('Alt+2');
   await page.waitForSelector('#view-code:not([hidden])');

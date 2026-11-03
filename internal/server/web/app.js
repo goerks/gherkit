@@ -860,8 +860,11 @@
   }
 
   // ---------- structure view ----------
+  // Only edits are printed back into the text: looking at the form must not rewrite (or "dirty") a file.
+  var pendingEdit = false;
   function syncNow() {
-    if (!S.edit) return Promise.resolve();
+    if (!S.edit || !pendingEdit) return Promise.resolve();
+    pendingEdit = false;
     return api('POST', '/api/render', S.edit).then(function (r) {
       S.text = r.content; S.parsed = r.parsed; if (!r.parsed.errors.length) S.lastGood = r.parsed;
       setSource(S.text, true); updateDirty();
@@ -871,7 +874,7 @@
     });
   }
   var syncSoon = debounce(syncNow, 250);
-  function changed() { syncSoon(); }
+  function changed() { pendingEdit = true; syncSoon(); }
 
   function kwOptions(kind) { return ((S.dialect || {})[kind] || []).slice(); }
   function select(options, value, onchange, cls) {
@@ -1208,7 +1211,7 @@
       view.appendChild(el('div', { class: 'st' }, [el('p', { class: 'hint', text: t('fixFirst') }), el('ul', {}, res.errors.map(function (e) { return el('li', {}, [el('a', { href: '#', text: t('line') + ' ' + e.line + ': ' + e.message, onclick: function (ev) { ev.preventDefault(); jumpTo(e.line); } })]); }))]));
       return;
     }
-    if (!S.edit) S.edit = clone(res.document);
+    if (!S.edit) { S.edit = clone(res.document); pendingEdit = false; }
     var doc = S.edit;
     if (!doc.feature) doc.feature = { keyword: kwOptions('feature')[0] || 'Feature', name: '', description: '', language: S.dialectCode || 'en', tags: [], children: [] };
     var f = doc.feature;
