@@ -401,6 +401,21 @@ test('code view: the coloured text always matches the source, also right after E
   await page.close();
 });
 
+test('code view: a file longer than the screen is shown completely when scrolled', async () => {
+  const page = await open('code', 'shop/checkout.feature');
+  await page.waitForSelector('#hl .ln');
+  const size = () => page.evaluate(() => { const h = (id) => document.getElementById(id).getBoundingClientRect().height; return { view: h('view-code'), src: h('src'), hl: h('hl'), gutter: h('gutter') }; });
+  const h = await size();
+  assert.ok(h.src > h.view, 'the example file is longer than the view: ' + JSON.stringify(h));
+  // the highlighting and the line numbers are as tall as the text, not only as tall as the visible part
+  assert.ok(Math.abs(h.hl - h.src) < 2 && Math.abs(h.gutter - h.src) < 2, 'overlay and gutter must follow the text: ' + JSON.stringify(h));
+  await page.evaluate(() => { const v = document.getElementById('view-code'); v.scrollTop = v.scrollHeight; });
+  const lastLine = await page.evaluate(() => { const lns = document.querySelectorAll('#hl .ln'), l = lns[lns.length - 1], v = document.getElementById('view-code').getBoundingClientRect(), r = l.getBoundingClientRect(); return { text: l.textContent, inView: r.bottom <= v.bottom + 1 && r.top >= v.top - 1 }; });
+  assert.equal(lastLine.inView, true, 'the last line is visible after scrolling to the end');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 // Screenshots for the docs: GHERKIT_SHOTS=<dir> npm test
 test('screenshots', { skip: !process.env.GHERKIT_SHOTS }, async () => {
   mkdirSync(process.env.GHERKIT_SHOTS, { recursive: true });

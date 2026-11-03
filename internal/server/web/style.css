@@ -78,6 +78,9 @@ input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px s
 
 /* code editor */
 .code-view { display: flex; }
+/* The editor grows with the text (the view scrolls). Stretching it to the height of the view would cut the
+   highlighting and the line numbers off after the first screen. */
+.code-view > .editor { align-self: flex-start; }
 .editor { display: flex; flex: 1; min-height: 100%; font: var(--font)/var(--line-h) var(--mono); background: var(--surface); }
 .gutter { padding: 10px 0; min-width: 52px; text-align: right; color: var(--muted); background: var(--sunken); user-select: none; border-right: 1px solid var(--line); }
 .gutter div { height: var(--line-h); padding: 0 8px 0 14px; position: relative; font-size: 12px; }
