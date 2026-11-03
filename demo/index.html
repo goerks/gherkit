@@ -1,0 +1,113 @@
+<title>gherkit</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="gherkit: ein Programm für den ganzen Gherkin-Workflow. Formatieren, prüfen, im Browser bearbeiten und Ergebnisse als Report.">
+<style>
+:root {
+  --bg: #f5f7f2; --surface: #ffffff; --sunken: #e9efe4; --fg: #18221a; --muted: #5a6857; --line: #d9e1d3;
+  --accent: #3d7a28; --accent-ink: #ffffff; --accent-soft: #e1efd8; --warn: #8a5a00; --warn-soft: #fbefd5;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11160f; --surface: #192016; --sunken: #212a1d; --fg: #e7eee2; --muted: #9ba998; --line: #2c3727;
+    --accent: #8cc56d; --accent-ink: #11160f; --accent-soft: #233420; --warn: #f0b04a; --warn-soft: #33290f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11160f; --surface: #192016; --sunken: #212a1d; --fg: #e7eee2; --muted: #9ba998; --line: #2c3727;
+  --accent: #8cc56d; --accent-ink: #11160f; --accent-soft: #233420; --warn: #f0b04a; --warn-soft: #33290f; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 var(--font);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.wrap { max-width: 980px; margin: 0 auto; }
+header { padding: 48px 0 8px; display: flex; align-items: center; gap: 12px; }
+.logo { width: 26px; height: 34px; border-radius: 13px; background: var(--accent); flex: none; }
+header b { font-size: 22px; letter-spacing: -.01em; }
+header .tag { margin-left: auto; font: 500 12px var(--mono); color: var(--muted); }
+h1 { font-size: clamp(30px, 5vw, 48px); line-height: 1.08; margin: 28px 0 14px; letter-spacing: -.02em; max-width: 20ch; text-wrap: balance; }
+.lede { font-size: 19px; color: var(--muted); max-width: 60ch; margin: 0 0 22px; }
+.status { background: var(--warn-soft); border: 1px solid var(--warn); color: var(--fg); border-radius: 12px; padding: 12px 16px; margin: 0 0 8px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.status b { color: var(--warn); }
+section { padding: 34px 0 6px; }
+h2 { font-size: 24px; margin: 0 0 6px; letter-spacing: -.01em; }
+.sub { color: var(--muted); margin: 0 0 18px; max-width: 62ch; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+.card h3 { margin: 0 0 4px; font-size: 16px; }
+.card p { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+.btn { display: inline-block; text-decoration: none; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 14px; border-radius: 8px; padding: 6px 14px; }
+.btn.alt { background: var(--sunken); color: var(--fg); border: 1px solid var(--line); }
+.btn + .btn { margin-left: 6px; }
+pre { background: var(--sunken); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font: 13px/1.5 var(--mono); margin: 8px 0; }
+code { font-family: var(--mono); font-size: .92em; background: var(--sunken); border-radius: 4px; padding: 0 4px; }
+pre code { background: none; padding: 0; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+ul.plain { margin: 0; padding-left: 20px; } ul.plain li { margin: 4px 0; }
+.hint { color: var(--muted); font-size: 13px; }
+footer { padding: 40px 0 60px; color: var(--muted); font-size: 13px; }
+@media (max-width: 600px) { header { padding-top: 28px; } .btn + .btn { margin-left: 0; margin-top: 6px; } }
+</style>
+
+<div class="wrap">
+  <header><span class="logo" aria-hidden="true"></span><b>gherkit</b><span class="tag">{{VERSION}}</span></header>
+
+  <h1>Gherkin schreiben, prüfen und ausführen lassen</h1>
+  <p class="lede">gherkit ist ein einzelnes Programm für den ganzen Gherkin-Workflow: formatieren, prüfen, im Browser bearbeiten und Testergebnisse als Report darstellen. Ohne Installation von Laufzeiten, für alle Runner.</p>
+
+  <p class="status"><b>Im Aufbau.</b> <span>Die Browser-Demo, in der Sie gherkit direkt auf dieser Seite ausprobieren, entsteht gerade. Heute können Sie die echte CLI mit den Beispielen herunterladen.</span></p>
+
+  <section id="downloads">
+    <h2>CLI herunterladen</h2>
+    <p class="sub">Jedes Paket enthält das Programm, die Beispiele und die Lizenz. Es ist nicht signiert: Windows SmartScreen und macOS Gatekeeper können beim ersten Start warnen.</p>
+    <div class="grid">
+      <div class="card"><h3>Windows</h3><p>Mit <code>editor.cmd</code> startet der Editor per Doppelklick.</p>
+        <a class="btn" href="downloads/gherkit-windows-amd64.zip">x64</a><a class="btn alt" href="downloads/gherkit-windows-arm64.zip">ARM64</a></div>
+      <div class="card"><h3>macOS</h3><p>Apple Silicon oder Intel.</p>
+        <a class="btn" href="downloads/gherkit-darwin-arm64.zip">Apple Silicon</a><a class="btn alt" href="downloads/gherkit-darwin-amd64.zip">Intel</a></div>
+      <div class="card"><h3>Linux</h3><p>Statisch gebunden, läuft auf jeder Distribution.</p>
+        <a class="btn" href="downloads/gherkit-linux-amd64.zip">x64</a><a class="btn alt" href="downloads/gherkit-linux-arm64.zip">ARM64</a></div>
+      <div class="card"><h3>Standardset</h3><p>Nur die Beispiel-Dateien, zum Ausprobieren mit jedem Programm.</p>
+        <a class="btn alt" href="downloads/standard-set.zip">standard-set.zip</a></div>
+    </div>
+    <p class="hint">Prüfsummen: <a href="downloads/SHA256SUMS.txt">SHA256SUMS.txt</a></p>
+  </section>
+
+  <section id="start">
+    <h2>In einer Minute ausprobieren</h2>
+    <div class="cols">
+      <div>
+        <p class="sub">Entpacken, im Ordner eine Eingabeaufforderung oder ein Terminal öffnen:</p>
+<pre><code>gherkit edit examples
+gherkit fmt --check examples
+gherkit lint --strict examples</code></pre>
+        <p class="hint">Der Editor öffnet sich im Browser unter <code>127.0.0.1:4848</code>. Alles bleibt auf Ihrem Rechner.</p>
+      </div>
+      <div>
+        <p class="sub">Ergebnisse Ihrer Tests zu einem Report machen:</p>
+<pre><code>gherkit run --adapter go
+gherkit report results.json -o report.html</code></pre>
+        <p class="hint">gherkit startet den Runner Ihres Projekts (Go, Java oder ein eigenes Kommando) und liest dessen Cucumber-JSON.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <h2>Was gherkit kann</h2>
+    <div class="grid">
+      <div class="card"><h3>Formatieren und prüfen</h3><p>Mit dem offiziellen Gherkin-Parser, in allen 80 Sprachen. Das Format ist gegen den offiziellen Testkorpus abgesichert.</p></div>
+      <div class="card"><h3>Editor im Browser</h3><p>Code mit Vorschlägen, ein Formular für Fachleute, eine Vorschau und die daraus entstehenden Testfälle.</p></div>
+      <div class="card"><h3>Für jeden Runner</h3><p>Go (godog), Java (Cucumber-JVM) oder jedes Kommando, das Cucumber-JSON schreibt.</p></div>
+      <div class="card"><h3>Reports</h3><p>HTML, Markdown oder JSON, mit eigenen Vorlagen und in Deutsch oder Englisch.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    gherkit ist Open Source (Apache-2.0) · Quellcode: <a href="https://github.com/goerks/gherkit">github.com/goerks/gherkit</a> · Stand {{DATE}}, Version {{VERSION}} ({{COMMIT}})
+  </footer>
+</div>
