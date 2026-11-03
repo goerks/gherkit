@@ -30,7 +30,9 @@ type Run struct {
 	Build       string    `json:"build,omitempty"`
 	Started     time.Time `json:"started"`
 	Finished    time.Time `json:"finished,omitempty"`
-	Cases       []*Case   `json:"cases"`
+	// Skipped lists files left out of the run because they have syntax errors.
+	Skipped []string `json:"skipped,omitempty"`
+	Cases   []*Case  `json:"cases"`
 }
 
 // Case is one test case (a pickle: outlines are already expanded).

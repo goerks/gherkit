@@ -131,3 +131,24 @@ func TestManualRunValidation(t *testing.T) {
 		t.Errorf("missing run: %d", code)
 	}
 }
+
+func TestManualRunOverTheFolderSkipsBrokenFiles(t *testing.T) {
+	ts, dir := newTestServer(t)
+	os.WriteFile(filepath.Join(dir, "good.feature"), []byte("Feature: G\n\n  @manual\n  Scenario: S\n    Given a\n"), 0o644)
+	os.WriteFile(filepath.Join(dir, "broken.feature"), []byte("Feature: B\n\n  Scenario: S\n    Given a\n      | x |\n      | y | z |\n"), 0o644)
+	var run struct {
+		Cases   []struct{ Name string }
+		Skipped []string
+	}
+	if code := call(t, ts, "POST", "/api/manual/runs", `{"tag":"@manual","tester":"A"}`, &run); code != 201 {
+		t.Fatalf("a broken file must not stop a run over the folder: %d", code)
+	}
+	if len(run.Cases) != 1 || len(run.Skipped) != 1 || !strings.Contains(run.Skipped[0], "broken.feature") {
+		t.Errorf("cases %v skipped %v", run.Cases, run.Skipped)
+	}
+	// asking for the broken file itself is an error, not a silent skip
+	var e map[string]string
+	if code := call(t, ts, "POST", "/api/manual/runs", `{"files":["broken.feature"],"tester":"A"}`, &e); code != 400 || !strings.Contains(e["error"], "syntax errors") {
+		t.Errorf("explicit file: %d %v", code, e)
+	}
+}

@@ -44,6 +44,7 @@
     }
   };
   // texts of the Run view (run.js) live next to its code
+  window.GherkitRun = window.GherkitRun || { TEXT: { de: {}, en: {} }, init: function () { }, show: function () { }, render: function () { } };
   ['de', 'en'].forEach(function (l) { Object.keys(window.GherkitRun.TEXT[l]).forEach(function (k) { TEXT[l][k] = window.GherkitRun.TEXT[l][k]; }); });
   var lang = 'de';
   try { lang = localStorage.getItem('gherkit.lang') || ((navigator.language || 'de').slice(0, 2) === 'de' ? 'de' : 'en'); } catch (e) { }

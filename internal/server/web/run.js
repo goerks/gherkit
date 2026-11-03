@@ -18,7 +18,7 @@
       attach: 'Nachweis anhängen', pasteHint: 'Screenshot mit Strg+V einfügen', openSteps: 'Es sind noch {n} Schritte offen. Trotzdem abschliessen?',
       finished: 'Lauf abgeschlossen. Ergebnis (Cucumber JSON):', needTester: 'Bitte die testende Person angeben.', noRun: 'Wähle oder starte einen Lauf.',
       cStatusPassed: 'bestanden', cStatusFailed: 'fehlgeschlagen', cStatusBlocked: 'blockiert', cStatusOpen: 'offen', uploadFailed: 'Anhang konnte nicht gespeichert werden',
-      readOnly: 'Dieser Lauf ist abgeschlossen und nur noch lesbar.', addNote: '+ Kommentar / Nachweis'
+      readOnly: 'Dieser Lauf ist abgeschlossen und nur noch lesbar.', addNote: '+ Kommentar / Nachweis', skippedFiles: 'Nicht im Lauf, weil fehlerhaft:'
     },
     en: {
       vRun: 'Run', runNew: 'New manual run', runTester: 'Tester', runEnv: 'Environment (e.g. URL or stage)', runBuild: 'Build / version',
@@ -30,12 +30,15 @@
       attach: 'Attach evidence', pasteHint: 'Paste a screenshot with Ctrl+V', openSteps: '{n} steps are still open. Finish anyway?',
       finished: 'Run finished. Result (Cucumber JSON):', needTester: 'Please enter the tester.', noRun: 'Pick or start a run.',
       cStatusPassed: 'passed', cStatusFailed: 'failed', cStatusBlocked: 'blocked', cStatusOpen: 'open', uploadFailed: 'The attachment could not be saved',
-      readOnly: 'This run is finished and read-only.', addNote: '+ Comment / evidence'
+      readOnly: 'This run is finished and read-only.', addNote: '+ Comment / evidence', skippedFiles: 'Left out because of syntax errors:'
     }
   };
 
   var c, R = { runs: [], run: null, open: '', done: null, error: '', scope: 'manual', files: 'current', form: {}, expanded: {} };
   var IMG = /\.(png|jpe?g|gif|webp)$/i;
+  // The browser demo answers the API in process (window.gherkitFetch): there is no server to link to, and its
+  // virtual folder holds text only, so attachments are not offered there.
+  function demo() { return typeof window.gherkitFetch === 'function'; }
 
   function load(key) { try { return localStorage.getItem('gherkit.run.' + key) || ''; } catch (e) { return ''; } }
   function store(key, v) { try { localStorage.setItem('gherkit.run.' + key, v); } catch (e) { } }
@@ -43,6 +46,18 @@
   function root() { return c.$('view-run'); }
   function url(path) { return '/api/manual/runs/' + encodeURIComponent(R.run.id) + path; }
   function evidenceUrl(rel) { return url('/' + rel.split('/').map(encodeURIComponent).join('/')); }
+
+  // The report is a page of its own. With a server a plain link does it; in the demo the page is fetched and shown
+  // from a blob URL.
+  function reportLink(id, id2) {
+    var href = '/api/manual/runs/' + encodeURIComponent(id) + '/report?lang=' + (document.documentElement.lang || 'en');
+    var a = c.el('a', { class: 'rn-link', id: id2 || null, href: href, target: '_blank', rel: 'noopener', text: c.t('runReport') });
+    if (demo()) a.addEventListener('click', function (e) {
+      e.preventDefault();
+      fetch(href).then(function (r) { return r.text(); }).then(function (html) { window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })), '_blank'); });
+    });
+    return a;
+  }
 
   function loadRuns() {
     return c.api('GET', '/api/manual/runs').then(function (l) { R.runs = l || []; });
@@ -130,7 +145,7 @@
         el('span', { class: 'rn-badge ' + (r.finished ? 'passed' : 'open'), text: r.finished ? t('runDone') : t('runRunning') }),
         el('span', { class: 'rn-muted', text: r.done + '/' + r.total }),
         el('button', { text: r.finished ? t('runView') : t('runResume'), onclick: function () { openRun(r.id); } }),
-        el('a', { class: 'rn-link', href: '/api/manual/runs/' + encodeURIComponent(r.id) + '/report?lang=' + (document.documentElement.lang || 'en'), target: '_blank', rel: 'noopener', text: t('runReport') })
+        reportLink(r.id)
       ]));
     });
     return el('div', { class: 'rn' }, [form, el('div', { class: 'rn-card' }, [el('h2', { text: t('runPrev') }), list])]);
@@ -150,7 +165,7 @@
   function renderRun() {
     var t = c.t, el = c.el, run = R.run, fin = isFinished(run), p = progress(run);
     var back = el('button', { id: 'rn-back', text: '← ' + t('runBack'), onclick: function () { R.run = null; R.done = null; loadRuns().then(render); } });
-    var report = el('a', { class: 'rn-link', id: 'rn-report', href: url('/report?lang=' + (document.documentElement.lang || 'en')), target: '_blank', rel: 'noopener', text: t('runReport') });
+    var report = reportLink(run.id, 'rn-report');
     var finish = fin ? null : el('button', {
       class: 'primary', id: 'rn-finish', text: t('runFinish'), onclick: function () {
         var open = p.total - p.done;
@@ -168,6 +183,7 @@
       el('span', { class: 'rn-muted', id: 'rn-progress', text: p.done + '/' + p.total }), bar, report, finish
     ]);
     var kids = [head];
+    if (run.skipped && run.skipped.length) kids.push(el('div', { class: 'rn-banner warn', id: 'rn-skipped' }, [el('strong', { text: t('skippedFiles') }), el('ul', {}, run.skipped.map(function (m) { return el('li', { text: m }); }))]));
     if (R.done) kids.push(el('div', { class: 'rn-banner', id: 'rn-banner' }, [t('finished') + ' ', el('code', { text: R.done })]));
     else if (fin) kids.push(el('div', { class: 'rn-banner', text: t('readOnly') }));
     run.cases.forEach(function (cs) { kids.push(renderCase(cs, fin)); });
@@ -222,7 +238,7 @@
       ta.value = s.comment || '';
       if (!fin) {
         ta.addEventListener('change', function () { record(cs.id, i, s.status, ta.value, false, key); });
-        ta.addEventListener('paste', function (e) {
+        if (!demo()) ta.addEventListener('paste', function (e) {
           var files = [].filter.call((e.clipboardData && e.clipboardData.files) || [], function (f) { return f.type.indexOf('image/') === 0; });
           if (!files.length) return;
           e.preventDefault();
@@ -231,7 +247,7 @@
       }
       li.appendChild(ta);
     }
-    if (s.status && open && !fin) {
+    if (s.status && open && !fin && !demo()) {
       var inp = el('input', { type: 'file', multiple: true, class: 'rs-file', 'aria-label': t('attach'), onchange: function () { upload(cs.id, i, [].map.call(inp.files, function (f) { return { file: f, name: f.name }; })); } });
       li.appendChild(el('div', { class: 'rn-attach' }, [el('span', { class: 'rn-muted', text: '📎 ' + t('attach') + ' · ' + t('pasteHint') }), inp]));
     }

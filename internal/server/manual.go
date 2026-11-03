@@ -63,7 +63,8 @@ func (s *Server) manualCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	ws := s.workspace()
 	files := req.Files
-	if len(files) == 0 {
+	explicit := len(files) > 0
+	if !explicit {
 		var err error
 		if files, err = ws.Files(); err != nil {
 			fail(w, 500, err)
@@ -86,8 +87,14 @@ func (s *Server) manualCreate(w http.ResponseWriter, r *http.Request) {
 		}
 		res := parse.Source(f, src)
 		if !res.OK() {
-			fail(w, 400, fmt.Errorf("%s has syntax errors: %s", f, res.Errors[0].Message))
-			return
+			msg := fmt.Sprintf("%s has syntax errors: %s", f, res.Errors[0].Message)
+			if explicit {
+				fail(w, 400, errors.New(msg))
+				return
+			}
+			// Over the whole folder one broken file must not stop the others; the run says what it left out.
+			run.Skipped = append(run.Skipped, msg)
+			continue
 		}
 		for _, c := range casesFrom(res, tag) {
 			c.ID = "c" + strconv.Itoa(len(run.Cases)+1)

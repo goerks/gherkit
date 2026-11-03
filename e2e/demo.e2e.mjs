@@ -201,3 +201,25 @@ test('the demo runner executes the standard set and writes a report', async () =
   assert.deepEqual(page.errors, []);
   await page.close();
 });
+
+test('the Run view works in the demo: a manual run is recorded and finished without a server', async () => {
+  const page = await openEditor();
+  // the standard set has no @manual scenario: add one through the editor's API, as a save would
+  await page.evaluate(() => fetch('/api/file', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: 'manuell.feature', content: 'Feature: Manuell\n\n  @manual\n  Scenario: Von Hand\n    Given ein Schritt\n    Then ein zweiter\n' }) }).then((r) => { if (!r.ok) throw new Error('save failed'); }));
+  await page.evaluate(() => window.gherkitApp.refresh());
+  await page.click('.variants [data-variant="run"]');
+  await page.waitForSelector('#rn-start');
+  await page.selectOption('#rn-files', 'all');
+  await page.fill('#rn-tester', 'Demo');
+  await page.click('#rn-start');
+  await page.waitForSelector('.rn-case'); // the @manual test cases of the standard set
+  await page.locator('#step-c1-0 .rs-pass').click();
+  await page.waitForFunction(() => /^1\//.test(document.getElementById('rn-progress').textContent));
+  assert.equal(await page.locator('.rs-file').count(), 0, 'the demo offers no attachments');
+  page.once('dialog', (d) => d.accept());
+  await page.click('#rn-finish');
+  await page.waitForSelector('#rn-banner');
+  assert.match(await page.textContent('#rn-banner'), /cucumber\.json/);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});

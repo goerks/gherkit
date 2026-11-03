@@ -66,3 +66,16 @@ Feature: Manual scenarios
       And I record "failed" with the comment "wrong order" for step 2 of test case 1
       And I finish the manual run and keep the result as "manual.json"
       Then the file "manual.json" contains "skipped"
+
+    Scenario: A file with syntax errors is left out of a run over the whole folder
+      Given a file "broken.feature" with:
+        """
+        Feature: Broken
+          Scenario: Table with a missing cell
+            Given a table
+              | a | b |
+              | c |
+        """
+      When I start a manual run as "Anna" for the tag "@manual"
+      Then the response contains "Offers are sorted by price"
+      And the response contains "broken.feature has syntax errors"

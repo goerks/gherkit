@@ -73,6 +73,7 @@
       GherkitDemo.installFetchBridge();
       decorate();
       await loadScript('highlight.js');
+      await loadScript('run.js');
       await loadScript('app.js');
       o.done();
     } catch (e) { o.fail((e && e.message) || String(e)); }
