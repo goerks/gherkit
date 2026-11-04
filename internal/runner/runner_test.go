@@ -186,3 +186,38 @@ func TestDemoAdapterRunsInProcess(t *testing.T) {
 		t.Fatalf("no results written: %v", err)
 	}
 }
+
+func TestCombineTagsAndProjectFilter(t *testing.T) {
+	for _, c := range []struct{ project, tags, want string }{
+		{"", "not @manual", "not @manual"},
+		{"not @fails", "not @manual", "(not @fails) and (not @manual)"},
+		{"not @fails", "", "not @fails"},
+		{"", "", ""},
+	} {
+		if got := CombineTags(c.project, c.tags); got != c.want {
+			t.Errorf("CombineTags(%q, %q) = %q, want %q", c.project, c.tags, got, c.want)
+		}
+	}
+	dir := t.TempDir()
+	res := filepath.Join(dir, "src", "test", "resources")
+	os.MkdirAll(res, 0o755)
+	if got := javaProjectTags(dir); got != "" {
+		t.Errorf("no properties file: %q", got)
+	}
+	os.WriteFile(filepath.Join(res, "junit-platform.properties"), []byte("cucumber.publish.quiet=true\n# cucumber.filter.tags=@commented\ncucumber.filter.tags = not @fails\n"), 0o644)
+	if got := javaProjectTags(dir); got != "not @fails" {
+		t.Errorf("junit-platform.properties: %q", got)
+	}
+	// the example project of the repository excludes its failing scenario itself
+	if got := javaProjectTags(filepath.Join("..", "..", "runner-examples", "java")); got != "not @fails" {
+		t.Errorf("runner-examples/java: %q", got)
+	}
+	// the Java adapter narrows the filter of the project by default and takes an explicit one as it is
+	a, _ := Lookup("java")
+	if a.ProjectTags == nil {
+		t.Fatal("the Java adapter must know the filter of the project")
+	}
+	if got := CombineTags(a.ProjectTags(dir), "not @manual"); got != "(not @fails) and (not @manual)" {
+		t.Errorf("default: %q", got)
+	}
+}
