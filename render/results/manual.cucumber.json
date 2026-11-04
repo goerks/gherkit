@@ -1,0 +1,794 @@
+[
+  {
+    "uri": "examples/bibliothek/katalogsuche.feature",
+    "id": "katalogsuche",
+    "keyword": "Funktionalität",
+    "name": "Katalogsuche",
+    "description": "",
+    "tags": [
+      {
+        "name": "@bibliothek",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "katalogsuche;die-trefferliste-ist-verständlich;;1",
+        "keyword": "Szenariogrundriss",
+        "name": "Die Trefferliste ist verständlich",
+        "description": "",
+        "line": 44,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@manual",
+            "line": 43
+          },
+          {
+            "name": "@TEST_BIB-101",
+            "line": 43
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "der Katalog enthält folgende Bücher:",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "autor",
+                  "verfügbar"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "Franz Kafka",
+                  "3"
+                ]
+              },
+              {
+                "cells": [
+                  "Der Prozess",
+                  "Franz Kafka",
+                  "1"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "Johanna Spyri",
+                  "0"
+                ]
+              }
+            ],
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:10:00Z"
+            }
+          },
+          {
+            "keyword": "Angenommen ",
+            "name": "ich öffne den Katalog auf dem Gerät \"Computer\"",
+            "line": 36,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "ignored",
+              "comment": "Im Testumfeld nicht prüfbar (kein Mailserver).",
+              "at": "2026-11-04T09:11:00Z"
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich nach \"Kafka\" suche",
+            "line": 37,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:12:00Z"
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "zeigt jeder Treffer Titel, Autor und Verfügbarkeit gut lesbar an",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:13:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "ausgeliehene Bücher nennen das Rückgabedatum",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:14:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "ein verfügbares Buch lässt sich direkt reservieren",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:15:00Z",
+              "comment": "Layout in Chrome und Firefox geprüft."
+            }
+          }
+        ],
+        "gherkit": {
+          "manual": true,
+          "run": "20261104-091000-demo",
+          "tester": "Anna Muster",
+          "environment": "Test (Chrome 130)",
+          "build": "preview",
+          "started": "2026-11-04T09:10:00Z",
+          "finished": "2026-11-04T09:30:00Z"
+        }
+      },
+      {
+        "id": "katalogsuche;die-trefferliste-ist-verständlich;;2",
+        "keyword": "Szenariogrundriss",
+        "name": "Die Trefferliste ist verständlich",
+        "description": "",
+        "line": 45,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@manual",
+            "line": 44
+          },
+          {
+            "name": "@TEST_BIB-101",
+            "line": 44
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "der Katalog enthält folgende Bücher:",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "autor",
+                  "verfügbar"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "Franz Kafka",
+                  "3"
+                ]
+              },
+              {
+                "cells": [
+                  "Der Prozess",
+                  "Franz Kafka",
+                  "1"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "Johanna Spyri",
+                  "0"
+                ]
+              }
+            ],
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:10:00Z"
+            }
+          },
+          {
+            "keyword": "Angenommen ",
+            "name": "ich öffne den Katalog auf dem Gerät \"Smartphone\"",
+            "line": 36,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "ignored",
+              "comment": "Im Testumfeld nicht prüfbar (kein Mailserver).",
+              "at": "2026-11-04T09:11:00Z"
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich nach \"Heidi\" suche",
+            "line": 37,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:12:00Z"
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "zeigt jeder Treffer Titel, Autor und Verfügbarkeit gut lesbar an",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:13:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "ausgeliehene Bücher nennen das Rückgabedatum",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:14:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "ein verfügbares Buch lässt sich direkt reservieren",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:15:00Z",
+              "comment": "Layout in Chrome und Firefox geprüft."
+            }
+          }
+        ],
+        "gherkit": {
+          "manual": true,
+          "run": "20261104-091000-demo",
+          "tester": "Anna Muster",
+          "environment": "Test (Chrome 130)",
+          "build": "preview",
+          "started": "2026-11-04T09:10:00Z",
+          "finished": "2026-11-04T09:30:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "uri": "examples/bibliothek/reservation.feature",
+    "id": "reservation",
+    "keyword": "Funktionalität",
+    "name": "Reservation",
+    "description": "",
+    "tags": [
+      {
+        "name": "@bibliothek",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "reservation;die-bestätigung-kommt-per-e-mail",
+        "keyword": "Szenario",
+        "name": "Die Bestätigung kommt per E-Mail",
+        "description": "",
+        "line": 32,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@manual",
+            "line": 31
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "der Katalog enthält folgende Bücher:",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "autor",
+                  "verfügbar"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "Franz Kafka",
+                  "3"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "Johanna Spyri",
+                  "0"
+                ]
+              }
+            ],
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:10:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "die Leserin \"Anna\" ist angemeldet",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:11:00Z"
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich \"Heidi\" reserviere",
+            "line": 33,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:12:00Z"
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "erhalte ich innerhalb von 5 Minuten eine E-Mail",
+            "line": 34,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:13:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "die E-Mail nennt Titel, Warteposition und Abholort",
+            "line": 35,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:14:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "der Link in der E-Mail führt in mein Kundenkonto",
+            "line": 36,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:15:00Z",
+              "comment": "Mail nach 40 Sekunden erhalten.",
+              "evidence": [
+                "evidence/bestaetigung-mail.svg"
+              ]
+            }
+          }
+        ],
+        "gherkit": {
+          "manual": true,
+          "run": "20261104-091000-demo",
+          "tester": "Anna Muster",
+          "environment": "Test (Chrome 130)",
+          "build": "preview",
+          "started": "2026-11-04T09:10:00Z",
+          "finished": "2026-11-04T09:30:00Z"
+        }
+      },
+      {
+        "id": "reservation;die-abholbenachrichtigung-kommt-wenn-das-buch-bereit-ist",
+        "keyword": "Szenario",
+        "name": "Die Abholbenachrichtigung kommt, wenn das Buch bereit ist",
+        "description": "",
+        "line": 39,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@manual",
+            "line": 38
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "der Katalog enthält folgende Bücher:",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "autor",
+                  "verfügbar"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "Franz Kafka",
+                  "3"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "Johanna Spyri",
+                  "0"
+                ]
+              }
+            ],
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:10:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "die Leserin \"Anna\" ist angemeldet",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:11:00Z"
+            }
+          },
+          {
+            "keyword": "Angenommen ",
+            "name": "ich habe \"Heidi\" reserviert",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:12:00Z"
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "das Buch zurückgegeben wird",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:13:00Z"
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "erhalte ich eine Abholbenachrichtigung",
+            "line": 42,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:14:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "das Buch liegt sieben Tage für mich bereit",
+            "line": 43,
+            "result": {
+              "status": "failed",
+              "duration": 0,
+              "error_message": "Die Nachricht nennt den falschen Abholort (Filiale Nord statt Zentrum)."
+            },
+            "gherkit": {
+              "status": "bad",
+              "at": "2026-11-04T09:15:00Z",
+              "comment": "Die Nachricht nennt den falschen Abholort (Filiale Nord statt Zentrum).",
+              "evidence": [
+                "evidence/abholort.svg"
+              ]
+            }
+          }
+        ],
+        "gherkit": {
+          "manual": true,
+          "run": "20261104-091000-demo",
+          "tester": "Anna Muster",
+          "environment": "Test (Chrome 130)",
+          "build": "preview",
+          "started": "2026-11-04T09:10:00Z",
+          "finished": "2026-11-04T09:30:00Z"
+        }
+      }
+    ]
+  },
+  {
+    "uri": "examples/bibliothek/verlaengerung.feature",
+    "id": "verlängerung",
+    "keyword": "Funktionalität",
+    "name": "Verlängerung",
+    "description": "",
+    "tags": [
+      {
+        "name": "@bibliothek",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "verlängerung;das-kundenkonto-zeigt-die-leihfristen-verständlich",
+        "keyword": "Szenario",
+        "name": "Das Kundenkonto zeigt die Leihfristen verständlich",
+        "description": "",
+        "line": 25,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@manual",
+            "line": 24
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "die Leserin \"Anna\" ist angemeldet",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:10:00Z"
+            }
+          },
+          {
+            "keyword": "Angenommen ",
+            "name": "ich habe mehrere Bücher ausgeliehen",
+            "line": 26,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "ignored",
+              "comment": "Im Testumfeld nicht prüfbar (kein Mailserver).",
+              "at": "2026-11-04T09:11:00Z"
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich im Kundenkonto \"Meine Ausleihen\" öffne",
+            "line": 27,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:12:00Z"
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "sehe ich zu jedem Buch die Leihfrist",
+            "line": 28,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:13:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "Bücher, die bald fällig sind, sind hervorgehoben",
+            "line": 29,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:14:00Z"
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "\"Verlängern\" ist nur aktiv, wenn eine Verlängerung möglich ist",
+            "line": 30,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:15:00Z"
+            }
+          }
+        ],
+        "gherkit": {
+          "manual": true,
+          "run": "20261104-091000-demo",
+          "tester": "Anna Muster",
+          "environment": "Test (Chrome 130)",
+          "build": "preview",
+          "started": "2026-11-04T09:10:00Z",
+          "finished": "2026-11-04T09:30:00Z"
+        }
+      },
+      {
+        "id": "verlängerung;verlängern-im-kundenkonto",
+        "keyword": "Szenario",
+        "name": "Verlängern im Kundenkonto",
+        "description": "",
+        "line": 33,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@manual",
+            "line": 32
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "die Leserin \"Anna\" ist angemeldet",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:10:00Z"
+            }
+          },
+          {
+            "keyword": "Angenommen ",
+            "name": "ich habe folgende Bücher ausgeliehen:",
+            "line": 34,
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "Besonderheit"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "erste Verlängerung"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "von anderer Leserin vorgemerkt"
+                ]
+              },
+              {
+                "cells": [
+                  "Der Prozess",
+                  "bereits einmal verlängert"
+                ]
+              }
+            ],
+            "gherkit": {
+              "status": "ignored",
+              "comment": "Im Testumfeld nicht prüfbar (kein Mailserver).",
+              "at": "2026-11-04T09:11:00Z"
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich bei jedem Buch auf \"Verlängern\" klicke",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:12:00Z"
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "stimmt das Ergebnis mit der Besonderheit überein",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 0
+            },
+            "gherkit": {
+              "status": "good",
+              "at": "2026-11-04T09:13:00Z"
+            }
+          }
+        ],
+        "gherkit": {
+          "manual": true,
+          "run": "20261104-091000-demo",
+          "tester": "Anna Muster",
+          "environment": "Test (Chrome 130)",
+          "build": "preview",
+          "started": "2026-11-04T09:10:00Z",
+          "finished": "2026-11-04T09:30:00Z"
+        }
+      }
+    ]
+  }
+]

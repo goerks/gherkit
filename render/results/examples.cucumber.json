@@ -1,0 +1,1203 @@
+[
+  {
+    "uri": "examples/bibliothek/katalogsuche.feature",
+    "id": "katalogsuche",
+    "keyword": "Funktionalität",
+    "name": "Katalogsuche",
+    "description": "",
+    "tags": [
+      {
+        "name": "@bibliothek",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "katalogsuche;die-suche-nach-einem-titel-findet-das-buch",
+        "keyword": "Szenario",
+        "name": "Die Suche nach einem Titel findet das Buch",
+        "description": "",
+        "line": 19,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@api",
+            "line": 18
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "der Katalog enthält folgende Bücher:",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 3592663
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "autor",
+                  "verfügbar"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "Franz Kafka",
+                  "3"
+                ]
+              },
+              {
+                "cells": [
+                  "Der Prozess",
+                  "Franz Kafka",
+                  "1"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "Johanna Spyri",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich nach \"Verwandlung\" suche",
+            "line": 20,
+            "result": {
+              "status": "passed",
+              "duration": 39634753
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "finde ich \"Die Verwandlung\" von \"Franz Kafka\"",
+            "line": 21,
+            "result": {
+              "status": "passed",
+              "duration": 36725499
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "es sind 3 Exemplare verfügbar",
+            "line": 22,
+            "result": {
+              "status": "passed",
+              "duration": 10985581
+            }
+          }
+        ]
+      },
+      {
+        "id": "katalogsuche;die-suche-nach-einem-autor-findet-alle-seine-bücher",
+        "keyword": "Szenario",
+        "name": "Die Suche nach einem Autor findet alle seine Bücher",
+        "description": "",
+        "line": 25,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@api",
+            "line": 24
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "der Katalog enthält folgende Bücher:",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 19873634
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "autor",
+                  "verfügbar"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "Franz Kafka",
+                  "3"
+                ]
+              },
+              {
+                "cells": [
+                  "Der Prozess",
+                  "Franz Kafka",
+                  "1"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "Johanna Spyri",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich nach \"Kafka\" suche",
+            "line": 26,
+            "result": {
+              "status": "passed",
+              "duration": 38218228
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "finde ich 2 Bücher",
+            "line": 27,
+            "result": {
+              "status": "passed",
+              "duration": 7736398
+            }
+          }
+        ]
+      },
+      {
+        "id": "katalogsuche;eine-suche-ohne-treffer-wird-erklärt",
+        "keyword": "Szenario",
+        "name": "Eine Suche ohne Treffer wird erklärt",
+        "description": "",
+        "line": 30,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@api",
+            "line": 29
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "der Katalog enthält folgende Bücher:",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 11280124
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "autor",
+                  "verfügbar"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "Franz Kafka",
+                  "3"
+                ]
+              },
+              {
+                "cells": [
+                  "Der Prozess",
+                  "Franz Kafka",
+                  "1"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "Johanna Spyri",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich nach \"Zauberberg\" suche",
+            "line": 31,
+            "result": {
+              "status": "passed",
+              "duration": 5858410
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "erhalte ich die Meldung \"Keine Bücher gefunden\"",
+            "line": 32,
+            "result": {
+              "status": "passed",
+              "duration": 26941904
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "examples/bibliothek/reservation.feature",
+    "id": "reservation",
+    "keyword": "Funktionalität",
+    "name": "Reservation",
+    "description": "",
+    "tags": [
+      {
+        "name": "@bibliothek",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "reservation;ein-ausgeliehenes-buch-kann-reserviert-werden",
+        "keyword": "Szenario",
+        "name": "Ein ausgeliehenes Buch kann reserviert werden",
+        "description": "",
+        "line": 15,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@api",
+            "line": 14
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "der Katalog enthält folgende Bücher:",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 16938738
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "autor",
+                  "verfügbar"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "Franz Kafka",
+                  "3"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "Johanna Spyri",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Und ",
+            "name": "die Leserin \"Anna\" ist angemeldet",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 30412388
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich \"Heidi\" reserviere",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 37986782
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "ist \"Heidi\" für mich reserviert",
+            "line": 17,
+            "result": {
+              "status": "passed",
+              "duration": 34815304
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "ich bin an Stelle 1 der Warteliste",
+            "line": 18,
+            "result": {
+              "status": "passed",
+              "duration": 18509547
+            }
+          }
+        ]
+      },
+      {
+        "id": "reservation;ein-verfügbares-buch-braucht-keine-reservation",
+        "keyword": "Szenario",
+        "name": "Ein verfügbares Buch braucht keine Reservation",
+        "description": "",
+        "line": 21,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@api",
+            "line": 20
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "der Katalog enthält folgende Bücher:",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 15210134
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "autor",
+                  "verfügbar"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "Franz Kafka",
+                  "3"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "Johanna Spyri",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Und ",
+            "name": "die Leserin \"Anna\" ist angemeldet",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 14448384
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich \"Die Verwandlung\" reserviere",
+            "line": 22,
+            "result": {
+              "status": "passed",
+              "duration": 24843706
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "erhalte ich die Meldung \"Das Buch ist verfügbar, bitte ausleihen\"",
+            "line": 23,
+            "result": {
+              "status": "passed",
+              "duration": 2428460
+            }
+          }
+        ]
+      },
+      {
+        "id": "reservation;mehr-als-5-reservationen-sind-nicht-möglich",
+        "keyword": "Szenario",
+        "name": "Mehr als 5 Reservationen sind nicht möglich",
+        "description": "",
+        "line": 26,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@api",
+            "line": 25
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "der Katalog enthält folgende Bücher:",
+            "line": 8,
+            "result": {
+              "status": "undefined"
+            },
+            "rows": [
+              {
+                "cells": [
+                  "titel",
+                  "autor",
+                  "verfügbar"
+                ]
+              },
+              {
+                "cells": [
+                  "Die Verwandlung",
+                  "Franz Kafka",
+                  "3"
+                ]
+              },
+              {
+                "cells": [
+                  "Heidi",
+                  "Johanna Spyri",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Und ",
+            "name": "die Leserin \"Anna\" ist angemeldet",
+            "line": 12,
+            "result": {
+              "status": "skipped"
+            }
+          },
+          {
+            "keyword": "Angenommen ",
+            "name": "ich habe 5 Reservationen",
+            "line": 27,
+            "result": {
+              "status": "skipped"
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich \"Heidi\" reserviere",
+            "line": 28,
+            "result": {
+              "status": "skipped"
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "erhalte ich die Meldung \"Maximal 5 Reservationen\"",
+            "line": 29,
+            "result": {
+              "status": "skipped"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "examples/bibliothek/verlaengerung.feature",
+    "id": "verlängerung",
+    "keyword": "Funktionalität",
+    "name": "Verlängerung",
+    "description": "",
+    "tags": [
+      {
+        "name": "@bibliothek",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "verlängerung;eine-ausleihe-wird-um-14-tage-verlängert",
+        "keyword": "Szenario",
+        "name": "Eine Ausleihe wird um 14 Tage verlängert",
+        "description": "",
+        "line": 11,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@api",
+            "line": 10
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "die Leserin \"Anna\" ist angemeldet",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 30935723
+            }
+          },
+          {
+            "keyword": "Angenommen ",
+            "name": "ich habe \"Die Verwandlung\" bis zum 10.11.2026 ausgeliehen",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 19534653
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich die Ausleihe verlängere",
+            "line": 13,
+            "result": {
+              "status": "passed",
+              "duration": 28198279
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "ist die Leihfrist bis zum 24.11.2026",
+            "line": 14,
+            "result": {
+              "status": "passed",
+              "duration": 9885713
+            }
+          }
+        ]
+      },
+      {
+        "id": "verlängerung;ein-vorgemerktes-buch-kann-nicht-verlängert-werden",
+        "keyword": "Szenario",
+        "name": "Ein vorgemerktes Buch kann nicht verlängert werden",
+        "description": "",
+        "line": 17,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@api",
+            "line": 16
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "die Leserin \"Anna\" ist angemeldet",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 31232490
+            }
+          },
+          {
+            "keyword": "Angenommen ",
+            "name": "ich habe \"Heidi\" bis zum 10.11.2026 ausgeliehen",
+            "line": 18,
+            "result": {
+              "status": "passed",
+              "duration": 30071164
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "\"Heidi\" ist von einer anderen Leserin vorgemerkt",
+            "line": 19,
+            "result": {
+              "status": "passed",
+              "duration": 27861190
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich die Ausleihe verlängere",
+            "line": 20,
+            "result": {
+              "status": "passed",
+              "duration": 5828688
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "erhalte ich die Meldung \"Das Buch ist vorgemerkt\"",
+            "line": 21,
+            "result": {
+              "status": "passed",
+              "duration": 30588915
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "die Leihfrist bleibt bis zum 10.11.2026",
+            "line": 22,
+            "result": {
+              "status": "passed",
+              "duration": 33891173
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "examples/de/anmeldung.feature",
+    "id": "anmeldung",
+    "keyword": "Funktionalität",
+    "name": "Anmeldung",
+    "description": "",
+    "tags": [
+      {
+        "name": "@login",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "anmeldung;erfolgreiche-anmeldung",
+        "keyword": "Szenario",
+        "name": "Erfolgreiche Anmeldung",
+        "description": "",
+        "line": 10,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "die Kundin \"anna@example.ch\" ist registriert",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 37738053
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "sie sich mit dem Passwort \"geheim\" anmeldet",
+            "line": 11,
+            "result": {
+              "status": "passed",
+              "duration": 32718035
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "sieht sie die Übersicht ihrer Bestellungen",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 29645161
+            }
+          }
+        ]
+      },
+      {
+        "id": "anmeldung;gesperrt-nach-2-fehlversuchen;;1",
+        "keyword": "Szenariogrundriss",
+        "name": "Gesperrt nach 2 Fehlversuchen",
+        "description": "",
+        "line": 20,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "die Kundin \"anna@example.ch\" ist registriert",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 29923989
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "sie sich 2 mal mit einem falschen Passwort anmeldet",
+            "line": 15,
+            "result": {
+              "status": "passed",
+              "duration": 37607683
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "ist das Konto aktiv",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 24719289
+            }
+          }
+        ]
+      },
+      {
+        "id": "anmeldung;gesperrt-nach-3-fehlversuchen;;2",
+        "keyword": "Szenariogrundriss",
+        "name": "Gesperrt nach 3 Fehlversuchen",
+        "description": "",
+        "line": 21,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "die Kundin \"anna@example.ch\" ist registriert",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 16261636
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "sie sich 3 mal mit einem falschen Passwort anmeldet",
+            "line": 15,
+            "result": {
+              "status": "passed",
+              "duration": 4787602
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "ist das Konto gesperrt",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 34261288
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "examples/shop/broken.feature",
+    "id": "broken-on-purpose",
+    "keyword": "Feature",
+    "name": "Broken on purpose",
+    "description": "",
+    "tags": [],
+    "elements": [
+      {
+        "id": "broken-on-purpose;missing-pipe",
+        "keyword": "Scenario",
+        "name": "Missing pipe",
+        "description": "",
+        "line": 4,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a table:",
+            "line": 5,
+            "result": {
+              "status": "failed",
+              "duration": 11639829,
+              "error_message": "gherkin parse error: (6:7): inconsistent cell count within the table"
+            },
+            "rows": [
+              {
+                "cells": [
+                  "a",
+                  "b"
+                ]
+              },
+              {
+                "cells": [
+                  "1"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Then ",
+            "name": "nothing else",
+            "line": 8,
+            "result": {
+              "status": "skipped"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "examples/shop/checkout.feature",
+    "id": "checkout",
+    "keyword": "Feature",
+    "name": "Checkout",
+    "description": "",
+    "tags": [
+      {
+        "name": "@shop",
+        "line": 1
+      },
+      {
+        "name": "@checkout",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "checkout;invoice-is-sent-as-pdf",
+        "keyword": "Scenario",
+        "name": "Invoice is sent as PDF",
+        "description": "",
+        "line": 15,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the product catalogue contains:",
+            "line": 10,
+            "result": {
+              "status": "passed",
+              "duration": 31106283
+            },
+            "rows": [
+              {
+                "cells": [
+                  "product",
+                  "price"
+                ]
+              },
+              {
+                "cells": [
+                  "Notebook",
+                  "4.50"
+                ]
+              },
+              {
+                "cells": [
+                  "Pen",
+                  "1.20"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Given ",
+            "name": "a paid order",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 40745085
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "the order is confirmed",
+            "line": 17,
+            "result": {
+              "status": "passed",
+              "duration": 15219143
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "an e-mail is sent with the body:",
+            "line": 18,
+            "result": {
+              "status": "passed",
+              "duration": 29019473
+            },
+            "doc_string": {
+              "value": "# Thank you for your order\n\nYour invoice is attached.",
+              "content_type": "markdown",
+              "line": 19
+            }
+          },
+          {
+            "keyword": "* ",
+            "name": "the invoice is archived",
+            "line": 24,
+            "result": {
+              "status": "passed",
+              "duration": 1039090
+            }
+          }
+        ]
+      },
+      {
+        "id": "checkout;empty-cart-cannot-be-checked-out",
+        "keyword": "Example",
+        "name": "Empty cart cannot be checked out",
+        "description": "",
+        "line": 28,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the product catalogue contains:",
+            "line": 10,
+            "result": {
+              "status": "passed",
+              "duration": 8440473
+            },
+            "rows": [
+              {
+                "cells": [
+                  "product",
+                  "price"
+                ]
+              },
+              {
+                "cells": [
+                  "Notebook",
+                  "4.50"
+                ]
+              },
+              {
+                "cells": [
+                  "Pen",
+                  "1.20"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Given ",
+            "name": "an empty shopping cart",
+            "line": 29,
+            "result": {
+              "status": "passed",
+              "duration": 9464591
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "the customer starts the checkout",
+            "line": 30,
+            "result": {
+              "status": "passed",
+              "duration": 40118197
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the message \"Your cart is empty\" is shown",
+            "line": 31,
+            "result": {
+              "status": "passed",
+              "duration": 22271523
+            }
+          }
+        ]
+      },
+      {
+        "id": "checkout;discount-code-welcome;;1",
+        "keyword": "Scenario Outline",
+        "name": "Discount code WELCOME",
+        "description": "",
+        "line": 44,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@discount",
+            "line": 43
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the product catalogue contains:",
+            "line": 10,
+            "result": {
+              "status": "passed",
+              "duration": 25403419
+            },
+            "rows": [
+              {
+                "cells": [
+                  "product",
+                  "price"
+                ]
+              },
+              {
+                "cells": [
+                  "Notebook",
+                  "4.50"
+                ]
+              },
+              {
+                "cells": [
+                  "Pen",
+                  "1.20"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Given ",
+            "name": "a shopping cart with 2 \"Notebook\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 14582669
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "the customer enters the discount code \"WELCOME\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 16669495
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the total is 8.10 CHF",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 10929313
+            }
+          }
+        ]
+      },
+      {
+        "id": "checkout;discount-code-vip20;;2",
+        "keyword": "Scenario Outline",
+        "name": "Discount code VIP20",
+        "description": "",
+        "line": 45,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@discount",
+            "line": 44
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the product catalogue contains:",
+            "line": 10,
+            "result": {
+              "status": "passed",
+              "duration": 4665660
+            },
+            "rows": [
+              {
+                "cells": [
+                  "product",
+                  "price"
+                ]
+              },
+              {
+                "cells": [
+                  "Notebook",
+                  "4.50"
+                ]
+              },
+              {
+                "cells": [
+                  "Pen",
+                  "1.20"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Given ",
+            "name": "a shopping cart with 2 \"Notebook\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 2977962
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "the customer enters the discount code \"VIP20\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 12464144
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the total is 7.20 CHF",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 30695814
+            }
+          }
+        ]
+      },
+      {
+        "id": "checkout;discount-code-nope;;3",
+        "keyword": "Scenario Outline",
+        "name": "Discount code NOPE",
+        "description": "",
+        "line": 50,
+        "type": "scenario",
+        "tags": [
+          {
+            "name": "@discount",
+            "line": 49
+          },
+          {
+            "name": "@invalid",
+            "line": 49
+          }
+        ],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the product catalogue contains:",
+            "line": 10,
+            "result": {
+              "status": "passed",
+              "duration": 11626380
+            },
+            "rows": [
+              {
+                "cells": [
+                  "product",
+                  "price"
+                ]
+              },
+              {
+                "cells": [
+                  "Notebook",
+                  "4.50"
+                ]
+              },
+              {
+                "cells": [
+                  "Pen",
+                  "1.20"
+                ]
+              }
+            ]
+          },
+          {
+            "keyword": "Given ",
+            "name": "a shopping cart with 2 \"Notebook\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 19179034
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "the customer enters the discount code \"NOPE\"",
+            "line": 39,
+            "result": {
+              "status": "failed",
+              "duration": 34823840,
+              "error_message": "expected total 9.00 but got 0.00: unknown discount code NOPE\n    at checkout_steps.go:57"
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the total is 9.00 CHF",
+            "line": 40,
+            "result": {
+              "status": "skipped"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
