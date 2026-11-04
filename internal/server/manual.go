@@ -30,6 +30,7 @@ func (s *Server) registerManual(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/manual/runs/{id}/evidence/{path...}", s.manualEvidenceFile)
 	mux.HandleFunc("POST /api/manual/runs/{id}/finish", s.manualFinish)
 	mux.HandleFunc("GET /api/manual/runs/{id}/report", s.manualReport)
+	mux.HandleFunc("GET /api/manual/runs/{id}/issue", s.manualIssue)
 }
 
 func (s *Server) manualList(w http.ResponseWriter, r *http.Request) {
@@ -129,7 +130,8 @@ func casesFrom(res *parse.Result, tag string) []*manual.Case {
 		line    int64
 	}
 	steps := map[string]loc{}
-	lines := map[string]int64{} // scenario and example row ids -> line
+	lines := map[string]int64{}     // scenario and example row ids -> line
+	examples := map[string]string{} // example row ids -> "header=value, ..."
 	addSteps := func(ss []*messages.Step) {
 		for _, st := range ss {
 			steps[st.Id] = loc{st.Keyword, st.Location.Line}
@@ -145,6 +147,16 @@ func casesFrom(res *parse.Result, tag string) []*manual.Case {
 			for _, ex := range sc.Examples {
 				for _, row := range ex.TableBody {
 					lines[row.Id] = row.Location.Line
+					if ex.TableHeader == nil {
+						continue
+					}
+					var parts []string
+					for i, cell := range row.Cells {
+						if i < len(ex.TableHeader.Cells) {
+							parts = append(parts, ex.TableHeader.Cells[i].Value+"="+cell.Value)
+						}
+					}
+					examples[row.Id] = strings.Join(parts, ", ")
 				}
 			}
 		}
@@ -175,6 +187,9 @@ func casesFrom(res *parse.Result, tag string) []*manual.Case {
 		for _, id := range p.AstNodeIds {
 			if l, ok := lines[id]; ok {
 				c.Line = int(l)
+			}
+			if e, ok := examples[id]; ok {
+				c.Example = e
 			}
 		}
 		for _, ps := range p.Steps {
@@ -338,4 +353,26 @@ func (s *Server) manualReport(w http.ResponseWriter, r *http.Request) {
 	if err := report.Render(w, rep, "html", ""); err != nil {
 		fail(w, 500, err)
 	}
+}
+
+// manualIssue answers with the text of a Jira bug for a failed step: ?case=c1&step=3 (step optional).
+func (s *Server) manualIssue(w http.ResponseWriter, r *http.Request) {
+	run, err := s.store().Load(r.PathValue("id"))
+	if err != nil {
+		fail(w, 404, err)
+		return
+	}
+	step := -1
+	if v := r.URL.Query().Get("step"); v != "" {
+		if step, err = strconv.Atoi(v); err != nil {
+			fail(w, 400, errors.New("step must be a number"))
+			return
+		}
+	}
+	is, err := run.Issue(r.URL.Query().Get("case"), step, r.URL.Query().Get("lang"))
+	if err != nil {
+		fail(w, 400, err)
+		return
+	}
+	writeJSON(w, 200, is)
 }

@@ -33,6 +33,9 @@ func TestEffectiveStatuses(t *testing.T) {
 		t.Errorf("nothing processed: %s", got)
 	}
 	_ = r.Record("c1", 0, Passed, "", t0)
+	if err := r.Record("c1", 1, Failed, "  ", t0); err == nil {
+		t.Error("a failure needs a reason")
+	}
 	_ = r.Record("c1", 1, Failed, "wrong order", t0)
 	if got := strings.Join(c.Effective(), ","); got != "passed,failed,skipped,skipped" {
 		t.Errorf("after a failure the rest is skipped: %s", got)
@@ -41,9 +44,12 @@ func TestEffectiveStatuses(t *testing.T) {
 	if got := strings.Join(c.Effective(), ","); got != "passed,failed,passed,skipped" {
 		t.Errorf("override: %s", got)
 	}
-	_ = r.Record("c1", 1, Blocked, "captcha", t0)
-	if c.Effective()[1] != Blocked {
-		t.Error("blocked stays blocked internally")
+	if err := r.Record("c1", 1, Ignored, "", t0); err == nil {
+		t.Error("ignoring needs a reason")
+	}
+	_ = r.Record("c1", 1, Ignored, "captcha", t0)
+	if c.Effective()[1] != Ignored {
+		t.Error("ignored stays ignored internally")
 	}
 }
 
@@ -54,6 +60,9 @@ func TestRecordValidation(t *testing.T) {
 	}
 	if err := r.Record("c1", 9, Passed, "", t0); err == nil {
 		t.Error("unknown step")
+	}
+	if err := r.Record("c1", 0, "blocked", "x", t0); err == nil {
+		t.Error("blocked no longer exists")
 	}
 	if err := r.Record("c1", 0, "great", "", t0); err == nil {
 		t.Error("unknown status")
@@ -69,6 +78,16 @@ func TestRecordValidation(t *testing.T) {
 	if done, total := r.Progress(); done != 0 || total != 4 {
 		t.Errorf("progress %d/%d", done, total)
 	}
+	_ = r.Record("c1", 1, Failed, "broken", t0)
+	if done, total := r.Progress(); done != 3 || total != 4 || r.Cases[0].Settled() {
+		t.Errorf("steps after a failure need nothing more, step 1 is still open: %d/%d", done, total)
+	}
+	_ = r.Record("c1", 0, Passed, "", t0)
+	if done, _ := r.Progress(); done != 4 || !r.Cases[0].Settled() {
+		t.Errorf("all judged or skipped settles the case: %d", done)
+	}
+	_ = r.Record("c1", 0, "", "", t0)
+	_ = r.Record("c1", 1, "", "", t0)
 	_ = r.Finish(t0)
 	if err := r.Record("c1", 0, Passed, "", t0); err == nil {
 		t.Error("a finished run is read-only")
@@ -81,7 +100,7 @@ func TestRecordValidation(t *testing.T) {
 func TestCucumberJSON(t *testing.T) {
 	r := sample()
 	_ = r.Record("c1", 0, Passed, "", t0)
-	_ = r.Record("c1", 1, Blocked, "captcha not solvable", t0)
+	_ = r.Record("c1", 1, Ignored, "captcha not solvable", t0)
 	b, err := r.CucumberJSON()
 	if err != nil {
 		t.Fatal(err)
@@ -118,7 +137,7 @@ func TestCucumberJSON(t *testing.T) {
 		got = append(got, s.Result.Status)
 	}
 	if strings.Join(got, ",") != "passed,skipped,skipped,skipped" {
-		t.Errorf("statuses %v: blocked exports as skipped, the rest follows", got)
+		t.Errorf("statuses %v: ignored exports as skipped, the rest follows", got)
 	}
 	if el.Steps[1].Result.ErrorMessage != "captcha not solvable" || el.Steps[1].DocString == nil {
 		t.Errorf("step 1: %+v", el.Steps[1])
@@ -169,5 +188,35 @@ func TestStoreRoundTripAndEvidence(t *testing.T) {
 	}
 	if _, err := s.Load("missing"); err == nil {
 		t.Error("missing run")
+	}
+}
+
+func TestIssueText(t *testing.T) {
+	r := sample()
+	r.Cases[0].Tags = []string{"@manual", "@TEST_LIB-42", "@REQ_LIB-1"}
+	_ = r.Record("c1", 0, Passed, "data ok", t0)
+	_ = r.Record("c1", 1, Failed, "sorted descending", t0)
+	r.Cases[0].Steps[1].Evidence = []string{"evidence/c1-s2-a.png"}
+	is, err := r.Issue("c1", -1, "de")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"h3. Beobachtetes Verhalten", "{quote}sorted descending{quote}", "features/vergleich.feature", "Xray-Test: LIB-42",
+		"# (/) *Given* a", "# (x) *When* b", "||x||y||", "evidence/c1-s2-a.png", "Testende Person: Michael", "Umgebung: https://test.example"} {
+		if !strings.Contains(is.Description, want) {
+			t.Errorf("description lacks %q:\n%s", want, is.Description)
+		}
+	}
+	if !strings.HasPrefix(is.Summary, "[Test fehlgeschlagen] Preise sortiert: b") || len(is.Xray) != 1 || is.Xray[0] != "LIB-42" {
+		t.Errorf("summary %q xray %v", is.Summary, is.Xray)
+	}
+	if strings.Contains(is.Description, "(?)") {
+		t.Error("only steps up to the failure belong in the text")
+	}
+	if _, err := r.Issue("c1", 0, "en"); err == nil {
+		t.Error("a passed step has no issue")
+	}
+	if _, err := r.Issue("nope", -1, "en"); err == nil {
+		t.Error("unknown case")
 	}
 }

@@ -132,7 +132,9 @@ func initScenario(sc *godog.ScenarioContext) {
 
 	// manual runs
 	sc.Step(`^I start a manual run as "([^"]*)" for the tag "([^"]*)"$`, w.startManualRun)
-	sc.Step(`^I record "(passed|failed|blocked)" with the comment "([^"]*)" for step (\d+) of test case (\d+)$`, w.recordManual)
+	sc.Step(`^I record "(passed|failed|ignored)" with the comment "([^"]*)" for step (\d+) of test case (\d+)$`, w.recordManual)
+	sc.Step(`^I try to record "(passed|failed|ignored)" with the comment "([^"]*)" for step (\d+) of test case (\d+)$`, w.tryRecordManual)
+	sc.Step(`^I ask for the Jira text of test case (\d+)$`, w.jiraText)
 	sc.Step(`^I finish the manual run and keep the result as "([^"]+)"$`, w.finishManual)
 	sc.Step(`^the editor refuses the request with "([^"]*)"$`, w.refused)
 }
@@ -440,6 +442,23 @@ func (w *world) recordManual(status, comment string, step, testCase int) error {
 	}
 	b, _ := json.Marshal(map[string]any{"case": fmt.Sprintf("c%d", testCase), "step": step - 1, "status": status, "comment": comment})
 	return w.do("PUT", "/api/manual/runs/"+w.runID+"/step", string(b))
+}
+
+// tryRecordManual records a step and leaves a refusal for a later step to check.
+func (w *world) tryRecordManual(status, comment string, step, testCase int) error {
+	if w.runID == "" {
+		return fmt.Errorf("no manual run was started; last response: %s", w.response)
+	}
+	b, _ := json.Marshal(map[string]any{"case": fmt.Sprintf("c%d", testCase), "step": step - 1, "status": status, "comment": comment})
+	_, err := w.doRaw("PUT", "/api/manual/runs/"+w.runID+"/step", string(b))
+	return err
+}
+
+func (w *world) jiraText(testCase int) error {
+	if w.runID == "" {
+		return fmt.Errorf("no manual run was started; last response: %s", w.response)
+	}
+	return w.do("GET", fmt.Sprintf("/api/manual/runs/%s/issue?case=c%d&lang=en", w.runID, testCase), "")
 }
 
 func (w *world) finishManual(keep string) error {

@@ -33,7 +33,7 @@
     const brand = document.querySelector('.brand'); const badge = document.createElement('span'); badge.className = 'demo-badge'; badge.textContent = 'Demo'; brand.appendChild(badge);
 
     const banner = document.createElement('div'); banner.className = 'demo-banner';
-    banner.innerHTML = '<span><b>Demo.</b> Läuft vollständig in Ihrem Browser. Ihre Dateien verlassen ihn nie und sind für andere nicht sichtbar.</span><span class="sp"></span><span>Standardbeispiele ändern ist erlaubt, „Zurücksetzen“ stellt sie wieder her. · Manueller Test: Tab „Ausführen“ (Beispiel <code>vergleich/praemienvergleich.feature</code>). · <a href="../">Startseite und Downloads</a></span>';
+    banner.innerHTML = '<span><b>Demo.</b> Läuft vollständig in Ihrem Browser. Ihre Dateien verlassen ihn nie und sind für andere nicht sichtbar.</span><span class="sp"></span><span>Standardbeispiele ändern ist erlaubt, „Zurücksetzen“ stellt sie wieder her. · Manueller Test: Tab „Ausführen“ (Beispiel: Bibliothek, Ordner <code>bibliothek</code>). · <a href="../">Startseite und Downloads</a></span>';
     document.querySelector('header.top').after(banner);
 
     const actions = document.querySelector('.actions');

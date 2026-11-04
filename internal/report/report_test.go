@@ -110,7 +110,7 @@ func TestManualResults(t *testing.T) {
 	const in = `[{"uri":"f.feature","keyword":"Feature","name":"F","elements":[{"id":"c1","keyword":"Scenario","name":"S","line":3,"type":"scenario",
 	 "tags":[{"name":"@manual"}],"gherkit":{"manual":true,"tester":"Anna","environment":"test","build":"42"},
 	 "steps":[{"keyword":"Given ","name":"a","result":{"status":"passed"},"gherkit":{"status":"passed","comment":"fine","evidence":["evidence/c1-s1-a.png"]}},
-	          {"keyword":"Then ","name":"b","result":{"status":"skipped","error_message":"captcha"},"gherkit":{"status":"blocked","comment":"captcha"}}]}]}]`
+	          {"keyword":"Then ","name":"b","result":{"status":"skipped","error_message":"captcha"},"gherkit":{"status":"ignored","comment":"captcha"}}]}]}]`
 	r, err := FromCucumberJSON(strings.NewReader(in))
 	if err != nil {
 		t.Fatal(err)
@@ -119,14 +119,14 @@ func TestManualResults(t *testing.T) {
 	if !sc.Manual || sc.Tester != "Anna" || sc.Environment != "test" || sc.Build != "42" {
 		t.Errorf("scenario: %+v", sc)
 	}
-	if sc.Steps[0].Comment != "fine" || len(sc.Steps[0].Evidence) != 1 || !sc.Steps[1].Blocked {
+	if sc.Steps[0].Comment != "fine" || len(sc.Steps[0].Evidence) != 1 || !sc.Steps[1].Ignored {
 		t.Errorf("steps: %+v %+v", sc.Steps[0], sc.Steps[1])
 	}
 	var b strings.Builder
 	if err := Render(&b, r, "html", ""); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"Anna", "fine", "evidence/c1-s1-a.png", "blocked"} {
+	for _, want := range []string{"Anna", "fine", "evidence/c1-s1-a.png", "ignored"} {
 		if !strings.Contains(b.String(), want) {
 			t.Errorf("html report lacks %q", want)
 		}

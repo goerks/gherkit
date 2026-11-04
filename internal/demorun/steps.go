@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	messages "github.com/cucumber/messages/go/v34"
 )
@@ -26,9 +27,23 @@ type world struct {
 	customer string
 	attempts int
 
-	portal bool
-	offers map[string]int // provider -> yearly premium in CHF
+	// library
+	catalog   []book
+	found     []book
+	me        string
+	reserved  []string       // titles reserved by the reader
+	waiting   map[string]int // titles -> readers already waiting
+	loans     map[string]time.Time
+	held      map[string]bool // titles reserved by another reader
+	loanTitle string
 }
+
+type book struct {
+	title, author string
+	available     int
+}
+
+const dateLayout = "02.01.2006"
 
 type stepFn func(w *world, m []string, arg *messages.PickleStepArgument) error
 
@@ -173,47 +188,139 @@ var library = []stepDef{
 		return expectEqual("Konto", state, m[1])
 	}),
 
-	// price comparison portal (German): a simulated portal with three providers
-	def(`das Vergleichsportal ist erreichbar`, func(w *world, m []string, a *messages.PickleStepArgument) error {
-		w.portal = true
-		return nil
-	}),
-	def(`ich die Prämien für eine (\d+)-jährige Person im Kanton (\S+) abfrage`, func(w *world, m []string, a *messages.PickleStepArgument) error {
-		if !w.portal {
-			return fmt.Errorf("the portal is not reachable")
+	// library (German): a simulated catalogue with reservations and loans
+	def(`der Katalog enthält folgende Bücher:`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		if a == nil || a.DataTable == nil || len(a.DataTable.Rows) < 2 {
+			return fmt.Errorf("a table with a header and at least one book is expected")
 		}
-		age, _ := strconv.Atoi(m[1])
-		base := 1200 + age*30
-		w.offers = map[string]int{"Alpina": base, "Helvetia": base + 370, "Mobiliar": base + 550}
-		return nil
-	}),
-	def(`ich die Prämien für die Postleitzahl "([^"]*)" abfrage`, func(w *world, m []string, a *messages.PickleStepArgument) error {
-		if !w.portal {
-			return fmt.Errorf("the portal is not reachable")
-		}
-		w.offers = nil
-		if m[1] == "0000" {
-			w.message = "Keine Angebote gefunden"
+		w.catalog = nil
+		for _, r := range a.DataTable.Rows[1:] {
+			if len(r.Cells) < 3 {
+				return fmt.Errorf("a row needs title, author and availability")
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(r.Cells[2].Value))
+			if err != nil {
+				return fmt.Errorf("availability %q is not a number", r.Cells[2].Value)
+			}
+			w.catalog = append(w.catalog, book{r.Cells[0].Value, r.Cells[1].Value, n})
 		}
 		return nil
 	}),
-	def(`enthält jedes Angebot eine Jahresprämie zwischen (\d+) und (\d+) Franken`, func(w *world, m []string, a *messages.PickleStepArgument) error {
-		lo, _ := strconv.Atoi(m[1])
-		hi, _ := strconv.Atoi(m[2])
-		if len(w.offers) == 0 {
-			return fmt.Errorf("there are no offers")
-		}
-		for name, v := range w.offers {
-			if v < lo || v > hi {
-				return fmt.Errorf("%s: premium %d is outside %d to %d", name, v, lo, hi)
+	def(`die Leserin "([^"]*)" ist angemeldet`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		w.me = m[1]
+		return nil
+	}),
+	def(`ich nach "([^"]*)" suche`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		w.found, w.message = nil, ""
+		q := strings.ToLower(m[1])
+		for _, b := range w.catalog {
+			if strings.Contains(strings.ToLower(b.title), q) || strings.Contains(strings.ToLower(b.author), q) {
+				w.found = append(w.found, b)
 			}
 		}
+		if len(w.found) == 0 {
+			w.message = "Keine Bücher gefunden"
+		}
 		return nil
 	}),
-	def(`kein Anbieter erscheint doppelt`, func(w *world, m []string, a *messages.PickleStepArgument) error {
-		return nil // a map has every provider once; the real portal is checked by the real runner
+	def(`finde ich "([^"]*)" von "([^"]*)"`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		for _, b := range w.found {
+			if b.title == m[1] && b.author == m[2] {
+				return nil
+			}
+		}
+		return fmt.Errorf("%q by %q is not in the results", m[1], m[2])
+	}),
+	def(`es sind (\d+) Exemplare verfügbar`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		if len(w.found) != 1 {
+			return fmt.Errorf("expected one result, got %d", len(w.found))
+		}
+		return expectEqual("available copies", strconv.Itoa(w.found[0].available), m[1])
+	}),
+	def(`finde ich (\d+) Bücher`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		return expectEqual("number of books", strconv.Itoa(len(w.found)), m[1])
 	}),
 	def(`erhalte ich die Meldung "([^"]*)"`, func(w *world, m []string, a *messages.PickleStepArgument) error {
 		return expectEqual("message", w.message, m[1])
+	}),
+	def(`ich habe (\d+) Reservationen`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		n, _ := strconv.Atoi(m[1])
+		w.reserved = nil
+		for i := 0; i < n; i++ {
+			w.reserved = append(w.reserved, fmt.Sprintf("Buch %d", i+1))
+		}
+		return nil
+	}),
+	def(`ich "([^"]*)" reserviere`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		var b *book
+		for i := range w.catalog {
+			if w.catalog[i].title == m[1] {
+				b = &w.catalog[i]
+			}
+		}
+		switch {
+		case b == nil:
+			return fmt.Errorf("%q is not in the catalogue", m[1])
+		case b.available > 0:
+			w.message = "Das Buch ist verfügbar, bitte ausleihen"
+		case len(w.reserved) >= 5:
+			w.message = "Maximal 5 Reservationen"
+		default:
+			w.reserved = append(w.reserved, m[1])
+		}
+		return nil
+	}),
+	def(`ist "([^"]*)" für mich reserviert`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		for _, t := range w.reserved {
+			if t == m[1] {
+				return nil
+			}
+		}
+		return fmt.Errorf("%q is not reserved", m[1])
+	}),
+	def(`ich bin an Stelle (\d+) der Warteliste`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		if len(w.reserved) == 0 {
+			return fmt.Errorf("there is no reservation")
+		}
+		last := w.reserved[len(w.reserved)-1]
+		return expectEqual("position", strconv.Itoa(w.waiting[last]+1), m[1])
+	}),
+	def(`ich habe "([^"]*)" bis zum (\d{2}\.\d{2}\.\d{4}) ausgeliehen`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		d, err := time.Parse(dateLayout, m[2])
+		if err != nil {
+			return err
+		}
+		if w.loans == nil {
+			w.loans = map[string]time.Time{}
+		}
+		w.loans[m[1]], w.message = d, ""
+		w.loanTitle = m[1]
+		return nil
+	}),
+	def(`"([^"]*)" ist von einer anderen Leserin vorgemerkt`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		if w.held == nil {
+			w.held = map[string]bool{}
+		}
+		w.held[m[1]] = true
+		return nil
+	}),
+	def(`ich die Ausleihe verlängere`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		due, ok := w.loans[w.loanTitle]
+		if !ok {
+			return fmt.Errorf("there is no loan to extend")
+		}
+		if w.held[w.loanTitle] {
+			w.message = "Das Buch ist vorgemerkt"
+			return nil
+		}
+		w.loans[w.loanTitle] = due.AddDate(0, 0, 14)
+		return nil
+	}),
+	def(`(?:ist die Leihfrist|die Leihfrist bleibt) bis zum (\d{2}\.\d{2}\.\d{4})`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		due, ok := w.loans[w.loanTitle]
+		if !ok {
+			return fmt.Errorf("there is no loan")
+		}
+		return expectEqual("due date", due.Format(dateLayout), m[1])
 	}),
 }

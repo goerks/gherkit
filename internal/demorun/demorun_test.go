@@ -12,7 +12,7 @@ import (
 func TestRunStandardSet(t *testing.T) {
 	dir := filepath.Join("..", "..", "examples")
 	files, err := FindFeatures(dir)
-	if err != nil || len(files) != 4 {
+	if err != nil || len(files) != 6 {
 		t.Fatalf("FindFeatures = %v, %v", files, err)
 	}
 	outFile := filepath.Join(t.TempDir(), "r.json")
@@ -21,9 +21,9 @@ func TestRunStandardSet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// checkout: 5 scenarios, anmeldung: 3, vergleich: 2 automated (the 3 @manual ones are left to people),
+	// checkout: 5 scenarios, anmeldung: 3, bibliothek: 8 automated (the 6 @manual ones are left to people),
 	// broken.feature: syntax errors count as one failure
-	if o.Scenarios != 11 || o.Passed != 10 || o.Failed != 1 || o.Undefined != 0 || o.Manual != 3 || !o.Failing() {
+	if o.Scenarios != 17 || o.Passed != 16 || o.Failed != 1 || o.Undefined != 0 || o.Manual != 6 || !o.Failing() {
 		t.Fatalf("outcome = %+v\nstdout:\n%s\nstderr:\n%s", o, stdout.String(), stderr.String())
 	}
 	if !strings.Contains(stdout.String(), "broken.feature: syntax errors") {
@@ -34,8 +34,8 @@ func TestRunStandardSet(t *testing.T) {
 		t.Fatal(err)
 	}
 	var feats []cjFeature
-	if err := json.Unmarshal(data, &feats); err != nil || len(feats) != 4 {
-		t.Fatalf("results are not Cucumber JSON for four features: %v\n%s", err, data)
+	if err := json.Unmarshal(data, &feats); err != nil || len(feats) != 6 {
+		t.Fatalf("results are not Cucumber JSON for six features: %v\n%s", err, data)
 	}
 	for _, f := range feats {
 		for _, e := range f.Elements {

@@ -35,10 +35,11 @@ func TestManualRunLifecycle(t *testing.T) {
 	var run struct {
 		ID    string `json:"id"`
 		Cases []struct {
-			ID    string `json:"id"`
-			Name  string `json:"name"`
-			Line  int    `json:"line"`
-			Steps []struct {
+			ID      string `json:"id"`
+			Name    string `json:"name"`
+			Line    int    `json:"line"`
+			Example string `json:"example"`
+			Steps   []struct {
 				Keyword string `json:"keyword"`
 				Text    string `json:"text"`
 				Line    int    `json:"line"`
@@ -52,7 +53,7 @@ func TestManualRunLifecycle(t *testing.T) {
 		t.Fatalf("only the two @manual outline rows, got %d cases", len(run.Cases))
 	}
 	c := run.Cases[0]
-	if c.Line != 13 || len(c.Steps) != 3 || c.Steps[0].Text != "I open the comparison page" || c.Steps[1].Text != `I search for "Hypothek"` || c.Steps[1].Keyword != "When " || c.Steps[1].Line != 8 {
+	if c.Line != 13 || c.Example != "product=Hypothek" || len(c.Steps) != 3 || c.Steps[0].Text != "I open the comparison page" || c.Steps[1].Text != `I search for "Hypothek"` || c.Steps[1].Keyword != "When " || c.Steps[1].Line != 8 {
 		t.Errorf("case 1: %+v", c)
 	}
 
@@ -64,7 +65,18 @@ func TestManualRunLifecycle(t *testing.T) {
 	if code := call(t, ts, "PUT", base+"/step", `{"case":"c1","step":1,"status":"nonsense"}`, &ok); code != 400 {
 		t.Errorf("bad status: %d", code)
 	}
+	if code := call(t, ts, "PUT", base+"/step", `{"case":"c1","step":1,"status":"failed"}`, &ok); code != 400 {
+		t.Errorf("a failure needs a reason: %d", code)
+	}
 	call(t, ts, "PUT", base+"/step", `{"case":"c1","step":1,"status":"failed","comment":"sorted descending"}`, &ok)
+	var issue struct{ Summary, Description string }
+	if code := call(t, ts, "GET", base+"/issue?case=c1&lang=en", "", &issue); code != 200 || !strings.Contains(issue.Description, "sorted descending") || !strings.HasPrefix(issue.Summary, "[Test failed]") {
+		t.Errorf("issue text: %d %+v", code, issue)
+	}
+	var e map[string]string
+	if code := call(t, ts, "GET", base+"/issue?case=c1&step=0", "", &e); code != 400 {
+		t.Errorf("a passed step has no issue: %d", code)
+	}
 
 	// evidence upload and retrieval
 	res, err := http.Post(ts.URL+base+"/evidence?case=c1&step=1&name=shot.png", "image/png", strings.NewReader("PNGDATA"))

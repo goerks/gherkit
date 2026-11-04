@@ -79,3 +79,40 @@ Feature: Manual scenarios
       When I start a manual run as "Anna" for the tag "@manual"
       Then the response contains "Offers are sorted by price"
       And the response contains "broken.feature has syntax errors"
+
+  Rule: Failing or ignoring a step needs a reason
+
+    Background:
+      Given a file "prices.feature" with:
+        """
+        Feature: Price comparison
+
+          @manual @TEST_LIB-7
+          Scenario: Offers are sorted by price
+            Given I have solved the captcha
+            When I search for a health insurance
+            Then the offers are sorted ascending
+        """
+      And the editor is running in the current folder
+      And I start a manual run as "Anna" for the tag "@manual"
+
+    Scenario: A failed step without a reason is refused
+      When I try to record "failed" with the comment "" for step 3 of test case 1
+      Then the editor refuses the request with "reason is required"
+
+    Scenario: An ignored step without a reason is refused
+      When I try to record "ignored" with the comment "" for step 1 of test case 1
+      Then the editor refuses the request with "reason is required"
+
+    Scenario: An ignored step is exported as skipped together with its reason
+      Given I record "ignored" with the comment "test system is down" for step 1 of test case 1
+      And I finish the manual run and keep the result as "manual.json"
+      Then the file "manual.json" contains "test system is down"
+      And the file "manual.json" contains "ignored"
+
+    Scenario: A failed step becomes the text of a Jira bug
+      Given I record "failed" with the comment "sorted descending" for step 3 of test case 1
+      When I ask for the Jira text of test case 1
+      Then the response contains "sorted descending"
+      And the response contains "prices.feature"
+      And the response contains "LIB-7"

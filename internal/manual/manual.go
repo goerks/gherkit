@@ -1,5 +1,5 @@
 // Package manual records manual test runs: a person walks through test cases
-// step by step and notes passed, failed or blocked, a comment and evidence.
+// step by step and notes passed, failed or ignored, a comment and evidence.
 // The result is exported as Cucumber JSON, like the output of any automated
 // runner (ADR 0009: the human is a runner). The package holds no parser
 // dependency: callers build a Run from the test cases they have.
@@ -15,9 +15,11 @@ import (
 
 // Step statuses a person can record. An empty status means "not processed".
 const (
-	Passed  = "passed"
-	Failed  = "failed"
-	Blocked = "blocked"
+	Passed = "passed"
+	Failed = "failed"
+	// Ignored: the step is not judged, on purpose or because it cannot be (a missing precondition, an
+	// unavailable system). The reason is mandatory, like for a failure.
+	Ignored = "ignored"
 	Skipped = "skipped"
 )
 
@@ -43,7 +45,10 @@ type Case struct {
 	Name    string   `json:"name"`
 	Line    int      `json:"line"`
 	Tags    []string `json:"tags,omitempty"`
-	Steps   []*Step  `json:"steps"`
+	// Example holds the values of the example row of a scenario outline ("device=Computer, term=Kafka"),
+	// so that the tester knows which variant is being tested.
+	Example string  `json:"example,omitempty"`
+	Steps   []*Step `json:"steps"`
 }
 
 // Step is one step to perform and the outcome a person recorded for it.
@@ -76,7 +81,7 @@ func (r *Run) Case(id string) *Case {
 // Valid statuses for Record; "" clears a step.
 func validStatus(s string) bool {
 	switch s {
-	case "", Passed, Failed, Blocked, Skipped:
+	case "", Passed, Failed, Ignored:
 		return true
 	}
 	return false
@@ -95,10 +100,14 @@ func (r *Run) Record(caseID string, step int, status, comment string, now time.T
 		return fmt.Errorf("test case %q has no step %d", caseID, step)
 	}
 	if !validStatus(status) {
-		return fmt.Errorf("unknown status %q (passed, failed, blocked, skipped)", status)
+		return fmt.Errorf("unknown status %q (passed, failed, ignored)", status)
+	}
+	comment = strings.TrimSpace(comment)
+	if (status == Failed || status == Ignored) && comment == "" {
+		return errors.New("a reason is required when a step failed or is ignored")
 	}
 	s := c.Steps[step]
-	s.Status, s.Comment = status, strings.TrimSpace(comment)
+	s.Status, s.Comment = status, comment
 	if status == "" {
 		s.At = time.Time{}
 	} else {
@@ -117,7 +126,7 @@ func (r *Run) Finish(now time.Time) error {
 }
 
 // Effective returns the status of every step of c as it is exported: steps
-// after a failed or blocked step are skipped unless a person recorded
+// after a failed or ignored step are skipped unless a person recorded
 // something for them; steps nobody processed are "undefined".
 func (c *Case) Effective() []string {
 	out := make([]string, len(c.Steps))
@@ -131,19 +140,31 @@ func (c *Case) Effective() []string {
 		default:
 			out[i] = "undefined"
 		}
-		if s.Status == Failed || s.Status == Blocked {
+		if s.Status == Failed || s.Status == Ignored {
 			stopped = true
 		}
 	}
 	return out
 }
 
-// Progress counts the processed steps and all steps of the run.
+// Settled reports whether the case needs nothing more from the tester: every
+// step is judged, or an earlier failed or ignored step ended the case.
+func (c *Case) Settled() bool {
+	for _, st := range c.Effective() {
+		if st == "undefined" {
+			return false
+		}
+	}
+	return len(c.Steps) > 0
+}
+
+// Progress counts the steps that need nothing more (judged, or skipped after a
+// failed or ignored step) and all steps of the run.
 func (r *Run) Progress() (done, total int) {
 	for _, c := range r.Cases {
-		for _, s := range c.Steps {
+		for _, st := range c.Effective() {
 			total++
-			if s.Status != "" {
+			if st != "undefined" {
 				done++
 			}
 		}
@@ -225,7 +246,7 @@ type cjResult struct {
 }
 
 // CucumberJSON exports the run. Failed steps carry the comment as
-// error_message; blocked steps become "skipped" and keep the comment.
+// error_message; ignored steps become "skipped" and keep the reason.
 func (r *Run) CucumberJSON() ([]byte, error) {
 	var feats []*cjFeature
 	byURI := map[string]*cjFeature{}
@@ -253,20 +274,12 @@ func (r *Run) CucumberJSON() ([]byte, error) {
 				st.Rows = append(st.Rows, cjRow{Cells: row})
 			}
 			status := eff[i]
-			switch status {
-			case Blocked:
+			st.Result.Status = status
+			if status == Ignored {
 				st.Result.Status = "skipped"
-			default:
-				st.Result.Status = status
 			}
-			switch {
-			case status == Failed && s.Comment == "":
-				st.Result.ErrorMessage = "failed in manual test"
-			case status == Failed || status == Blocked:
+			if (status == Failed || status == Ignored) && s.Comment != "" {
 				st.Result.ErrorMessage = s.Comment
-			}
-			if status == Blocked && s.Comment == "" {
-				st.Result.ErrorMessage = "blocked in manual test"
 			}
 			if s.Status != "" || s.Comment != "" || len(s.Evidence) > 0 {
 				st.Gherkit = &StepInfo{Status: s.Status, Comment: s.Comment, Evidence: s.Evidence, At: s.At}

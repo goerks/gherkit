@@ -517,8 +517,8 @@ test('split (form and preview): edits appear in the preview, clicks sync both wa
   await page.close();
 });
 
-test('manual run: walk through @manual test cases, record a failure with evidence, finish and export', async () => {
-  const page = await open('run', 'vergleich/praemienvergleich.feature');
+test('manual run: guided step by step, reasons are mandatory, overview, Jira text, export', async () => {
+  const page = await open('run', 'bibliothek/katalogsuche.feature');
   await page.waitForSelector('#rn-start');
   assert.equal(await page.locator('#rn-error').textContent(), '');
   // a tester is required
@@ -528,45 +528,89 @@ test('manual run: walk through @manual test cases, record a failure with evidenc
   await page.fill('#rn-tester', 'Anna');
   await page.fill('#rn-env', 'Test-Stage');
   await page.click('#rn-start');
-  await page.waitForSelector('.rn-case');
-  // two example rows and one scenario carry @manual; the @api scenarios do not
-  assert.equal(await page.locator('.rn-case').count(), 3);
+  await page.waitForSelector('#rn-focus');
+  // the navigation lists the @manual test cases per feature: 2 + 2 + 2 over 3 features
+  assert.equal(await page.locator('.rn-nav-case').count(), 6);
+  assert.equal(await page.locator('.rn-nav-feat').count(), 3);
+  assert.match(await page.textContent('#rn-crumb'), /Feature 1 of 3.*Scenario 1 of 2.*Step 1 of 6/);
 
-  // the first case is open: pass the first steps, fail the sorting step
-  for (const n of [0, 1, 2]) await page.locator(`#step-c1-${n} .rs-pass`).click();
-  await page.locator('#step-c1-3 .rs-fail').click();
-  await page.waitForFunction(() => document.activeElement && document.activeElement.classList.contains('rs-comment'));
-  await page.keyboard.type('sorted descending');
-  await page.locator('#step-c1-3 .rs-file').setInputFiles({ name: 'sort order.png', mimeType: 'image/png', buffer: Buffer.from('PNG') });
-  await page.waitForSelector('#step-c1-3 .rn-evidence a');
-  assert.equal(await page.inputValue('#step-c1-3 .rs-comment'), 'sorted descending', 'the comment survives the upload');
-  assert.match(await page.textContent('#rn-progress'), /^4\//);
-  assert.match(await page.textContent('#case-c1 .rn-badge'), /failed/);
+  // good moves on to the next step by itself; the progress follows
+  for (let n = 1; n <= 3; n++) {
+    await page.click('#rn-good');
+    await page.waitForFunction((k) => document.getElementById('rn-progress').textContent.startsWith(k + '/'), n);
+  }
+  assert.match(await page.textContent('#rn-crumb'), /Step 4 of 6/);
+  assert.match(await page.textContent('#rn-progress'), /^3\//);
+  // test information can be added to a step that went well
+  await page.fill('#rn-comment', 'device: Pixel 7, search term Kafka');
+  await page.click('#rn-good');
+  await page.waitForFunction(() => /Step 5 of 6/.test(document.getElementById('rn-crumb').textContent));
+
+  // bad needs a reason: nothing is saved before one is written
+  await page.click('#rn-bad');
+  assert.equal(await page.locator('#rn-confirm').isDisabled(), true);
+  await page.click('#rn-cancel');
+  await page.waitForSelector('#rn-good');
+  assert.match(await page.textContent('#rn-crumb'), /Step 5 of 6/, 'cancelling stays on the step');
+  await page.click('#rn-bad');
+  await page.fill('#rn-comment', 'return date is missing');
+  await page.setInputFiles('.rs-file', { name: 'shot.png', mimeType: 'image/png', buffer: Buffer.from('PNG') });
+  await page.waitForSelector('#rn-focus .rn-evidence a');
+  assert.equal(await page.inputValue('#rn-comment'), 'return date is missing', 'the reason survives the upload');
+  await page.click('#rn-confirm');
+  // the failure ends the scenario: the next one is open
+  await page.waitForFunction(() => /Scenario 2 of 2/.test(document.getElementById('rn-crumb').textContent));
+  assert.ok((await page.getAttribute('#nav-c1 .rn-dot', 'class')).includes('failed'));
+  assert.match(await page.textContent('#rn-progress'), /^6\//, 'the skipped step counts as done');
+
+  // ignoring needs a reason as well
+  await page.click('#rn-ignore');
+  assert.equal(await page.locator('#rn-confirm').isDisabled(), true);
+  await page.fill('#rn-comment', 'test system is down');
+  await page.click('#rn-confirm');
+  await page.waitForFunction(() => /Feature 2 of 3/.test(document.getElementById('rn-crumb').textContent));
+
+  // overview of the results
+  await page.click('#rn-tab-overview');
+  assert.equal(await page.textContent('#ov-failed b'), '1');
+  assert.equal(await page.textContent('#ov-ignored b'), '1');
+  assert.equal(await page.textContent('#ov-open b'), '4');
+  assert.match(await page.textContent('#ov-c1'), /return date is missing/);
+  // the Jira text of the failed test
+  await page.click('#ov-c1 .rs-jira');
+  await page.waitForSelector('#rn-jira[open]');
+  const desc = await page.inputValue('#rn-jira-desc');
+  assert.match(desc, /return date is missing/);
+  assert.match(desc, /katalogsuche\.feature/);
+  assert.match(desc, /device: Pixel 7/, 'test information of earlier steps is part of the text');
+  assert.match(await page.inputValue('#rn-jira-summary'), /^\[Test failed\]/);
+  await page.keyboard.press('Escape');
 
   // finish with open steps: the tester is asked first
   page.once('dialog', (d) => d.accept());
   await page.click('#rn-finish');
   await page.waitForSelector('#rn-banner');
   assert.match(await page.textContent('#rn-banner'), /cucumber\.json/);
-  assert.equal(await page.locator('.rs-pass').count(), 0, 'a finished run is read-only');
+  assert.equal(await page.locator('#rn-good').count(), 0, 'a finished run is read-only');
 
   // the exported file is Cucumber JSON that `gherkit report` understands
   const runs = join(dir, 'ws', '.gherkit', 'runs');
   const id = readdirSync(runs)[0];
   const json = JSON.parse(readFileSync(join(runs, id, 'cucumber.json'), 'utf8'));
-  const first = json[0].elements[0];
-  assert.deepEqual(first.steps.map((s) => s.result.status), ['passed', 'passed', 'passed', 'failed', 'skipped', 'skipped']);
-  assert.equal(first.steps[3].result.error_message, 'sorted descending');
-  assert.equal(first.gherkit.tester, 'Anna');
-  assert.equal(readFileSync(join(runs, id, 'evidence', 'c1-s4-sort_order.png'), 'utf8'), 'PNG');
-  const second = json[0].elements[1];
-  assert.ok(second.steps.every((s) => s.result.status === 'undefined'), 'unprocessed steps stay undefined');
+  const els = json.flatMap((f) => f.elements);
+  assert.deepEqual(els[0].steps.map((x) => x.result.status), ['passed', 'passed', 'passed', 'passed', 'failed', 'skipped']);
+  assert.equal(els[0].steps[3].gherkit.comment, 'device: Pixel 7, search term Kafka');
+  assert.equal(els[0].steps[4].result.error_message, 'return date is missing');
+  assert.equal(els[0].gherkit.tester, 'Anna');
+  assert.equal(readFileSync(join(runs, id, 'evidence', 'c1-s5-shot.png'), 'utf8'), 'PNG');
+  assert.ok(els[1].steps.every((x) => x.result.status === 'skipped') && els[1].steps[0].gherkit.status === 'ignored', 'ignored is exported as skipped, with the reason');
+  assert.ok(els[2].steps.every((x) => x.result.status === 'undefined'), 'unprocessed steps stay undefined');
 
   // the run is listed and has a report
   await page.click('#rn-back');
   await page.waitForSelector('#rn-runs li .rn-badge');
   const report = await page.evaluate((i) => fetch(`/api/manual/runs/${i}/report?lang=en`).then((r) => r.text()), id);
-  assert.match(report, /sorted descending/);
+  assert.match(report, /return date is missing/);
   assert.match(report, /Anna/);
   assert.deepEqual(page.errors, []);
   await page.close();

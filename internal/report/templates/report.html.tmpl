@@ -61,7 +61,7 @@ table{border-collapse:collapse;margin:4px 0;font-size:13px}td{border:1px solid v
     {{if .Manual}}<div class="who"><span class="badge">{{t "manual"}}</span> {{t "tester"}}: {{.Tester}}{{if .Environment}} · {{t "environment"}}: {{.Environment}}{{end}}{{if .Build}} · {{t "build"}}: {{.Build}}{{end}}</div>{{end}}
     <ol class="steps">
     {{range .Steps}}
-      <li class="st-{{.Status}}"><span class="kw">{{.Keyword}}</span> {{.Text}}{{if .Blocked}} <span class="badge">{{t "blocked"}}</span>{{end}}
+      <li class="st-{{.Status}}"><span class="kw">{{.Keyword}}</span> {{.Text}}{{if .Ignored}} <span class="badge">{{t "ignored"}}</span>{{end}}
         {{if .Rows}}<table>{{range .Rows}}<tr>{{range .}}<td>{{.}}</td>{{end}}</tr>{{end}}</table>{{end}}
         {{if .DocString}}<pre>{{.DocString}}</pre>{{end}}
         {{if .Error}}<pre class="err">{{.Error}}</pre>{{end}}

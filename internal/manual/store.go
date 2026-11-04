@@ -91,6 +91,16 @@ func (s *Store) Load(id string) (*Run, error) {
 	if err := json.Unmarshal(b, &r); err != nil {
 		return nil, fmt.Errorf("run %q: %w", id, err)
 	}
+	for _, c := range r.Cases { // early runs knew "blocked"; it became "ignored"
+		for _, st := range c.Steps {
+			if st.Status == "blocked" {
+				st.Status = Ignored
+				if st.Comment == "" {
+					st.Comment = "(blocked)"
+				}
+			}
+		}
+	}
 	return &r, nil
 }
 

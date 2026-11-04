@@ -26,19 +26,22 @@ The work is staged. Each stage is useful on its own.
   is the same expression in godog's own syntax (`~@manual`), because godog does not understand Cucumber tag
   expressions and would silently select nothing. A custom `--cmd` stays free to ignore both.
 - **Manual run:** a new "Run" view in the editor walks through the pickles (test cases, outlines already expanded).
-  Per step the tester records *passed*, *failed* or *blocked*, a comment and attachments. A failed step marks the
-  remaining steps of that test case as skipped, as automated runners do; the tester may override.
+  The view guides the tester feature by feature, scenario by scenario, step by step. Per step the tester records
+  *good*, *bad* or *ignore*, a comment and attachments. *Bad* and *ignore* need a reason. A failed or ignored step
+  ends the test case: the remaining steps count as skipped, as with automated runners. An overview lists the results
+  and can turn a failed test into the text of a Jira bug (see the [concept](../concepts/manuelle-ausfuehrung.md)).
 - **Status mapping to Cucumber JSON:**
 
   | Manual | Cucumber JSON |
   | --- | --- |
   | passed | `passed` |
   | failed | `failed`, comment as `error_message` |
-  | blocked | `skipped`, comment kept on the step |
+  | ignored (reason mandatory) | `skipped`, reason as `error_message` and kept in the `gherkit` object |
   | not processed | `undefined` |
 
-  The original manual status stays recoverable (comment or an extra field), so the Xray mapping (PASS, FAIL, ABORTED,
-  BLOCKED, TODO) can be decided in M3 without data loss.
+  The original manual status stays recoverable (the extra `gherkit` object), so the Xray mapping (PASS, FAIL, ABORTED,
+  TODO) can be decided in M3 without data loss. There is no separate *blocked*: "cannot be judged" and "not judged on
+  purpose" are both *ignored*, and the mandatory reason tells them apart.
 - **Run metadata:** tester, start and end time, environment (URL, build, browser) per run; comment and duration per step.
 - **Evidence:** attachments are stored as files next to the Cucumber JSON and referenced relatively. Embedding them
   would bloat the JSON. The report model must be able to show them.
@@ -67,4 +70,4 @@ The work is staged. Each stage is useful on its own.
 - Stage 1 needs no change to existing runners beyond a tag filter.
 - The result model gains manual metadata and attachments; the report templates and the web UI grow accordingly.
 - Open points, decided during implementation: attachment handling in reports, scope of the lint rule, whether the
-  terminal mode is needed before stage 3, and how blocked maps to Xray.
+  terminal mode is needed before stage 3, and how ignored maps to Xray.

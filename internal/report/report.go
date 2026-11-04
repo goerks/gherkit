@@ -126,10 +126,10 @@ type Step struct {
 	Rows      [][]string
 	Location  string
 	// Manual information: the comment of the tester, evidence files (paths
-	// relative to the results file) and whether the step was blocked.
+	// relative to the results file) and whether the tester ignored the step.
 	Comment  string
 	Evidence []string
-	Blocked  bool
+	Ignored  bool
 }
 
 // cucumber JSON (the de-facto exchange format written by godog, cucumber-jvm, cucumber-js, ...)
@@ -213,7 +213,7 @@ func FromCucumberJSON(readers ...io.Reader) (*Report, error) {
 						st.Rows = append(st.Rows, row.Cells)
 					}
 					if cs.Gherkit != nil {
-						st.Comment, st.Evidence, st.Blocked = cs.Gherkit.Comment, cs.Gherkit.Evidence, cs.Gherkit.Status == "blocked"
+						st.Comment, st.Evidence, st.Ignored = cs.Gherkit.Comment, cs.Gherkit.Evidence, cs.Gherkit.Status == "ignored" || cs.Gherkit.Status == "blocked"
 					}
 					if st.Status == "" {
 						st.Status = Skipped
@@ -347,8 +347,8 @@ func Funcs(lang string) map[string]any {
 }
 
 var texts = map[string]map[string]string{
-	"en": {"title": "Acceptance test report", "features": "Features", "scenarios": "Scenarios", "steps": "Steps", "passed": "passed", "failed": "failed", "skipped": "skipped", "pending": "pending", "undefined": "undefined", "duration": "Duration", "generated": "Generated", "status": "Status", "summary": "Summary", "manual": "manual", "blocked": "blocked", "tester": "Tester", "environment": "Environment", "build": "Build", "comment": "Comment", "evidence": "Evidence"},
-	"de": {"title": "Abnahmetest-Report", "features": "Features", "scenarios": "Szenarien", "steps": "Schritte", "passed": "erfolgreich", "failed": "fehlgeschlagen", "skipped": "übersprungen", "pending": "ausstehend", "undefined": "undefiniert", "duration": "Dauer", "generated": "Erstellt", "status": "Status", "summary": "Zusammenfassung", "manual": "manuell", "blocked": "blockiert", "tester": "Testende Person", "environment": "Umgebung", "build": "Build", "comment": "Kommentar", "evidence": "Nachweis"},
+	"en": {"title": "Acceptance test report", "features": "Features", "scenarios": "Scenarios", "steps": "Steps", "passed": "passed", "failed": "failed", "skipped": "skipped", "pending": "pending", "undefined": "undefined", "duration": "Duration", "generated": "Generated", "status": "Status", "summary": "Summary", "manual": "manual", "ignored": "ignored", "tester": "Tester", "environment": "Environment", "build": "Build", "comment": "Comment", "evidence": "Evidence"},
+	"de": {"title": "Abnahmetest-Report", "features": "Features", "scenarios": "Szenarien", "steps": "Schritte", "passed": "erfolgreich", "failed": "fehlgeschlagen", "skipped": "übersprungen", "pending": "ausstehend", "undefined": "undefiniert", "duration": "Dauer", "generated": "Erstellt", "status": "Status", "summary": "Zusammenfassung", "manual": "manuell", "ignored": "ignoriert", "tester": "Testende Person", "environment": "Umgebung", "build": "Build", "comment": "Kommentar", "evidence": "Nachweis"},
 }
 
 // T translates a report text; unknown languages fall back to English.
