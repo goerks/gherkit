@@ -17,8 +17,8 @@ test: ## Unit and API tests (incl. official Gherkin corpus)
 	go test -cover ./internal/...
 
 dogfood: build ## gherkit checks its own specifications
-	$(BIN) fmt --check features
-	$(BIN) lint --strict features
+	$(BIN) fmt --check features e2e/features
+	$(BIN) lint --strict features e2e/features
 
 acceptance: build ## Run gherkit's own Gherkin acceptance tests and report them with gherkit
 	$(BIN) run --adapter go --cmd "go test -count=1 ./acceptance -args -gherkit.cucumber={output}" -o $(ACCEPT)/cucumber.json --report $(ACCEPT)/report.html --title "gherkit acceptance tests"

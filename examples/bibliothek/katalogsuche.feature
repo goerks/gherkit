@@ -31,7 +31,7 @@ Funktionalität: Katalogsuche
     Wenn ich nach "Zauberberg" suche
     Dann erhalte ich die Meldung "Keine Bücher gefunden"
 
-  @manual
+  @manual @TEST_BIB-101
   Szenariogrundriss: Die Trefferliste ist verständlich
     Angenommen ich öffne den Katalog auf dem Gerät "<gerät>"
     Wenn ich nach "<suchbegriff>" suche

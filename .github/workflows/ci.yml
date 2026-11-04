@@ -77,9 +77,9 @@ jobs:
           go-version-file: go.mod
       - run: make build
       - name: Format check of our own specifications
-        run: bin/gherkit fmt --check features
+        run: bin/gherkit fmt --check features e2e/features
       - name: Lint our own specifications (annotations on the PR)
-        run: bin/gherkit lint --strict -o github features
+        run: bin/gherkit lint --strict -o github features e2e/features
       - name: Run acceptance tests with gherkit run
         run: bin/gherkit run --adapter go --cmd "go test -count=1 ./acceptance -args -gherkit.cucumber={output}" -o build/acceptance/cucumber.json
       - name: Report with gherkit

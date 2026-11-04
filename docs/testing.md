@@ -9,6 +9,7 @@ Mark it as a required check in the repository settings so nothing is merged with
 | Unit tests | Parser wrapper, formatter (official Gherkin corpus, line endings), linter, report, runner adapters, editor HTTP API | Linux, macOS, Windows |
 | Acceptance (gherkit tests gherkit) | The behaviour in `features/*.feature` through the real binary. The suite runs through `gherkit run` with the Go adapter, so that is proven on every run | Linux |
 | Browser tests | The editor in Chromium: automatic indentation, Structure (cards, list, drag and drop, paste from a spreadsheet), Split (form and preview, test cases tab), saving, CRLF files | Linux, Windows |
+| Browser tests as Gherkin | `e2e/features/manual-run.feature`: the whole manual run through the editor in Chromium (start, guidance, good / bad / ignore with reasons, evidence, change, resume, results, Jira text, export, report, build gate). The feature files are parsed by gherkit itself (`gherkit parse --pickles`), the steps in `e2e/steps` drive the page; run them with `npm run test:features` in `e2e/` | Linux, Windows |
 | Windows binary | `gherkit.exe` builds and runs; `fmt` and `lint` work on a CRLF checkout; `gherkit run` starts a runner through `cmd.exe`, also with spaces in paths. The binary is an artifact of the run | Windows |
 | Java adapter | Maven and Cucumber-JVM run through `gherkit run`; a failing scenario gives exit code 1 | Linux |
 | Release config | goreleaser builds every platform | Linux |
