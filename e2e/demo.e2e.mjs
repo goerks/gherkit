@@ -191,13 +191,38 @@ test('the demo runner executes the standard set and writes a report', async () =
   assert.match(t, /✓ shop\/checkout\.feature:\d+ Invoice is sent as PDF/);
   assert.match(t, /✓ de\/anmeldung\.feature:\d+ Erfolgreiche Anmeldung/);
   assert.match(t, /broken\.feature: syntax errors/);
-  assert.match(t, /9 scenario\(s\): 8 passed, 1 failed/);
+  assert.match(t, /17 scenario\(s\): 16 passed, 1 failed/);
   assert.match(t, /\[exit 1\]/, 'a failing scenario gives exit code 1');
   t = await run(page, 'ls');
   assert.match(t, /report\.html/);
   await run(page, 'cd shop');
   t = await run(page, 'gherkit run --adapter demo checkout.feature');
   assert.match(t, /5 scenario\(s\): 5 passed, 0 failed/);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('the Run view works in the demo: a manual run is guided and finished without a server', async () => {
+  const page = await openEditor();
+  await page.click('.variants [data-variant="run"]');
+  await page.waitForSelector('#rn-start');
+  await page.fill('#rn-tester', 'Demo');
+  await page.click('#rn-start');
+  await page.waitForSelector('#rn-focus'); // the @manual test cases of the standard set
+  assert.equal(await page.locator('.rn-nav-case').count(), 6);
+  assert.match(await page.textContent('#rn-skipped'), /broken\.feature/, 'the broken file is named, not silently dropped');
+  await page.click('#rn-good');
+  await page.waitForFunction(() => /^1\//.test(document.getElementById('rn-progress').textContent));
+  assert.equal(await page.locator('.rs-file').count(), 0, 'the demo offers no attachments');
+  await page.click('#rn-bad');
+  await page.fill('#rn-comment', 'Demo-Fehler');
+  await page.click('#rn-confirm');
+  await page.click('#rn-tab-overview');
+  assert.equal(await page.textContent('#ov-failed b'), '1');
+  page.once('dialog', (d) => d.accept());
+  await page.click('#rn-finish');
+  await page.waitForSelector('#rn-banner');
+  assert.match(await page.textContent('#rn-banner'), /cucumber\.json/);
   assert.deepEqual(page.errors, []);
   await page.close();
 });

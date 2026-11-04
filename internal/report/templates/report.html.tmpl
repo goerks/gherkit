@@ -27,6 +27,10 @@ ol.steps li{padding:2px 0}
 pre{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;overflow:auto;font-size:13px}
 pre.err{border-color:var(--fail);color:var(--fail);white-space:pre-wrap}
 table{border-collapse:collapse;margin:4px 0;font-size:13px}td{border:1px solid var(--line);padding:2px 8px}
+.badge{font-size:12px;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:0 8px;font-weight:400}
+.note{margin:2px 0 4px;padding:4px 8px;border-left:3px solid var(--line);color:var(--fg);white-space:pre-wrap}
+.who{color:var(--muted);font-size:13px;margin:0 0 4px}
+.ev a{margin-right:8px;font-size:13px}.ev img{max-width:320px;max-height:200px;border:1px solid var(--line);border-radius:6px;display:block;margin:4px 0}
 .desc{white-space:pre-line;color:var(--muted);margin:0 0 8px}
 </style>
 </head>
@@ -52,14 +56,17 @@ table{border-collapse:collapse;margin:4px 0;font-size:13px}td{border:1px solid v
   {{if .Description}}<p class="desc">{{.Description}}</p>{{end}}
   {{range .Scenarios}}
   <div class="scenario" id="{{.ID}}">
-    <h3><span class="dot s-{{.Status}}"></span>{{.Keyword}}: {{.Name}} <span class="muted">({{t .Status}} · {{duration .Duration}})</span></h3>
+    <h3><span class="dot s-{{.Status}}"></span>{{.Keyword}}: {{.Name}} <span class="muted">({{t .Status}}{{if not .Manual}} · {{duration .Duration}}{{end}})</span></h3>
     {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
+    {{if .Manual}}<div class="who"><span class="badge">{{t "manual"}}</span> {{t "tester"}}: {{.Tester}}{{if .Environment}} · {{t "environment"}}: {{.Environment}}{{end}}{{if .Build}} · {{t "build"}}: {{.Build}}{{end}}</div>{{end}}
     <ol class="steps">
     {{range .Steps}}
-      <li class="st-{{.Status}}"><span class="kw">{{.Keyword}}</span> {{.Text}}
+      <li class="st-{{.Status}}"><span class="kw">{{.Keyword}}</span> {{.Text}}{{if .Ignored}} <span class="badge">{{t "ignored"}}</span>{{end}}
         {{if .Rows}}<table>{{range .Rows}}<tr>{{range .}}<td>{{.}}</td>{{end}}</tr>{{end}}</table>{{end}}
         {{if .DocString}}<pre>{{.DocString}}</pre>{{end}}
         {{if .Error}}<pre class="err">{{.Error}}</pre>{{end}}
+        {{if and .Comment (not .Error)}}<div class="note">{{.Comment}}</div>{{end}}
+        {{if .Evidence}}<div class="ev">{{range .Evidence}}<a href="{{.}}" target="_blank" rel="noopener">{{.}}</a>{{end}}</div>{{end}}
       </li>
     {{end}}
     </ol>

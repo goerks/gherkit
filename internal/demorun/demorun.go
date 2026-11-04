@@ -22,6 +22,7 @@ import (
 // Outcome counts what happened in a run.
 type Outcome struct {
 	Scenarios, Passed, Failed, Undefined int
+	Manual                               int // @manual scenarios left to people (ADR 0009), not counted in Scenarios
 }
 
 // Failing reports whether the run should exit with a non-zero code.
@@ -204,6 +205,12 @@ func Run(dir string, files []string, output string, stdout, stderr io.Writer) (O
 		steps := stepNodes(f)
 		lines := scenarioLines(f)
 		for _, p := range res.Pickles {
+			if hasTag(p.Tags, "@manual") {
+				// tested by people in the editor (Run view), as `gherkit run` excludes them by default
+				out.Manual++
+				fmt.Fprintf(stdout, "- %s %s (@manual: test it by hand in the editor)\n", uri, p.Name)
+				continue
+			}
 			el := cjElement{ID: p.Id, Keyword: "Scenario", Name: p.Name, Type: "scenario"}
 			if len(p.AstNodeIds) > 0 {
 				el.Line = lines[p.AstNodeIds[len(p.AstNodeIds)-1]]
@@ -297,7 +304,9 @@ func Run(dir string, files []string, output string, stdout, stderr io.Writer) (O
 			}
 			cf.Elements = append(cf.Elements, el)
 		}
-		features = append(features, cf)
+		if len(cf.Elements) > 0 {
+			features = append(features, cf)
+		}
 	}
 	data, err := json.MarshalIndent(features, "", " ")
 	if err != nil {
@@ -307,4 +316,13 @@ func Run(dir string, files []string, output string, stdout, stderr io.Writer) (O
 		return out, err
 	}
 	return out, nil
+}
+
+func hasTag(tags []*messages.PickleTag, name string) bool {
+	for _, t := range tags {
+		if t.Name == name {
+			return true
+		}
+	}
+	return false
 }

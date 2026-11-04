@@ -83,6 +83,8 @@ type world struct {
 	editor         *exec.Cmd
 	editorURL      string
 	response       string
+	status         int    // HTTP status of the last editor call
+	runID          string // id of the manual run started in this scenario
 }
 
 func initScenario(sc *godog.ScenarioContext) {
@@ -106,6 +108,7 @@ func initScenario(sc *godog.ScenarioContext) {
 	sc.Step(`^the official Gherkin example "([^"]+)"$`, w.officialExample)
 	sc.Step(`^the file "([^"]+)" contains:$`, w.fileContainsDoc)
 	sc.Step(`^the file "([^"]+)" contains "([^"]*)"$`, w.fileContains)
+	sc.Step(`^the file "([^"]+)" does not contain "([^"]*)"$`, w.fileNotContains)
 	sc.Step(`^the file "([^"]+)" is unchanged$`, w.fileUnchanged)
 	sc.Step(`^the file still yields the same test cases$`, w.samePickles)
 	sc.Step(`^a Cucumber JSON result with (\d+) passed and (\d+) failed scenarios?$`, w.cucumberResult)
@@ -126,6 +129,14 @@ func initScenario(sc *godog.ScenarioContext) {
 	sc.Step(`^the response does not contain "([^"]*)"$`, w.responseNotContains)
 	sc.Step(`^I save "([^"]+)" with "((?:[^"\\]|\\.)*)" through the editor$`, w.saveThroughEditor)
 	sc.Step(`^I open the folder "([^"]+)" in the editor$`, w.openFolder)
+
+	// manual runs
+	sc.Step(`^I start a manual run as "([^"]*)" for the tag "([^"]*)"$`, w.startManualRun)
+	sc.Step(`^I record "(passed|failed|ignored)" with the comment "([^"]*)" for step (\d+) of test case (\d+)$`, w.recordManual)
+	sc.Step(`^I try to record "(passed|failed|ignored)" with the comment "([^"]*)" for step (\d+) of test case (\d+)$`, w.tryRecordManual)
+	sc.Step(`^I ask for the Jira text of test case (\d+)$`, w.jiraText)
+	sc.Step(`^I finish the manual run and keep the result as "([^"]+)"$`, w.finishManual)
+	sc.Step(`^the editor refuses the request with "([^"]*)"$`, w.refused)
 }
 
 func unquote(s string) string {
@@ -169,6 +180,17 @@ func (w *world) fileContains(name, want string) error {
 	}
 	if !strings.Contains(string(b), want) {
 		return fmt.Errorf("file %s does not contain %q:\n%s", name, want, b)
+	}
+	return nil
+}
+
+func (w *world) fileNotContains(name, unwanted string) error {
+	b, err := os.ReadFile(w.path(name))
+	if err != nil {
+		return err
+	}
+	if strings.Contains(string(b), unwanted) {
+		return fmt.Errorf("file %s contains %q:\n%s", name, unwanted, b)
 	}
 	return nil
 }
@@ -344,24 +366,31 @@ func (w *world) startEditor() error {
 }
 
 func (w *world) do(method, path, body string) error {
+	status, err := w.doRaw(method, path, body)
+	if err == nil && status >= 300 {
+		return fmt.Errorf("%s %s: %d %s", method, path, status, w.response)
+	}
+	return err
+}
+
+// doRaw sends a request to the editor and keeps status and body; HTTP errors
+// are not Go errors, so that scenarios can check for refusals.
+func (w *world) doRaw(method, path, body string) (int, error) {
 	req, err := http.NewRequest(method, w.editorURL+path, strings.NewReader(body))
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if body != "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer res.Body.Close()
 	b, _ := io.ReadAll(res.Body)
-	w.response = string(b)
-	if res.StatusCode >= 300 {
-		return fmt.Errorf("%s %s: %d %s", method, path, res.StatusCode, b)
-	}
-	return nil
+	w.response, w.status = string(b), res.StatusCode
+	return res.StatusCode, nil
 }
 
 func (w *world) request(method, path string) error { return w.do(method, path, "") }
@@ -389,4 +418,72 @@ func (w *world) saveThroughEditor(path, content string) error {
 func (w *world) openFolder(folder string) error {
 	b, _ := json.Marshal(map[string]string{"root": folder})
 	return w.do("POST", "/api/workspace", string(b))
+}
+
+func (w *world) startManualRun(tester, tag string) error {
+	b, _ := json.Marshal(map[string]string{"tester": tester, "tag": tag, "environment": "acceptance"})
+	status, err := w.doRaw("POST", "/api/manual/runs", string(b))
+	if err != nil || status >= 300 {
+		return err // a refusal is checked by a later step
+	}
+	var run struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal([]byte(w.response), &run); err != nil {
+		return err
+	}
+	w.runID = run.ID
+	return nil
+}
+
+func (w *world) recordManual(status, comment string, step, testCase int) error {
+	if w.runID == "" {
+		return fmt.Errorf("no manual run was started; last response: %s", w.response)
+	}
+	b, _ := json.Marshal(map[string]any{"case": fmt.Sprintf("c%d", testCase), "step": step - 1, "status": status, "comment": comment})
+	return w.do("PUT", "/api/manual/runs/"+w.runID+"/step", string(b))
+}
+
+// tryRecordManual records a step and leaves a refusal for a later step to check.
+func (w *world) tryRecordManual(status, comment string, step, testCase int) error {
+	if w.runID == "" {
+		return fmt.Errorf("no manual run was started; last response: %s", w.response)
+	}
+	b, _ := json.Marshal(map[string]any{"case": fmt.Sprintf("c%d", testCase), "step": step - 1, "status": status, "comment": comment})
+	_, err := w.doRaw("PUT", "/api/manual/runs/"+w.runID+"/step", string(b))
+	return err
+}
+
+func (w *world) jiraText(testCase int) error {
+	if w.runID == "" {
+		return fmt.Errorf("no manual run was started; last response: %s", w.response)
+	}
+	return w.do("GET", fmt.Sprintf("/api/manual/runs/%s/issue?case=c%d&lang=en", w.runID, testCase), "")
+}
+
+func (w *world) finishManual(keep string) error {
+	if w.runID == "" {
+		return fmt.Errorf("no manual run was started; last response: %s", w.response)
+	}
+	if err := w.do("POST", "/api/manual/runs/"+w.runID+"/finish", ""); err != nil {
+		return err
+	}
+	var fin struct {
+		Cucumber string `json:"cucumber"`
+	}
+	if err := json.Unmarshal([]byte(w.response), &fin); err != nil {
+		return err
+	}
+	b, err := os.ReadFile(w.path(fin.Cucumber))
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(w.path(keep), b, 0o644)
+}
+
+func (w *world) refused(msg string) error {
+	if w.status < 400 {
+		return fmt.Errorf("the editor accepted the request (status %d): %s", w.status, w.response)
+	}
+	return w.responseContains(msg)
 }

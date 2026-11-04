@@ -83,6 +83,26 @@ func TestPlaceholders(t *testing.T) {
 	}
 }
 
+func TestTagsPlaceholder(t *testing.T) {
+	a := Adapter{Command: "runner --tags {tags}", Env: map[string]string{"TAGS": "{tags}"}}
+	req := Request{Dir: t.TempDir(), Output: "res.json", Tags: "not @manual", Stdout: io.Discard, Stderr: io.Discard}
+	res, _ := Run(context.Background(), a, req)
+	if !strings.Contains(res.Command, "--tags "+Quote("not @manual")) {
+		t.Errorf("tags not expanded and quoted: %q", res.Command)
+	}
+	req.Tags = ""
+	res, _ = Run(context.Background(), a, req)
+	if !strings.HasSuffix(res.Command, "--tags "+Quote("")) {
+		t.Errorf("empty tags should expand to an empty argument: %q", res.Command)
+	}
+	for _, name := range []string{"go", "java"} {
+		a, _ := Lookup(name)
+		if !strings.Contains(a.Command+a.Env["JAVA_TOOL_OPTIONS"], "{tags") {
+			t.Errorf("preset %s does not pass the tag filter", name)
+		}
+	}
+}
+
 func TestDetect(t *testing.T) {
 	dir := t.TempDir()
 	if _, ok := Detect(dir); ok {
@@ -164,5 +184,40 @@ func TestDemoAdapterRunsInProcess(t *testing.T) {
 	}
 	if _, err := os.Stat(out); err != nil {
 		t.Fatalf("no results written: %v", err)
+	}
+}
+
+func TestCombineTagsAndProjectFilter(t *testing.T) {
+	for _, c := range []struct{ project, tags, want string }{
+		{"", "not @manual", "not @manual"},
+		{"not @fails", "not @manual", "(not @fails) and (not @manual)"},
+		{"not @fails", "", "not @fails"},
+		{"", "", ""},
+	} {
+		if got := CombineTags(c.project, c.tags); got != c.want {
+			t.Errorf("CombineTags(%q, %q) = %q, want %q", c.project, c.tags, got, c.want)
+		}
+	}
+	dir := t.TempDir()
+	res := filepath.Join(dir, "src", "test", "resources")
+	os.MkdirAll(res, 0o755)
+	if got := javaProjectTags(dir); got != "" {
+		t.Errorf("no properties file: %q", got)
+	}
+	os.WriteFile(filepath.Join(res, "junit-platform.properties"), []byte("cucumber.publish.quiet=true\n# cucumber.filter.tags=@commented\ncucumber.filter.tags = not @fails\n"), 0o644)
+	if got := javaProjectTags(dir); got != "not @fails" {
+		t.Errorf("junit-platform.properties: %q", got)
+	}
+	// the example project of the repository excludes its failing scenario itself
+	if got := javaProjectTags(filepath.Join("..", "..", "runner-examples", "java")); got != "not @fails" {
+		t.Errorf("runner-examples/java: %q", got)
+	}
+	// the Java adapter narrows the filter of the project by default and takes an explicit one as it is
+	a, _ := Lookup("java")
+	if a.ProjectTags == nil {
+		t.Fatal("the Java adapter must know the filter of the project")
+	}
+	if got := CombineTags(a.ProjectTags(dir), "not @manual"); got != "(not @fails) and (not @manual)" {
+		t.Errorf("default: %q", got)
 	}
 }

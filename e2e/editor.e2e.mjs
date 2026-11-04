@@ -5,7 +5,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -513,6 +513,105 @@ test('split (form and preview): edits appear in the preview, clicks sync both wa
   await page.click('#split-left [data-left="code"]');
   await page.waitForSelector('#view-code:not([hidden])');
   assert.match(await page.inputValue('#src'), /confirmed by the customer/);
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
+test('manual run: guided step by step, reasons are mandatory, overview, Jira text, export', async () => {
+  const page = await open('run', 'bibliothek/katalogsuche.feature');
+  await page.waitForSelector('#rn-start');
+  assert.equal(await page.locator('#rn-error').textContent(), '');
+  // a tester is required
+  await page.fill('#rn-tester', '');
+  await page.click('#rn-start');
+  await page.waitForFunction(() => document.getElementById('rn-error').textContent.length > 0);
+  await page.fill('#rn-tester', 'Anna');
+  await page.fill('#rn-env', 'Test-Stage');
+  await page.click('#rn-start');
+  await page.waitForSelector('#rn-focus');
+  // the navigation lists the @manual test cases per feature: 2 + 2 + 2 over 3 features
+  assert.equal(await page.locator('.rn-nav-case').count(), 6);
+  assert.equal(await page.locator('.rn-nav-feat').count(), 3);
+  assert.match(await page.textContent('#rn-crumb'), /Feature 1 of 3.*Scenario 1 of 2.*Step 1 of 6/);
+
+  // good moves on to the next step by itself; the progress follows
+  for (let n = 1; n <= 3; n++) {
+    await page.click('#rn-good');
+    await page.waitForFunction((k) => document.getElementById('rn-progress').textContent.startsWith(k + '/'), n);
+  }
+  assert.match(await page.textContent('#rn-crumb'), /Step 4 of 6/);
+  assert.match(await page.textContent('#rn-progress'), /^3\//);
+  // test information can be added to a step that went well
+  await page.fill('#rn-comment', 'device: Pixel 7, search term Kafka');
+  await page.click('#rn-good');
+  await page.waitForFunction(() => /Step 5 of 6/.test(document.getElementById('rn-crumb').textContent));
+
+  // bad needs a reason: nothing is saved before one is written
+  await page.click('#rn-bad');
+  assert.equal(await page.locator('#rn-confirm').isDisabled(), true);
+  await page.click('#rn-cancel');
+  await page.waitForSelector('#rn-good');
+  assert.match(await page.textContent('#rn-crumb'), /Step 5 of 6/, 'cancelling stays on the step');
+  await page.click('#rn-bad');
+  await page.fill('#rn-comment', 'return date is missing');
+  await page.setInputFiles('.rs-file', { name: 'shot.png', mimeType: 'image/png', buffer: Buffer.from('PNG') });
+  await page.waitForSelector('#rn-focus .rn-evidence a');
+  assert.equal(await page.inputValue('#rn-comment'), 'return date is missing', 'the reason survives the upload');
+  await page.click('#rn-confirm');
+  // the failure ends the scenario: the next one is open
+  await page.waitForFunction(() => /Scenario 2 of 2/.test(document.getElementById('rn-crumb').textContent));
+  assert.ok((await page.getAttribute('#nav-c1 .rn-dot', 'class')).includes('failed'));
+  assert.match(await page.textContent('#rn-progress'), /^6\//, 'the skipped step counts as done');
+
+  // ignoring needs a reason as well
+  await page.click('#rn-ignore');
+  assert.equal(await page.locator('#rn-confirm').isDisabled(), true);
+  await page.fill('#rn-comment', 'test system is down');
+  await page.click('#rn-confirm');
+  await page.waitForFunction(() => /Feature 2 of 3/.test(document.getElementById('rn-crumb').textContent));
+
+  // overview of the results
+  await page.click('#rn-tab-overview');
+  assert.equal(await page.textContent('#ov-failed b'), '1');
+  assert.equal(await page.textContent('#ov-ignored b'), '1');
+  assert.equal(await page.textContent('#ov-open b'), '4');
+  assert.match(await page.textContent('#ov-c1'), /return date is missing/);
+  // the Jira text of the failed test
+  await page.click('#ov-c1 .rs-jira');
+  await page.waitForSelector('#rn-jira[open]');
+  const desc = await page.inputValue('#rn-jira-desc');
+  assert.match(desc, /return date is missing/);
+  assert.match(desc, /katalogsuche\.feature/);
+  assert.match(desc, /device: Pixel 7/, 'test information of earlier steps is part of the text');
+  assert.match(await page.inputValue('#rn-jira-summary'), /^\[Test failed\]/);
+  await page.keyboard.press('Escape');
+
+  // finish with open steps: the tester is asked first
+  page.once('dialog', (d) => d.accept());
+  await page.click('#rn-finish');
+  await page.waitForSelector('#rn-banner');
+  assert.match(await page.textContent('#rn-banner'), /cucumber\.json/);
+  assert.equal(await page.locator('#rn-good').count(), 0, 'a finished run is read-only');
+
+  // the exported file is Cucumber JSON that `gherkit report` understands
+  const runs = join(dir, 'ws', '.gherkit', 'runs');
+  const id = readdirSync(runs)[0];
+  const json = JSON.parse(readFileSync(join(runs, id, 'cucumber.json'), 'utf8'));
+  const els = json.flatMap((f) => f.elements);
+  assert.deepEqual(els[0].steps.map((x) => x.result.status), ['passed', 'passed', 'passed', 'passed', 'failed', 'skipped']);
+  assert.equal(els[0].steps[3].gherkit.comment, 'device: Pixel 7, search term Kafka');
+  assert.equal(els[0].steps[4].result.error_message, 'return date is missing');
+  assert.equal(els[0].gherkit.tester, 'Anna');
+  assert.equal(readFileSync(join(runs, id, 'evidence', 'c1-s5-shot.png'), 'utf8'), 'PNG');
+  assert.ok(els[1].steps.every((x) => x.result.status === 'skipped') && els[1].steps[0].gherkit.status === 'ignored', 'ignored is exported as skipped, with the reason');
+  assert.ok(els[2].steps.every((x) => x.result.status === 'undefined'), 'unprocessed steps stay undefined');
+
+  // the run is listed and has a report
+  await page.click('#rn-back');
+  await page.waitForSelector('#rn-runs li .rn-badge');
+  const report = await page.evaluate((i) => fetch(`/api/manual/runs/${i}/report?lang=en`).then((r) => r.text()), id);
+  assert.match(report, /return date is missing/);
+  assert.match(report, /Anna/);
   assert.deepEqual(page.errors, []);
   await page.close();
 });

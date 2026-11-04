@@ -11,9 +11,13 @@ Wird von Claude Code automatisch gelesen. Stand: 2026-11-03.
 
 ## Projekt
 
-Go-CLI **gherkit** (cobra): Gherkin `fmt`, `lint`, `parse`, `edit` (Web-Editor, eingebettet in `internal/server/web`, reines JS ohne Build), `report`, `run` (Runner-Adapter). Offizieller Cucumber-Gherkin-Parser, Format gegen den offiziellen Testkorpus abgesichert. Docs: `docs/` (ADRs 0001-0008, `testing.md`, `demo.md`, `editor-variants.md`, `roadmap.md`).
+Go-CLI **gherkit** (cobra): Gherkin `fmt`, `lint`, `parse`, `edit` (Web-Editor, eingebettet in `internal/server/web`, reines JS ohne Build), `report`, `run` (Runner-Adapter). Offizieller Cucumber-Gherkin-Parser, Format gegen den offiziellen Testkorpus abgesichert. Docs: `docs/` (ADRs 0001-0009, `testing.md`, `demo.md`, `editor-variants.md`, `roadmap.md`).
 
 Beschlossen: erster Runner-Adapter Java (Go ebenfalls fertig), Jira Data Center mit Xray (noch nicht umgesetzt), Editor-Varianten Code, Dokument, Struktur (S1/S2) und Split (P1/P2) sind abgenommen.
+
+## Manuelle Ausführung (ADR 0009)
+
+Tag `@manual` markiert Szenarien, die Menschen testen; `gherkit run` schliesst sie per `--tags` (Standard `not @manual`, godog über `{tags_godog}`) aus. Editor-Tab «Ausführen» (`internal/server/web/run.js`, Texte mit Präfix `r_`): geführter Durchlauf Feature, Szenario, Schritt; Antworten Gut/Schlecht/Ignorieren (Begründung Pflicht bei Schlecht/Ignorieren, vom Server erzwungen), Kommentar und Nachweis im Schritt, Ergebnisübersicht, Jira-Text (`GET /api/manual/runs/{id}/issue`, Xray-Tag `@TEST_PROJ-123`). Paket `internal/manual` (Lauf, Speicher unter `.gherkit/runs/<id>/`, Export als Cucumber JSON mit Zusatzobjekt `gherkit`). Beispiel: `examples/bibliothek`. Konzept mit Varianten und offenen Fragen: `docs/concepts/manuelle-ausfuehrung.md`. Browser-Tests als Gherkin: `e2e/features/manual-run.feature` (Runner `e2e/support/gherkin.mjs`, Schritte `e2e/steps`).
 
 ## Öffentliche Demo (GitHub Pages)
 
@@ -28,7 +32,7 @@ Stand der Schritte (alle gemergt, PRs #5 bis #8):
 
 Weitere offene Punkte:
 - Erstes Release `v0.1.0` taggen (dauerhafte Download-Links statt `dev-<commit>`); vom Nutzer noch nicht entschieden.
-- Ob die Live-Seite beim Nutzer wirklich funktioniert, wurde nach dem Cache-Fix noch nicht bestätigt (Test: Strg+F5, dann `gherkit run --adapter demo . --report report.html`, erwartet 9 Szenarien, 8 bestanden, 1 fehlgeschlagen).
+- Ob die Live-Seite beim Nutzer wirklich funktioniert, wurde nach dem Cache-Fix noch nicht bestätigt (Test: Strg+F5, dann `gherkit run --adapter demo . --report report.html`, erwartet 17 Szenarien, 16 bestanden, 1 fehlgeschlagen, 6 `@manual` übersprungen).
 - Jira/Xray-Anbindung, weitere Adapter (TS, .NET).
 
 Wichtige Entwurfsentscheidungen der Demo:

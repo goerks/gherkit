@@ -52,11 +52,11 @@ echo "built the browser demo ($(du -h "$out/gherkit.wasm.gz" | cut -f1) gzipped)
 
 # The editor of the demo: the real editor UI, started by demo/js/editor-boot.js instead of a server.
 mkdir -p "$out/editor"
-cp internal/server/web/app.js internal/server/web/highlight.js internal/server/web/style.css "$out/editor/"
+cp internal/server/web/app.js internal/server/web/run.js internal/server/web/highlight.js internal/server/web/style.css "$out/editor/"
 python3 - internal/server/web/index.html "$out/editor/index.html" <<'PY'
 import sys
 s = open(sys.argv[1], encoding="utf-8").read()
-old = '<script src="highlight.js"></script>\n<script src="app.js"></script>'
+old = '<script src="highlight.js"></script>\n<script src="run.js"></script>\n<script src="app.js"></script>'
 assert old in s, "editor index.html changed, adjust build-site.sh"
 new = "\n".join('<script src="../js/%s.js?v={{VERSION}}"></script>' % n for n in ("memfs", "zip", "demo", "terminal", "editor-boot"))
 s = s.replace(old, new).replace("<title>gherkit editor</title>", "<title>gherkit Demo-Editor</title>")

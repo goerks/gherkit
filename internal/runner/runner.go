@@ -27,17 +27,23 @@ type Adapter struct {
 	Description string
 	// Command is a shell command template. {output} is replaced by the path of
 	// the Cucumber JSON file to write, {features} by the feature paths given
-	// on the command line (quoted, separated by spaces).
+	// on the command line (quoted, separated by spaces), {tags} by the Cucumber
+	// tag expression of the scenarios to run and {tags_godog} by the same
+	// expression in godog's own syntax (both quoted; see Request.Tags).
 	Command string
 	// Resolve picks the command from the project when Command is empty (for
 	// example Maven or Gradle for Java).
 	Resolve func(dir string) string
 	// Env holds extra environment variables. Values can use {output} and
-	// {features_csv} (the feature paths, unquoted, separated by commas). A
+	// {features_csv} (the feature paths, unquoted, separated by commas) and
+	// {tags} (the tag expression, unquoted). A
 	// variable that is empty after expanding is not set.
 	Env map[string]string
 	// Detect reports whether dir looks like a project of this stack.
 	Detect func(dir string) bool
+	// ProjectTags returns the tag filter the project itself configures (Cucumber-JVM: cucumber.filter.tags in
+	// its properties), so that the default filter of gherkit narrows it instead of replacing it.
+	ProjectTags func(dir string) string
 	// InProcess runs the scenarios inside gherkit itself instead of starting a command. It returns the exit
 	// code the runner would have had. Used by the built-in demo runner.
 	InProcess func(req Request) (int, error)
@@ -48,7 +54,7 @@ var presets = []Adapter{
 	{
 		Name:        "go",
 		Description: "godog, started with go test (the suite must bind the godog flags, e.g. godog.BindCommandLineFlags)",
-		Command:     "go test -count=1 -args -godog.format=cucumber:{output}",
+		Command:     "go test -count=1 -args -godog.format=cucumber:{output} -godog.tags={tags_godog}",
 		Detect:      func(dir string) bool { return exists(dir, "go.mod") },
 	},
 	{
@@ -58,8 +64,9 @@ var presets = []Adapter{
 		// The JUnit Platform engine reads system properties, not environment
 		// variables. JAVA_TOOL_OPTIONS reaches every JVM the build starts,
 		// including the forked test JVM of Maven and Gradle's test workers.
-		Env:    map[string]string{"JAVA_TOOL_OPTIONS": `-Dcucumber.plugin="json:{output}"`},
-		Detect: func(dir string) bool { return exists(dir, "pom.xml", "build.gradle", "build.gradle.kts", "gradlew") },
+		Env:         map[string]string{"JAVA_TOOL_OPTIONS": `-Dcucumber.plugin="json:{output}" -Dcucumber.filter.tags="{tags}"`},
+		Detect:      func(dir string) bool { return exists(dir, "pom.xml", "build.gradle", "build.gradle.kts", "gradlew") },
+		ProjectTags: javaProjectTags,
 	},
 	{
 		Name:        "demo",
@@ -162,10 +169,17 @@ type Request struct {
 	Dir      string   // working directory of the runner
 	Features []string // feature paths for adapters that take them
 	Output   string   // absolute path of the Cucumber JSON file the runner must write
-	Command  string   // replaces the adapter's command when set
-	Env      []string // extra KEY=VALUE pairs, applied last
-	Stdout   io.Writer
-	Stderr   io.Writer
+	// Tags is a Cucumber tag expression selecting the scenarios the runner
+	// executes, e.g. "not @manual" (ADR 0009). Empty means no filter. godog
+	// has its own syntax; {tags_godog} translates it (see GodogTags).
+	Tags string
+	// TagsDefault is set when Tags is gherkit's default and not chosen by the user: the adapter then
+	// narrows the filter of the project (Adapter.ProjectTags) instead of replacing it.
+	TagsDefault bool
+	Command     string   // replaces the adapter's command when set
+	Env         []string // extra KEY=VALUE pairs, applied last
+	Stdout      io.Writer
+	Stderr      io.Writer
 }
 
 // Result describes a finished run.
@@ -216,8 +230,16 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 	for _, f := range req.Features {
 		quoted = append(quoted, Quote(f))
 	}
+	tags := req.Tags
+	if req.TagsDefault && a.ProjectTags != nil {
+		tags = CombineTags(a.ProjectTags(req.Dir), tags)
+	}
+	godogTags, err := GodogTags(tags)
+	if err != nil && strings.Contains(tpl, "{tags_godog}") {
+		return Result{}, err
+	}
 	res := Result{FeaturesIgnored: len(req.Features) > 0 && !strings.Contains(tpl, "{features}")}
-	res.Command = expand(tpl, map[string]string{"output": Quote(req.Output), "features": strings.Join(quoted, " ")})
+	res.Command = expand(tpl, map[string]string{"output": Quote(req.Output), "features": strings.Join(quoted, " "), "tags": Quote(tags), "tags_godog": Quote(godogTags)})
 
 	c := shellCmd(ctx, res.Command)
 	c.Dir = req.Dir
@@ -228,7 +250,7 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		v := expand(a.Env[k], map[string]string{"output": req.Output, "features_csv": strings.Join(req.Features, ",")})
+		v := expand(a.Env[k], map[string]string{"output": req.Output, "features_csv": strings.Join(req.Features, ","), "tags": tags, "tags_godog": godogTags})
 		if k == "JAVA_TOOL_OPTIONS" && os.Getenv(k) != "" {
 			v = os.Getenv(k) + " " + v // keep the options the user already set
 		}
@@ -240,7 +262,7 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 	c.Stdout, c.Stderr = req.Stdout, req.Stderr
 
 	start := time.Now()
-	err := c.Run()
+	err = c.Run()
 	res.Duration = time.Since(start)
 	var ee *exec.ExitError
 	switch {
@@ -255,4 +277,71 @@ func Run(ctx context.Context, a Adapter, req Request) (Result, error) {
 		return res, err
 	}
 	return res, nil
+}
+
+// GodogTags translates a Cucumber tag expression into godog's syntax: `not @a`
+// becomes `~@a`, `and` becomes `&&`, `or` becomes a comma. godog cannot
+// express parentheses; such an expression is an error (use --cmd instead).
+func GodogTags(expr string) (string, error) {
+	groups := [][]string{{}}
+	neg := false
+	for _, tok := range strings.Fields(expr) {
+		switch low := strings.ToLower(tok); {
+		case strings.ContainsAny(tok, "()"):
+			return "", errors.New("godog cannot filter by an expression with parentheses (" + expr + "): use --tags without them or --cmd")
+		case low == "or":
+			groups = append(groups, []string{})
+		case low == "and":
+		case low == "not":
+			neg = true
+		case strings.HasPrefix(tok, "@"):
+			if neg {
+				tok = "~" + tok
+			}
+			neg = false
+			groups[len(groups)-1] = append(groups[len(groups)-1], tok)
+		default:
+			return "", errors.New("unexpected " + tok + " in the tag expression " + expr + ": tags start with @, operators are and, or, not")
+		}
+	}
+	var parts []string
+	for _, g := range groups {
+		if len(g) > 0 {
+			parts = append(parts, strings.Join(g, "&&"))
+		}
+	}
+	return strings.Join(parts, ","), nil
+}
+
+// CombineTags narrows the tag filter of a project by one of gherkit: both must hold.
+func CombineTags(project, tags string) string {
+	project, tags = strings.TrimSpace(project), strings.TrimSpace(tags)
+	switch {
+	case project == "":
+		return tags
+	case tags == "":
+		return project
+	}
+	return "(" + project + ") and (" + tags + ")"
+}
+
+// javaProjectTags reads cucumber.filter.tags from the properties files Cucumber-JVM looks at in a Maven or
+// Gradle project. It returns "" when the project sets none.
+func javaProjectTags(dir string) string {
+	for _, f := range []string{"junit-platform.properties", "cucumber.properties"} {
+		b, err := os.ReadFile(filepath.Join(dir, "src", "test", "resources", f))
+		if err != nil {
+			continue
+		}
+		for _, line := range strings.Split(string(b), "\n") {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "!") {
+				continue
+			}
+			if k, v, ok := strings.Cut(line, "="); ok && strings.TrimSpace(k) == "cucumber.filter.tags" {
+				return strings.TrimSpace(v)
+			}
+		}
+	}
+	return ""
 }

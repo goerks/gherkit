@@ -31,5 +31,5 @@ page (HTML, JS)  ──►  gherkit.wasm.gz  ──►  the CLI, compiled with G
 1. GitHub Pages pipeline, downloads and landing page (done)
 2. The CLI in the browser: terminal on a virtual folder (done)
 3. The editor in the browser with the standard set, saving in the browser, reset, export and import (done)
-4. Demo runner (`gherkit run --adapter demo`) with report (done)
+4. Demo runner (`gherkit run --adapter demo`) with report (done); it leaves `@manual` scenarios to the Run view of the editor, where the standard set has a price comparison example (ADR 0009)
 5. Polish and tests against the built site
