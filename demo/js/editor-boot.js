@@ -8,7 +8,8 @@
 .demo-banner{background:var(--accent-soft);border-bottom:1px solid var(--accent);color:var(--fg);font-size:13px;padding:6px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .demo-banner b{color:var(--accent)} .demo-banner .sp{flex:1}
 .demo-banner a{color:var(--accent)}
-.dock{border-top:1px solid var(--line);background:var(--surface);flex:none}
+.dock{border-top:1px solid var(--line);background:var(--surface);flex:none;max-height:80vh;overflow:auto}
+#dock-report{--rp-h:45vh;margin:0 14px 12px}
 .dock-head{display:flex;align-items:center;gap:10px;padding:0 14px;height:34px;font-size:12px;color:var(--muted)}
 .dock-head b{color:var(--fg);font-weight:600} .dock-head .sp{flex:1} .dock-head button{font-size:11px;padding:1px 9px}
 #dock-term{height:230px;background:#14181a;color:#d9e1dc;padding:10px 16px;overflow:auto;font:12.5px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
@@ -52,14 +53,14 @@
 
     // terminal dock below the editor
     const dock = document.createElement('div'); dock.className = 'dock'; dock.id = 'dock';
-    dock.innerHTML = '<div class="dock-head"><b>Terminal</b><span>gherkit im Browser</span><span class="sp"></span><span>fmt · lint · parse · report · dialects · help</span><button id="dock-toggle" type="button">Aufklappen</button></div><div id="dock-term" hidden></div>';
+    dock.innerHTML = '<div class="dock-head"><b>Terminal</b><span>gherkit im Browser</span><span class="sp"></span><span>fmt · lint · parse · report · dialects · help</span><button id="dock-toggle" type="button">Aufklappen</button></div><div id="dock-term" hidden></div><div id="dock-report" hidden></div>';
     document.querySelector('.layout').after(dock);
     let term = null;
     $('dock-toggle').addEventListener('click', () => {
       const open = $('dock-term').hidden; $('dock-term').hidden = !open; $('dock-toggle').textContent = open ? 'Einklappen' : 'Aufklappen';
       if (open && !term) {
-        term = GherkitTerminal.create($('dock-term'), { afterCommand: () => g.gherkitApp && g.gherkitApp.refresh() });
-        term.print('Dieselben Dateien wie im Editor. Änderungen aus dem Terminal erscheinen dort sofort.', 'info');
+        term = GherkitTerminal.create($('dock-term'), { report: $('dock-report'), afterCommand: () => g.gherkitApp && g.gherkitApp.refresh() });
+        term.print('Dieselben Dateien wie im Editor. Änderungen aus dem Terminal erscheinen dort sofort. Berichte: gherkit report results/examples.cucumber.json -o report.html', 'info');
       }
       if (open && term) term.input.focus();
     });

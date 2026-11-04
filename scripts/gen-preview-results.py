@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Writes Cucumber JSON sample results for the .feature files of this repository.
 
-The results feed the Render preview (render/, docs/render-preview.md): there the
+The results feed the report demo (terminal of the browser demo, Render preview, docs/render-preview.md): there the
 real `gherkit report` command turns them into reports. They are sample data, not
 the result of a test run: nearly everything passes, a few scenarios fail or are
 undefined on purpose so that the report shows every status, and the @manual
 scenarios get a made-up manual run (tester, comments, evidence).
 
 Usage: python3 scripts/gen-preview-results.py   (from the repository root)
-Output: render/results/{gherkit,examples,manual}.cucumber.json
+Output: examples/results/{gherkit,examples,manual}.cucumber.json
 
 The Gherkin reading below only knows what our own files use (English and
 German keywords, Rule, Background, Outline, doc strings, tables, tags). The Go
@@ -21,7 +21,7 @@ import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "render" / "results"
+OUT = ROOT / "examples" / "results"
 
 KW = {
     "en": dict(feature=["Feature"], background=["Background"], rule=["Rule"],

@@ -10,12 +10,12 @@ import (
 	"github.com/goerks/gherkit/internal/parse"
 )
 
-// The sample results of the Render preview (render/results, written by
+// The sample results of the Render preview (examples/results, written by
 // scripts/gen-preview-results.py) must stay valid: they load as Cucumber JSON
 // and cover exactly the scenarios the official parser finds in the feature files.
 func TestPreviewResultsMatchFeatureFiles(t *testing.T) {
 	root := filepath.Join("..", "..")
-	files, _ := filepath.Glob(filepath.Join(root, "render", "results", "*.cucumber.json"))
+	files, _ := filepath.Glob(filepath.Join(root, "examples", "results", "*.cucumber.json"))
 	if len(files) != 3 {
 		t.Fatalf("expected 3 result files, got %v", files)
 	}

@@ -1,0 +1,9 @@
+{
+	admin off
+}
+
+:{$PORT:10000} {
+	root * /site
+	header Cache-Control "no-cache"
+	file_server
+}

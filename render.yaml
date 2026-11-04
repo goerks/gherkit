@@ -1,10 +1,10 @@
-# Render Blueprint: pull request previews of the report command (docs/render-preview.md).
+# Render Blueprint: pull request previews of the browser demo (docs/render-preview.md).
 previews:
   generation: automatic
 
 services:
   - type: web
-    name: gherkit-report-preview
+    name: gherkit-demo-preview
     runtime: docker
     dockerfilePath: ./render/Dockerfile
     dockerContext: .

@@ -10,13 +10,14 @@ version="${VERSION:-dev-$commit}"
 date="$(date -u +%Y-%m-%d)"
 pkg=github.com/goerks/gherkit/internal/cli
 
+# SKIP_DOWNLOADS=1 leaves out the CLI ZIPs (the Render preview needs only the browser demo).
 rm -rf "$out"
 mkdir -p "$out/downloads"
 cp -r demo/. "$out/"
 touch "$out/.nojekyll"
 
 # The CLI for every platform, each ZIP with the examples to try it on.
-for target in windows/amd64 windows/arm64 linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
+for target in $([ -n "${SKIP_DOWNLOADS:-}" ] || echo windows/amd64 windows/arm64 linux/amd64 linux/arm64 darwin/amd64 darwin/arm64); do
   os="${target%/*}"; arch="${target#*/}"
   ext=""; [ "$os" = windows ] && ext=".exe"
   tmp="$(mktemp -d)"
@@ -64,8 +65,10 @@ open(sys.argv[2], "w", encoding="utf-8").write(s)
 PY
 
 # The standard set on its own.
-(cd examples && zip -qr "../$out/downloads/standard-set.zip" .)
-(cd "$out/downloads" && sha256sum ./*.zip | sed 's# \./# #' > SHA256SUMS.txt)
+if [ -z "${SKIP_DOWNLOADS:-}" ]; then
+  (cd examples && zip -qr "../$out/downloads/standard-set.zip" .)
+  (cd "$out/downloads" && sha256sum ./*.zip | sed 's# \./# #' > SHA256SUMS.txt)
+fi
 
 # Version information in the pages.
 find "$out" -name '*.html' -exec sed -i -e "s/{{VERSION}}/$version/g" -e "s/{{COMMIT}}/$commit/g" -e "s/{{DATE}}/$date/g" {} +

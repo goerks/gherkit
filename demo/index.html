@@ -91,11 +91,15 @@ footer { padding: 40px 0 60px; color: var(--muted); font-size: 13px; }
         <button type="button" class="chip" data-cmd="gherkit lint --strict .">gherkit lint --strict .</button>
         <button type="button" class="chip" data-cmd="gherkit fmt --check .">gherkit fmt --check .</button>
         <button type="button" class="chip" data-cmd="gherkit run --adapter demo . --report report.html">gherkit run --adapter demo .</button>
+        <button type="button" class="chip" data-cmd="gherkit report results/examples.cucumber.json -o report.html --title Beispiele">Report (automatisiert)</button>
+        <button type="button" class="chip" data-cmd="gherkit report results/manual.cucumber.json -o manual.html --lang de --title Manuell">Report (manuell, de)</button>
+        <button type="button" class="chip" data-cmd="gherkit report results/gherkit.cucumber.json results/examples.cucumber.json results/manual.cucumber.json -o alle.html --title Alles">Report (alles)</button>
         <button type="button" class="chip" data-cmd="gherkit parse shop/checkout.feature">gherkit parse shop/checkout.feature</button>
         <button type="button" class="chip" data-cmd="gherkit dialects">gherkit dialects</button>
         <button type="button" class="chip" data-cmd="help">help</button>
       </div>
       <div id="term" class="term" hidden></div>
+      <div id="report" class="report" hidden></div>
     </div>
   </section>
 
@@ -160,7 +164,7 @@ gherkit report results.json -o report.html</code></pre>
     function go() {
       term.hidden = false;
       GherkitDemo.boot('', function (t) { status.textContent = t; }).then(function () {
-        running = GherkitTerminal.create(term, {});
+        running = GherkitTerminal.create(term, { report: document.getElementById('report') });
         startRow.hidden = true; chips.hidden = false; running.input.focus();
       }, function (e) { term.hidden = true; btn.disabled = false; status.textContent = 'Die Demo konnte nicht starten: ' + (e && e.message || e); });
     }
