@@ -28,7 +28,7 @@ Stand der Schritte (alle gemergt, PRs #5 bis #8):
 
 Weitere offene Punkte:
 - Erstes Release `v0.1.0` taggen (dauerhafte Download-Links statt `dev-<commit>`); vom Nutzer noch nicht entschieden.
-- Ob die Live-Seite beim Nutzer wirklich funktioniert, wurde nach dem Cache-Fix noch nicht bestätigt (Test: Strg+F5, dann `gherkit run --adapter demo . --report report.html`, erwartet 9 Szenarien, 8 bestanden, 1 fehlgeschlagen).
+- Ob die Live-Seite beim Nutzer wirklich funktioniert, wurde nach dem Cache-Fix noch nicht bestätigt (Test: Strg+F5, dann `gherkit run --adapter demo . --report report.html`, erwartet 11 Szenarien, 10 bestanden, 1 fehlgeschlagen, 3 `@manual` übersprungen).
 - Jira/Xray-Anbindung, weitere Adapter (TS, .NET).
 
 Wichtige Entwurfsentscheidungen der Demo:

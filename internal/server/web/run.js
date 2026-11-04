@@ -34,7 +34,7 @@
     }
   };
 
-  var c, R = { runs: [], run: null, open: '', done: null, error: '', scope: 'manual', files: 'current', form: {}, expanded: {} };
+  var c, R = { runs: [], run: null, open: '', done: null, error: '', scope: 'manual', files: 'all', form: {}, expanded: {} };
   var IMG = /\.(png|jpe?g|gif|webp)$/i;
   // The browser demo answers the API in process (window.gherkitFetch): there is no server to link to, and its
   // virtual folder holds text only, so attachments are not offered there.

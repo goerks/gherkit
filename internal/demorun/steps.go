@@ -25,6 +25,9 @@ type world struct {
 
 	customer string
 	attempts int
+
+	portal bool
+	offers map[string]int // provider -> yearly premium in CHF
 }
 
 type stepFn func(w *world, m []string, arg *messages.PickleStepArgument) error
@@ -168,5 +171,49 @@ var library = []stepDef{
 			state = "gesperrt"
 		}
 		return expectEqual("Konto", state, m[1])
+	}),
+
+	// price comparison portal (German): a simulated portal with three providers
+	def(`das Vergleichsportal ist erreichbar`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		w.portal = true
+		return nil
+	}),
+	def(`ich die Prämien für eine (\d+)-jährige Person im Kanton (\S+) abfrage`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		if !w.portal {
+			return fmt.Errorf("the portal is not reachable")
+		}
+		age, _ := strconv.Atoi(m[1])
+		base := 1200 + age*30
+		w.offers = map[string]int{"Alpina": base, "Helvetia": base + 370, "Mobiliar": base + 550}
+		return nil
+	}),
+	def(`ich die Prämien für die Postleitzahl "([^"]*)" abfrage`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		if !w.portal {
+			return fmt.Errorf("the portal is not reachable")
+		}
+		w.offers = nil
+		if m[1] == "0000" {
+			w.message = "Keine Angebote gefunden"
+		}
+		return nil
+	}),
+	def(`enthält jedes Angebot eine Jahresprämie zwischen (\d+) und (\d+) Franken`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		lo, _ := strconv.Atoi(m[1])
+		hi, _ := strconv.Atoi(m[2])
+		if len(w.offers) == 0 {
+			return fmt.Errorf("there are no offers")
+		}
+		for name, v := range w.offers {
+			if v < lo || v > hi {
+				return fmt.Errorf("%s: premium %d is outside %d to %d", name, v, lo, hi)
+			}
+		}
+		return nil
+	}),
+	def(`kein Anbieter erscheint doppelt`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		return nil // a map has every provider once; the real portal is checked by the real runner
+	}),
+	def(`erhalte ich die Meldung "([^"]*)"`, func(w *world, m []string, a *messages.PickleStepArgument) error {
+		return expectEqual("message", w.message, m[1])
 	}),
 }

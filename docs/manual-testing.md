@@ -9,7 +9,7 @@ records the result in the same format ([ADR 0009](adr/0009-manual-and-hybrid-exe
 ## How it works
 
 1. **Mark** the scenario (or the whole feature) with the tag `@manual`. The steps describe what the person does and
-   checks. See [`docs/examples/vergleich/praemienvergleich.feature`](examples/vergleich/praemienvergleich.feature) (try it with `gherkit edit docs/examples/vergleich`):
+   checks. See [`examples/vergleich/praemienvergleich.feature`](../examples/vergleich/praemienvergleich.feature) (part of the standard set; try it with `gherkit edit examples`):
    two scenarios are checked automatically through the API, two are tagged `@manual`.
 2. **Automated runs skip them.** `gherkit run` passes the tag filter `not @manual` to the runner (change it with
    `--tags`, see [cli.md](cli.md)).

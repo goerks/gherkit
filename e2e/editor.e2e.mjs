@@ -21,7 +21,6 @@ let dir, proc, url, browser;
 before(async () => {
   dir = mkdtempSync(join(tmpdir(), 'gherkit-e2e-'));
   cpSync(join(repo, 'examples'), join(dir, 'ws'), { recursive: true });
-  cpSync(join(repo, 'docs', 'examples', 'vergleich'), join(dir, 'ws', 'vergleich'), { recursive: true }); // mixed manual and automated scenarios
   mkdirSync(join(dir, 'other'));
   writeFileSync(join(dir, 'other', 'elsewhere.feature'), 'Feature: Elsewhere\n');
   proc = spawn(bin, ['edit', '--no-open', '--addr', '127.0.0.1:0', join(dir, 'ws')]);
