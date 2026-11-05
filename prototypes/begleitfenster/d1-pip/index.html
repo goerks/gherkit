@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>D1 – Schwebendes Begleitfenster</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font:15px/1.5 system-ui,Segoe UI,sans-serif;max-width:640px;margin:32px auto;padding:0 16px;color:#1d2433}
+  button,a.b{display:inline-block;padding:10px 16px;border:0;border-radius:6px;background:#1d2d44;color:#fff;font:inherit;cursor:pointer;text-decoration:none;margin:0 8px 8px 0}
+  #status{padding:8px 12px;border-radius:6px;background:#eef1f6;margin:12px 0}
+  code{background:#eef1f6;padding:1px 5px;border-radius:4px}
+</style></head><body>
+<h1>D1 – Schwebendes Begleitfenster</h1>
+<p>Das Begleitfenster liegt <b>immer im Vordergrund</b> über der getesteten Anwendung (Document Picture-in-Picture, Chrome und Edge ab Version 116).
+Diese Seite muss dafür offen bleiben, sie kann aber im Hintergrund liegen.</p>
+<ol>
+  <li><button id="open">Begleitfenster öffnen</button></li>
+  <li><a class="b" href="../testapp/index.html" target="gkapp">Test-Anwendung öffnen</a> (oder eine beliebige andere Anwendung in einem anderen Fenster)</li>
+  <li>Test durchführen: Tasten <code>G</code> Gut, <code>S</code> Schlecht, <code>I</code> Ignorieren, <code>←</code> zurück.
+      «Nachweis» fragt einmal, welches Fenster freigegeben wird, danach genügt ein Klick.</li>
+</ol>
+<div id="status"></div>
+<p>Ohne Picture-in-Picture (anderer Browser) öffnet sich ein kleines normales Fenster, das nicht automatisch im Vordergrund bleibt.
+Zum Feld springen kann D1 nicht (ein Browser darf nicht in eine fremde Seite eingreifen): dafür D2 oder D3.</p>
+<script src="../common/scenario.js"></script>
+<script src="../common/xray.js"></script>
+<script src="../common/panel.js"></script>
+<script>
+  var store = GherkitPanel.localStore('gk-proto-d1'), panel = null, info = document.getElementById('status');
+  var supported = 'documentPictureInPicture' in window;
+  info.textContent = supported ? 'Document Picture-in-Picture wird unterstützt.' : 'Document Picture-in-Picture wird NICHT unterstützt, es öffnet sich ein normales Popup.';
+
+  function mountIn(win) {
+    var root = win.document.body; root.style.margin = '0'; root.style.height = '100vh';
+    win.document.documentElement.style.height = '100%';
+    panel = GherkitPanel.mount(root, { scenarios: GK_SCENARIOS, load: store.load, save: store.save });
+    win.addEventListener('pagehide', function () { if (panel) panel.stop(); panel = null; info.textContent = 'Begleitfenster geschlossen.'; });
+  }
+  document.getElementById('open').addEventListener('click', function () {
+    if (supported) {
+      documentPictureInPicture.requestWindow({ width: 360, height: 500 }).then(function (w) { mountIn(w); info.textContent = 'Begleitfenster ist offen und bleibt im Vordergrund.'; }, function (e) { info.textContent = 'Fehler: ' + e.message; });
+    } else {
+      var w = window.open('', 'gkpanel', 'popup=yes,width=360,height=500');
+      if (!w) { info.textContent = 'Popup wurde blockiert.'; return; }
+      w.document.title = 'Begleitfenster'; mountIn(w);
+    }
+  });
+</script></body></html>

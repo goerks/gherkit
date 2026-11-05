@@ -1,0 +1,9 @@
+{
+  "name": "gherkit-proto-d4",
+  "productName": "gherkit Begleitfenster",
+  "version": "0.0.1",
+  "private": true,
+  "main": "main.js",
+  "scripts": { "start": "electron ." },
+  "devDependencies": { "electron": "^33.0.0" }
+}
