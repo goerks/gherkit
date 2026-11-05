@@ -1,0 +1,58 @@
+name: demo-video
+
+# Records a video of the report demo (browser demo with the terminal that generates and shows reports), so that a
+# reviewer can see how the page behaves without building it. The video is an artifact and is published as
+# build/video/report-demo.mp4 on the branch "demo-video" (overwritten on each run, not part of the PR).
+on:
+  pull_request:
+    paths:
+      - "e2e/video/**"
+      - ".github/workflows/demo-video.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build the site (browser demo only)
+        run: SKIP_DOWNLOADS=1 scripts/build-site.sh build/site
+      - name: Record the demo
+        working-directory: e2e
+        env:
+          GHERKIT_SITE: ${{ github.workspace }}/build/site
+          GHERKIT_VIDEO_DIR: ${{ github.workspace }}/build/video
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+          node video/report-demo.mjs
+      - name: Convert to MP4
+        run: |
+          ffmpeg -y -loglevel error -i build/video/report-demo.webm -c:v libx264 -pix_fmt yuv420p -crf 28 -movflags +faststart build/video/report-demo.mp4
+          ls -lh build/video
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report-demo-video
+          path: build/video/report-demo.*
+      - name: Publish on the branch demo-video
+        if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          cp build/video/report-demo.mp4 "$RUNNER_TEMP/report-demo.mp4"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch --orphan demo-video
+          git rm -rf --quiet . || true
+          cp "$RUNNER_TEMP/report-demo.mp4" report-demo.mp4
+          printf '%s\n' "Video der Report-Demo, erzeugt aus ${GITHUB_SHA} (Workflow demo-video)." > README.md
+          git add report-demo.mp4 README.md
+          git commit -q -m "Video der Report-Demo (${GITHUB_SHA})"
+          git push -f origin demo-video
