@@ -1,0 +1,3237 @@
+[
+  {
+    "uri": "features/de/sprachen.feature",
+    "id": "mehrsprachigkeit",
+    "keyword": "Funktionalität",
+    "name": "Mehrsprachigkeit",
+    "description": "",
+    "tags": [
+      {
+        "name": "@cli",
+        "line": 1
+      },
+      {
+        "name": "@i18n",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "mehrsprachigkeit;deutsche-features-werden-erkannt-und-geprüft",
+        "keyword": "Szenario",
+        "name": "Deutsche Features werden erkannt und geprüft",
+        "description": "",
+        "line": 7,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Angenommen ",
+            "name": "eine Datei \"anmeldung.feature\" mit:",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 3766028
+            },
+            "doc_string": {
+              "value": "# language: de\nFunktionalität: Anmeldung\n\n  Szenario: Erfolgreich\n    Angenommen eine registrierte Kundin\n    Wenn sie sich anmeldet\n    Dann sieht sie ihre Bestellungen",
+              "content_type": "gherkin",
+              "line": 9
+            }
+          },
+          {
+            "keyword": "Wenn ",
+            "name": "ich \"gherkit lint .\" ausführe",
+            "line": 18,
+            "result": {
+              "status": "passed",
+              "duration": 28058266
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "ist der Exit-Code 0",
+            "line": 19,
+            "result": {
+              "status": "passed",
+              "duration": 32008224
+            }
+          }
+        ]
+      },
+      {
+        "id": "mehrsprachigkeit;die-schlüsselwörter-einer-sprache-anzeigen",
+        "keyword": "Szenario",
+        "name": "Die Schlüsselwörter einer Sprache anzeigen",
+        "description": "",
+        "line": 21,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Wenn ",
+            "name": "ich \"gherkit dialects de\" ausführe",
+            "line": 22,
+            "result": {
+              "status": "passed",
+              "duration": 35884471
+            }
+          },
+          {
+            "keyword": "Dann ",
+            "name": "enthält die Ausgabe \"Funktionalität\"",
+            "line": 23,
+            "result": {
+              "status": "passed",
+              "duration": 30340129
+            }
+          },
+          {
+            "keyword": "Und ",
+            "name": "enthält die Ausgabe \"Angenommen\"",
+            "line": 24,
+            "result": {
+              "status": "passed",
+              "duration": 27299483
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "features/editor.feature",
+    "id": "browser-editor",
+    "keyword": "Feature",
+    "name": "Browser editor",
+    "description": "",
+    "tags": [
+      {
+        "name": "@editor",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "browser-editor;the-editor-lists-the-features-of-the-folder",
+        "keyword": "Scenario",
+        "name": "The editor lists the features of the folder",
+        "description": "",
+        "line": 18,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"shop/cart.feature\" with:",
+            "line": 7,
+            "result": {
+              "status": "passed",
+              "duration": 29401857
+            },
+            "doc_string": {
+              "value": "Feature: Cart\n\n  Scenario: Add an item\n    Given an empty cart\n    When I add \"Pen\"\n    Then the cart contains 1 item",
+              "content_type": "gherkin",
+              "line": 8
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 40353431
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I request \"GET /api/workspace\"",
+            "line": 19,
+            "result": {
+              "status": "passed",
+              "duration": 38135853
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the response contains \"shop/cart.feature\"",
+            "line": 20,
+            "result": {
+              "status": "passed",
+              "duration": 4006843
+            }
+          }
+        ]
+      },
+      {
+        "id": "browser-editor;the-editor-offers-all-editing-variants",
+        "keyword": "Scenario",
+        "name": "The editor offers all editing variants",
+        "description": "",
+        "line": 22,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"shop/cart.feature\" with:",
+            "line": 7,
+            "result": {
+              "status": "passed",
+              "duration": 5744238
+            },
+            "doc_string": {
+              "value": "Feature: Cart\n\n  Scenario: Add an item\n    Given an empty cart\n    When I add \"Pen\"\n    Then the cart contains 1 item",
+              "content_type": "gherkin",
+              "line": 8
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 7111416
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I request \"GET /\"",
+            "line": 23,
+            "result": {
+              "status": "passed",
+              "duration": 40668482
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the response contains \"data-variant=\\\"code\\\"\"",
+            "line": 24,
+            "result": {
+              "status": "passed",
+              "duration": 9866196
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the response contains \"data-variant=\\\"doc\\\"\"",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 40136823
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the response contains \"data-variant=\\\"struct\\\"\"",
+            "line": 26,
+            "result": {
+              "status": "passed",
+              "duration": 9669345
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the response contains \"data-variant=\\\"split\\\"\"",
+            "line": 27,
+            "result": {
+              "status": "passed",
+              "duration": 35830619
+            }
+          }
+        ]
+      },
+      {
+        "id": "browser-editor;a-feature-can-be-saved-from-the-editor",
+        "keyword": "Scenario",
+        "name": "A feature can be saved from the editor",
+        "description": "",
+        "line": 29,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"shop/cart.feature\" with:",
+            "line": 7,
+            "result": {
+              "status": "passed",
+              "duration": 33573267
+            },
+            "doc_string": {
+              "value": "Feature: Cart\n\n  Scenario: Add an item\n    Given an empty cart\n    When I add \"Pen\"\n    Then the cart contains 1 item",
+              "content_type": "gherkin",
+              "line": 8
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 1329669
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I save \"shop/new.feature\" with \"Feature: New\\n\" through the editor",
+            "line": 30,
+            "result": {
+              "status": "passed",
+              "duration": 33936063
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the file \"shop/new.feature\" contains:",
+            "line": 31,
+            "result": {
+              "status": "passed",
+              "duration": 36482345
+            },
+            "doc_string": {
+              "value": "Feature: New",
+              "content_type": "",
+              "line": 32
+            }
+          }
+        ]
+      },
+      {
+        "id": "browser-editor;another-folder-can-be-opened-later",
+        "keyword": "Scenario",
+        "name": "Another folder can be opened later",
+        "description": "",
+        "line": 36,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"shop/cart.feature\" with:",
+            "line": 7,
+            "result": {
+              "status": "passed",
+              "duration": 22560922
+            },
+            "doc_string": {
+              "value": "Feature: Cart\n\n  Scenario: Add an item\n    Given an empty cart\n    When I add \"Pen\"\n    Then the cart contains 1 item",
+              "content_type": "gherkin",
+              "line": 8
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 36681996
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"other/x.feature\" with:",
+            "line": 37,
+            "result": {
+              "status": "passed",
+              "duration": 17634230
+            },
+            "doc_string": {
+              "value": "Feature: X",
+              "content_type": "gherkin",
+              "line": 38
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I open the folder \"other\" in the editor",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 14061600
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I request \"GET /api/workspace\"",
+            "line": 42,
+            "result": {
+              "status": "passed",
+              "duration": 20557955
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the response contains \"x.feature\"",
+            "line": 43,
+            "result": {
+              "status": "passed",
+              "duration": 1795861
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the response does not contain \"cart.feature\"",
+            "line": 44,
+            "result": {
+              "status": "passed",
+              "duration": 17449391
+            }
+          }
+        ]
+      },
+      {
+        "id": "browser-editor;steps-used-in-the-folder-feed-the-completion",
+        "keyword": "Scenario",
+        "name": "Steps used in the folder feed the completion",
+        "description": "",
+        "line": 46,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"shop/cart.feature\" with:",
+            "line": 7,
+            "result": {
+              "status": "passed",
+              "duration": 26347388
+            },
+            "doc_string": {
+              "value": "Feature: Cart\n\n  Scenario: Add an item\n    Given an empty cart\n    When I add \"Pen\"\n    Then the cart contains 1 item",
+              "content_type": "gherkin",
+              "line": 8
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 2169834
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I request \"GET /api/steps\"",
+            "line": 47,
+            "result": {
+              "status": "passed",
+              "duration": 9653328
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the response contains \"an empty cart\"",
+            "line": 48,
+            "result": {
+              "status": "passed",
+              "duration": 4379334
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "features/formatting.feature",
+    "id": "formatting",
+    "keyword": "Feature",
+    "name": "Formatting",
+    "description": "",
+    "tags": [
+      {
+        "name": "@cli",
+        "line": 1
+      },
+      {
+        "name": "@fmt",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "formatting;an-unformatted-file-is-reported-by-check",
+        "keyword": "Scenario",
+        "name": "An unformatted file is reported by --check",
+        "description": "",
+        "line": 7,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"messy.feature\" with:",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 22469243
+            },
+            "doc_string": {
+              "value": "Feature:    Messy\nScenario:   Somewhere\nGiven    a step",
+              "content_type": "gherkin",
+              "line": 9
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt --check .\"",
+            "line": 14,
+            "result": {
+              "status": "passed",
+              "duration": 27302125
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 2",
+            "line": 15,
+            "result": {
+              "status": "passed",
+              "duration": 36820823
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the output contains \"messy.feature\"",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 8532417
+            }
+          }
+        ]
+      },
+      {
+        "id": "formatting;formatting-rewrites-the-file-in-canonical-layout",
+        "keyword": "Scenario",
+        "name": "Formatting rewrites the file in canonical layout",
+        "description": "",
+        "line": 18,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"messy.feature\" with:",
+            "line": 19,
+            "result": {
+              "status": "passed",
+              "duration": 12730330
+            },
+            "doc_string": {
+              "value": "Feature:    Messy\nScenario:   Somewhere\nGiven    a step\n  |a|bb|",
+              "content_type": "gherkin",
+              "line": 20
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt .\"",
+            "line": 26,
+            "result": {
+              "status": "passed",
+              "duration": 11500364
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 27,
+            "result": {
+              "status": "passed",
+              "duration": 18983670
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"messy.feature\" contains:",
+            "line": 28,
+            "result": {
+              "status": "passed",
+              "duration": 9665120
+            },
+            "doc_string": {
+              "value": "Feature: Messy\n\n  Scenario: Somewhere\n    Given a step\n      | a | bb |",
+              "content_type": "gherkin",
+              "line": 29
+            }
+          }
+        ]
+      },
+      {
+        "id": "formatting;formatting-keeps-the-meaning-of-the-official-example-complex-background-feature;;1",
+        "keyword": "Scenario Outline",
+        "name": "Formatting keeps the meaning of the official example \"complex_background.feature\"",
+        "description": "",
+        "line": 45,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the official Gherkin example \"complex_background.feature\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 29009449
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt .\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 11172799
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 25638149
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file still yields the same test cases",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 26930323
+            }
+          }
+        ]
+      },
+      {
+        "id": "formatting;formatting-keeps-the-meaning-of-the-official-example-docstrings-feature;;2",
+        "keyword": "Scenario Outline",
+        "name": "Formatting keeps the meaning of the official example \"docstrings.feature\"",
+        "description": "",
+        "line": 46,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the official Gherkin example \"docstrings.feature\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 21503749
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt .\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 4058259
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 18524201
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file still yields the same test cases",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 19425215
+            }
+          }
+        ]
+      },
+      {
+        "id": "formatting;formatting-keeps-the-meaning-of-the-official-example-escaped-pipes-feature;;3",
+        "keyword": "Scenario Outline",
+        "name": "Formatting keeps the meaning of the official example \"escaped_pipes.feature\"",
+        "description": "",
+        "line": 47,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the official Gherkin example \"escaped_pipes.feature\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 32907833
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt .\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 7307183
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 28259093
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file still yields the same test cases",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 24407683
+            }
+          }
+        ]
+      },
+      {
+        "id": "formatting;formatting-keeps-the-meaning-of-the-official-example-i18n-fr-feature;;4",
+        "keyword": "Scenario Outline",
+        "name": "Formatting keeps the meaning of the official example \"i18n_fr.feature\"",
+        "description": "",
+        "line": 48,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the official Gherkin example \"i18n_fr.feature\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 31946114
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt .\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 34639892
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 27115182
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file still yields the same test cases",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 34986296
+            }
+          }
+        ]
+      },
+      {
+        "id": "formatting;formatting-keeps-the-meaning-of-the-official-example-rule-feature;;5",
+        "keyword": "Scenario Outline",
+        "name": "Formatting keeps the meaning of the official example \"rule.feature\"",
+        "description": "",
+        "line": 49,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the official Gherkin example \"rule.feature\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 25621488
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt .\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 30445926
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 39956188
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file still yields the same test cases",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 11692106
+            }
+          }
+        ]
+      },
+      {
+        "id": "formatting;formatting-keeps-the-meaning-of-the-official-example-scenario-outline-feature;;6",
+        "keyword": "Scenario Outline",
+        "name": "Formatting keeps the meaning of the official example \"scenario_outline.feature\"",
+        "description": "",
+        "line": 50,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the official Gherkin example \"scenario_outline.feature\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 35472389
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt .\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 6667667
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 19547945
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file still yields the same test cases",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 24913087
+            }
+          }
+        ]
+      },
+      {
+        "id": "formatting;formatting-keeps-the-meaning-of-the-official-example-step-with-datatable-and-docstring-feature;;7",
+        "keyword": "Scenario Outline",
+        "name": "Formatting keeps the meaning of the official example \"step_with_datatable_and_docstring.feature\"",
+        "description": "",
+        "line": 51,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the official Gherkin example \"step_with_datatable_and_docstring.feature\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 29186821
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt .\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 33896595
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 6679081
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file still yields the same test cases",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 18791871
+            }
+          }
+        ]
+      },
+      {
+        "id": "formatting;formatting-keeps-the-meaning-of-the-official-example-tags-feature;;8",
+        "keyword": "Scenario Outline",
+        "name": "Formatting keeps the meaning of the official example \"tags.feature\"",
+        "description": "",
+        "line": 52,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "the official Gherkin example \"tags.feature\"",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 1006348
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt .\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 23186074
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 13700640
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file still yields the same test cases",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 14976438
+            }
+          }
+        ]
+      },
+      {
+        "id": "formatting;a-file-with-syntax-errors-is-left-untouched",
+        "keyword": "Scenario",
+        "name": "A file with syntax errors is left untouched",
+        "description": "",
+        "line": 54,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"broken.feature\" with:",
+            "line": 55,
+            "result": {
+              "status": "passed",
+              "duration": 22949585
+            },
+            "doc_string": {
+              "value": "Feature: Broken\n  Scenario: S\n    Given a table\n      | a | b |\n      | 1 |",
+              "content_type": "gherkin",
+              "line": 56
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit fmt .\"",
+            "line": 63,
+            "result": {
+              "status": "passed",
+              "duration": 32032327
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 64,
+            "result": {
+              "status": "passed",
+              "duration": 13107709
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"syntax error\"",
+            "line": 65,
+            "result": {
+              "status": "passed",
+              "duration": 14327147
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"broken.feature\" is unchanged",
+            "line": 66,
+            "result": {
+              "status": "passed",
+              "duration": 26401992
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "features/linting.feature",
+    "id": "linting",
+    "keyword": "Feature",
+    "name": "Linting",
+    "description": "",
+    "tags": [
+      {
+        "name": "@cli",
+        "line": 1
+      },
+      {
+        "name": "@lint",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "linting;the-rule-syntax-finds-its-problem;;1",
+        "keyword": "Scenario Outline",
+        "name": "The rule syntax finds its problem",
+        "description": "",
+        "line": 19,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"case.feature\" with:",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 23334577
+            },
+            "doc_string": {
+              "value": "Feature: F\n  Scenario: S\n    Given x\n      | a |\n      | 1 | 2 |",
+              "content_type": "gherkin",
+              "line": 10
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit lint .\"",
+            "line": 13,
+            "result": {
+              "status": "passed",
+              "duration": 11435815
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the output contains \"syntax\"",
+            "line": 14,
+            "result": {
+              "status": "passed",
+              "duration": 18878877
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the output contains \"case.feature:5:\"",
+            "line": 15,
+            "result": {
+              "status": "passed",
+              "duration": 1342475
+            }
+          }
+        ]
+      },
+      {
+        "id": "linting;the-rule-no-steps-finds-its-problem;;2",
+        "keyword": "Scenario Outline",
+        "name": "The rule no-steps finds its problem",
+        "description": "",
+        "line": 20,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"case.feature\" with:",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 14926906
+            },
+            "doc_string": {
+              "value": "Feature: F\n\n  Scenario: Empty",
+              "content_type": "gherkin",
+              "line": 10
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit lint .\"",
+            "line": 13,
+            "result": {
+              "status": "passed",
+              "duration": 3958700
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the output contains \"no-steps\"",
+            "line": 14,
+            "result": {
+              "status": "passed",
+              "duration": 33563414
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the output contains \"case.feature:3:\"",
+            "line": 15,
+            "result": {
+              "status": "passed",
+              "duration": 27708544
+            }
+          }
+        ]
+      },
+      {
+        "id": "linting;the-rule-duplicate-scenario-finds-its-problem;;3",
+        "keyword": "Scenario Outline",
+        "name": "The rule duplicate-scenario finds its problem",
+        "description": "",
+        "line": 21,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"case.feature\" with:",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 30156390
+            },
+            "doc_string": {
+              "value": "Feature: F\n\n  Scenario: S\n    Given x\n\n  Scenario: S\n    Given y",
+              "content_type": "gherkin",
+              "line": 10
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit lint .\"",
+            "line": 13,
+            "result": {
+              "status": "passed",
+              "duration": 14309616
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the output contains \"duplicate-scenario\"",
+            "line": 14,
+            "result": {
+              "status": "passed",
+              "duration": 18431306
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the output contains \"case.feature:6:\"",
+            "line": 15,
+            "result": {
+              "status": "passed",
+              "duration": 23713756
+            }
+          }
+        ]
+      },
+      {
+        "id": "linting;the-rule-outline-placeholder-finds-its-problem;;4",
+        "keyword": "Scenario Outline",
+        "name": "The rule outline-placeholder finds its problem",
+        "description": "",
+        "line": 22,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"case.feature\" with:",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 32669233
+            },
+            "doc_string": {
+              "value": "Feature: F\n\n  Scenario Outline: O\n    Given <a> <b>\n\n    Examples:\n      | a |\n      | 1 |",
+              "content_type": "gherkin",
+              "line": 10
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit lint .\"",
+            "line": 13,
+            "result": {
+              "status": "passed",
+              "duration": 18916775
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the output contains \"outline-placeholder\"",
+            "line": 14,
+            "result": {
+              "status": "passed",
+              "duration": 36825885
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the output contains \"case.feature:4:\"",
+            "line": 15,
+            "result": {
+              "status": "passed",
+              "duration": 40275595
+            }
+          }
+        ]
+      },
+      {
+        "id": "linting;errors-fail-the-build",
+        "keyword": "Scenario",
+        "name": "Errors fail the build",
+        "description": "",
+        "line": 26,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"bad.feature\" with:",
+            "line": 27,
+            "result": {
+              "status": "passed",
+              "duration": 14676139
+            },
+            "doc_string": {
+              "value": "Feature: Bad\n  Scenario: S\n    Given x\n      | a |\n      | 1 | 2 |",
+              "content_type": "gherkin",
+              "line": 28
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit lint .\"",
+            "line": 35,
+            "result": {
+              "status": "passed",
+              "duration": 39035197
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 2",
+            "line": 36,
+            "result": {
+              "status": "passed",
+              "duration": 23357319
+            }
+          }
+        ]
+      },
+      {
+        "id": "linting;warnings-only-fail-in-strict-mode",
+        "keyword": "Scenario",
+        "name": "Warnings only fail in strict mode",
+        "description": "",
+        "line": 38,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"warn.feature\" with:",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 11571130
+            },
+            "doc_string": {
+              "value": "Feature: Warn\n\n  Scenario: Without steps",
+              "content_type": "gherkin",
+              "line": 40
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit lint .\"",
+            "line": 45,
+            "result": {
+              "status": "passed",
+              "duration": 9508908
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 46,
+            "result": {
+              "status": "passed",
+              "duration": 22397078
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit lint --strict .\"",
+            "line": 47,
+            "result": {
+              "status": "passed",
+              "duration": 1003776
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 2",
+            "line": 48,
+            "result": {
+              "status": "passed",
+              "duration": 10208675
+            }
+          }
+        ]
+      },
+      {
+        "id": "linting;github-annotations-for-pull-requests",
+        "keyword": "Scenario",
+        "name": "GitHub annotations for pull requests",
+        "description": "",
+        "line": 50,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"bad.feature\" with:",
+            "line": 51,
+            "result": {
+              "status": "passed",
+              "duration": 21017837
+            },
+            "doc_string": {
+              "value": "Feature: Bad\n\n  Scenario: S",
+              "content_type": "gherkin",
+              "line": 52
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit lint -o github .\"",
+            "line": 57,
+            "result": {
+              "status": "passed",
+              "duration": 5532283
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the output contains \"::warning file=bad.feature,line=3\"",
+            "line": 58,
+            "result": {
+              "status": "passed",
+              "duration": 4494273
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "features/manual.feature",
+    "id": "manual-scenarios",
+    "keyword": "Feature",
+    "name": "Manual scenarios",
+    "description": "",
+    "tags": [
+      {
+        "name": "@cli",
+        "line": 1
+      },
+      {
+        "name": "@run",
+        "line": 1
+      },
+      {
+        "name": "@manual-testing",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "manual-scenarios;manual-scenarios-are-excluded-by-default",
+        "keyword": "Scenario",
+        "name": "Manual scenarios are excluded by default",
+        "description": "",
+        "line": 13,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 19114625
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 15856919
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 14728621
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 34793019
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 17635992
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 22543630
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit run --cmd \\\"cp results.json {output}; echo {tags} > tags.txt\\\" --fail-on-failed=false\"",
+            "line": 14,
+            "result": {
+              "status": "passed",
+              "duration": 14019508
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the file \"tags.txt\" contains \"not @manual\"",
+            "line": 15,
+            "result": {
+              "status": "passed",
+              "duration": 38547490
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;the-tag-expression-can-be-changed",
+        "keyword": "Scenario",
+        "name": "The tag expression can be changed",
+        "description": "",
+        "line": 17,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 6765288
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 5104254
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 14483908
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 32967506
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 1372401
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 5223527
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit run --cmd \\\"cp results.json {output}; echo {tags} > tags.txt\\\" --tags @smoke --fail-on-failed=false\"",
+            "line": 18,
+            "result": {
+              "status": "passed",
+              "duration": 9304541
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the file \"tags.txt\" contains \"@smoke\"",
+            "line": 19,
+            "result": {
+              "status": "passed",
+              "duration": 34904907
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"tags.txt\" does not contain \"not @manual\"",
+            "line": 20,
+            "result": {
+              "status": "passed",
+              "duration": 18091226
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;only-test-cases-tagged-manual-are-part-of-the-run",
+        "keyword": "Scenario",
+        "name": "Only test cases tagged @manual are part of the run",
+        "description": "",
+        "line": 40,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 30929607
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 38629457
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 40708587
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 16464253
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 27726046
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 15433800
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 23008242
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the response contains \"Offers are sorted by price\"",
+            "line": 42,
+            "result": {
+              "status": "passed",
+              "duration": 5602660
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the response does not contain \"The API answers\"",
+            "line": 43,
+            "result": {
+              "status": "passed",
+              "duration": 35119861
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;a-run-needs-a-tester",
+        "keyword": "Scenario",
+        "name": "A run needs a tester",
+        "description": "",
+        "line": 45,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 5204454
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 29702512
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 39179978
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 31242332
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 21825535
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 39484777
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I start a manual run as \"\" for the tag \"@manual\"",
+            "line": 46,
+            "result": {
+              "status": "passed",
+              "duration": 3466963
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the editor refuses the request with \"tester is required\"",
+            "line": 47,
+            "result": {
+              "status": "passed",
+              "duration": 15521349
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;a-run-without-matching-test-cases-is-refused",
+        "keyword": "Scenario",
+        "name": "A run without matching test cases is refused",
+        "description": "",
+        "line": 49,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 17356519
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 22852721
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 20667851
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 31994205
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 25377022
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 9554536
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@nightly\"",
+            "line": 50,
+            "result": {
+              "status": "passed",
+              "duration": 2070994
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the editor refuses the request with \"no test cases found\"",
+            "line": 51,
+            "result": {
+              "status": "passed",
+              "duration": 7344964
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;a-failed-manual-step-fails-the-build-and-shows-up-in-the-report",
+        "keyword": "Scenario",
+        "name": "A failed manual step fails the build and shows up in the report",
+        "description": "",
+        "line": 53,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 4604568
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 9421070
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 8391092
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 20119074
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 21376129
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 6184727
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 54,
+            "result": {
+              "status": "passed",
+              "duration": 37562285
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I record \"passed\" with the comment \"\" for step 1 of test case 1",
+            "line": 55,
+            "result": {
+              "status": "passed",
+              "duration": 2451515
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I record \"failed\" with the comment \"sorted descending\" for step 2 of test case 1",
+            "line": 56,
+            "result": {
+              "status": "passed",
+              "duration": 26567338
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I finish the manual run and keep the result as \"manual.json\"",
+            "line": 57,
+            "result": {
+              "status": "passed",
+              "duration": 4143932
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit run --cmd \\\"cp manual.json {output}\\\" --report report.md\"",
+            "line": 58,
+            "result": {
+              "status": "passed",
+              "duration": 13331094
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 1",
+            "line": 59,
+            "result": {
+              "status": "passed",
+              "duration": 10004224
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"1 scenario(s): 0 passed, 1 failed\"",
+            "line": 60,
+            "result": {
+              "status": "passed",
+              "duration": 3569594
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"report.md\" contains \"sorted descending\"",
+            "line": 61,
+            "result": {
+              "status": "passed",
+              "duration": 17444908
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"report.md\" contains \"Tester: Anna\"",
+            "line": 62,
+            "result": {
+              "status": "passed",
+              "duration": 13770895
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;steps-after-a-failed-step-are-skipped",
+        "keyword": "Scenario",
+        "name": "Steps after a failed step are skipped",
+        "description": "",
+        "line": 64,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 25636339
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 7265125
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 22918367
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 24466505
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 8853482
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 37583228
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 65,
+            "result": {
+              "status": "passed",
+              "duration": 18535110
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I record \"failed\" with the comment \"wrong order\" for step 2 of test case 1",
+            "line": 66,
+            "result": {
+              "status": "passed",
+              "duration": 40353360
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I finish the manual run and keep the result as \"manual.json\"",
+            "line": 67,
+            "result": {
+              "status": "passed",
+              "duration": 28462529
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the file \"manual.json\" contains \"skipped\"",
+            "line": 68,
+            "result": {
+              "status": "passed",
+              "duration": 23375703
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;a-file-with-syntax-errors-is-left-out-of-a-run-over-the-whole-folder",
+        "keyword": "Scenario",
+        "name": "A file with syntax errors is left out of a run over the whole folder",
+        "description": "",
+        "line": 70,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 35670412
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 20102170
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 27593376
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 32597302
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 32366485
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 37068291
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"broken.feature\" with:",
+            "line": 71,
+            "result": {
+              "status": "passed",
+              "duration": 9858233
+            },
+            "doc_string": {
+              "value": "Feature: Broken\n  Scenario: Table with a missing cell\n    Given a table\n      | a | b |\n      | c |",
+              "content_type": "",
+              "line": 72
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 79,
+            "result": {
+              "status": "passed",
+              "duration": 21963055
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the response contains \"Offers are sorted by price\"",
+            "line": 80,
+            "result": {
+              "status": "passed",
+              "duration": 13550526
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the response contains \"broken.feature has syntax errors\"",
+            "line": 81,
+            "result": {
+              "status": "passed",
+              "duration": 25484328
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;a-failed-step-without-a-reason-is-refused",
+        "keyword": "Scenario",
+        "name": "A failed step without a reason is refused",
+        "description": "",
+        "line": 99,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 29800508
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 11356586
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 8291600
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 37283462
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 6703141
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 7989171
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I try to record \"failed\" with the comment \"\" for step 3 of test case 1",
+            "line": 100,
+            "result": {
+              "status": "passed",
+              "duration": 37593865
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the editor refuses the request with \"reason is required\"",
+            "line": 101,
+            "result": {
+              "status": "passed",
+              "duration": 19484831
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;an-ignored-step-without-a-reason-is-refused",
+        "keyword": "Scenario",
+        "name": "An ignored step without a reason is refused",
+        "description": "",
+        "line": 103,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 30641178
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 15693196
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 22136118
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 26519200
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 34987523
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 14527381
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I try to record \"ignored\" with the comment \"\" for step 1 of test case 1",
+            "line": 104,
+            "result": {
+              "status": "passed",
+              "duration": 28366127
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the editor refuses the request with \"reason is required\"",
+            "line": 105,
+            "result": {
+              "status": "passed",
+              "duration": 25632441
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;an-ignored-step-is-exported-as-skipped-together-with-its-reason",
+        "keyword": "Scenario",
+        "name": "An ignored step is exported as skipped together with its reason",
+        "description": "",
+        "line": 107,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 27810404
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 3724018
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 33197896
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 40723934
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 25191037
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 32677099
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "I record \"ignored\" with the comment \"test system is down\" for step 1 of test case 1",
+            "line": 108,
+            "result": {
+              "status": "passed",
+              "duration": 29743441
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I finish the manual run and keep the result as \"manual.json\"",
+            "line": 109,
+            "result": {
+              "status": "passed",
+              "duration": 32543687
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the file \"manual.json\" contains \"test system is down\"",
+            "line": 110,
+            "result": {
+              "status": "passed",
+              "duration": 8701526
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"manual.json\" contains \"ignored\"",
+            "line": 111,
+            "result": {
+              "status": "passed",
+              "duration": 22895296
+            }
+          }
+        ]
+      },
+      {
+        "id": "manual-scenarios;a-failed-step-becomes-the-text-of-a-jira-bug",
+        "keyword": "Scenario",
+        "name": "A failed step becomes the text of a Jira bug",
+        "description": "",
+        "line": 113,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 9,
+            "result": {
+              "status": "passed",
+              "duration": 32061497
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 23749039
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending\n\n  Scenario: The API answers\n    Then the API answers with offers",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 37710613
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"prices.feature\" with:",
+            "line": 86,
+            "result": {
+              "status": "passed",
+              "duration": 22583427
+            },
+            "doc_string": {
+              "value": "Feature: Price comparison\n\n  @manual @TEST_LIB-7\n  Scenario: Offers are sorted by price\n    Given I have solved the captcha\n    When I search for a health insurance\n    Then the offers are sorted ascending",
+              "content_type": "",
+              "line": 87
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the editor is running in the current folder",
+            "line": 96,
+            "result": {
+              "status": "passed",
+              "duration": 35972640
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "I start a manual run as \"Anna\" for the tag \"@manual\"",
+            "line": 97,
+            "result": {
+              "status": "passed",
+              "duration": 33434550
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "I record \"failed\" with the comment \"sorted descending\" for step 3 of test case 1",
+            "line": 114,
+            "result": {
+              "status": "passed",
+              "duration": 39738124
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I ask for the Jira text of test case 1",
+            "line": 115,
+            "result": {
+              "status": "passed",
+              "duration": 31989914
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the response contains \"sorted descending\"",
+            "line": 116,
+            "result": {
+              "status": "passed",
+              "duration": 24089611
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the response contains \"prices.feature\"",
+            "line": 117,
+            "result": {
+              "status": "passed",
+              "duration": 14843805
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the response contains \"LIB-7\"",
+            "line": 118,
+            "result": {
+              "status": "passed",
+              "duration": 24669079
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "features/reporting.feature",
+    "id": "reporting",
+    "keyword": "Feature",
+    "name": "Reporting",
+    "description": "",
+    "tags": [
+      {
+        "name": "@cli",
+        "line": 1
+      },
+      {
+        "name": "@report",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "reporting;html-report-with-summary",
+        "keyword": "Scenario",
+        "name": "HTML report with summary",
+        "description": "",
+        "line": 9,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 7,
+            "result": {
+              "status": "passed",
+              "duration": 5447748
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit report results.json -o report.html\"",
+            "line": 10,
+            "result": {
+              "status": "passed",
+              "duration": 39780562
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 11,
+            "result": {
+              "status": "passed",
+              "duration": 7395688
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"report.html\" contains \"2 / 3\"",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 23349246
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"3 scenario(s): 2 passed, 1 failed\"",
+            "line": 13,
+            "result": {
+              "status": "passed",
+              "duration": 34158173
+            }
+          }
+        ]
+      },
+      {
+        "id": "reporting;the-build-fails-when-a-scenario-failed",
+        "keyword": "Scenario",
+        "name": "The build fails when a scenario failed",
+        "description": "",
+        "line": 15,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 7,
+            "result": {
+              "status": "passed",
+              "duration": 35475482
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit report results.json -o report.html --fail-on-failed\"",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 34247564
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 1",
+            "line": 17,
+            "result": {
+              "status": "passed",
+              "duration": 25616694
+            }
+          }
+        ]
+      },
+      {
+        "id": "reporting;report-in-german",
+        "keyword": "Scenario",
+        "name": "Report in German",
+        "description": "",
+        "line": 19,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 7,
+            "result": {
+              "status": "passed",
+              "duration": 32266277
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit report results.json -f md --lang de\"",
+            "line": 20,
+            "result": {
+              "status": "passed",
+              "duration": 3750323
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the output contains \"Abnahmetest-Report\"",
+            "line": 21,
+            "result": {
+              "status": "passed",
+              "duration": 1573129
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the output contains \"fehlgeschlagen\"",
+            "line": 22,
+            "result": {
+              "status": "passed",
+              "duration": 6895263
+            }
+          }
+        ]
+      },
+      {
+        "id": "reporting;custom-template",
+        "keyword": "Scenario",
+        "name": "Custom template",
+        "description": "",
+        "line": 24,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 7,
+            "result": {
+              "status": "passed",
+              "duration": 15126127
+            }
+          },
+          {
+            "keyword": "Given ",
+            "name": "a file \"summary.tmpl\" with:",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 37533433
+            },
+            "doc_string": {
+              "value": "{{.Summary.Scenarios.Passed}} of {{.Summary.Scenarios.Total}} ok",
+              "content_type": "",
+              "line": 26
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit report results.json -t summary.tmpl\"",
+            "line": 29,
+            "result": {
+              "status": "passed",
+              "duration": 39710531
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the output contains \"2 of 3 ok\"",
+            "line": 30,
+            "result": {
+              "status": "passed",
+              "duration": 40497109
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "uri": "features/running.feature",
+    "id": "running",
+    "keyword": "Feature",
+    "name": "Running",
+    "description": "",
+    "tags": [
+      {
+        "name": "@cli",
+        "line": 1
+      },
+      {
+        "name": "@run",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "running;a-failed-scenario-fails-the-build",
+        "keyword": "Scenario",
+        "name": "A failed scenario fails the build",
+        "description": "",
+        "line": 12,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 2921585
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit run --cmd \\\"cp results.json {output}\\\" --report report.html\"",
+            "line": 13,
+            "result": {
+              "status": "passed",
+              "duration": 17369319
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 1",
+            "line": 14,
+            "result": {
+              "status": "passed",
+              "duration": 3530589
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"3 scenario(s): 2 passed, 1 failed\"",
+            "line": 15,
+            "result": {
+              "status": "passed",
+              "duration": 12276683
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"report.html\" contains \"2 / 3\"",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 11396712
+            }
+          }
+        ]
+      },
+      {
+        "id": "running;the-results-can-be-reported-without-failing-the-build",
+        "keyword": "Scenario",
+        "name": "The results can be reported without failing the build",
+        "description": "",
+        "line": 18,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 15840965
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit run --cmd \\\"cp results.json {output}\\\" --fail-on-failed=false\"",
+            "line": 19,
+            "result": {
+              "status": "passed",
+              "duration": 31866963
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 20,
+            "result": {
+              "status": "passed",
+              "duration": 17905641
+            }
+          }
+        ]
+      },
+      {
+        "id": "running;the-cucumber-json-can-be-kept",
+        "keyword": "Scenario",
+        "name": "The Cucumber JSON can be kept",
+        "description": "",
+        "line": 22,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 36852733
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit run --cmd \\\"cp results.json {output}\\\" -o kept/out.json --fail-on-failed=false\"",
+            "line": 23,
+            "result": {
+              "status": "passed",
+              "duration": 21340523
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the file \"kept/out.json\" contains \"bad 0\"",
+            "line": 24,
+            "result": {
+              "status": "passed",
+              "duration": 30695121
+            }
+          }
+        ]
+      },
+      {
+        "id": "running;a-failing-runner-without-results-fails-the-build",
+        "keyword": "Scenario",
+        "name": "A failing runner without results fails the build",
+        "description": "",
+        "line": 28,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 37644891
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit run --cmd false\"",
+            "line": 29,
+            "result": {
+              "status": "passed",
+              "duration": 40338637
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 1",
+            "line": 30,
+            "result": {
+              "status": "passed",
+              "duration": 8830327
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"wrote no results\"",
+            "line": 31,
+            "result": {
+              "status": "passed",
+              "duration": 16701409
+            }
+          }
+        ]
+      },
+      {
+        "id": "running;a-runner-that-writes-nothing-is-a-configuration-error",
+        "keyword": "Scenario",
+        "name": "A runner that writes nothing is a configuration error",
+        "description": "",
+        "line": 33,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 22045254
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit run --cmd true\"",
+            "line": 34,
+            "result": {
+              "status": "passed",
+              "duration": 19049680
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 3",
+            "line": 35,
+            "result": {
+              "status": "passed",
+              "duration": 32855914
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"wrote no results\"",
+            "line": 36,
+            "result": {
+              "status": "passed",
+              "duration": 12658172
+            }
+          }
+        ]
+      },
+      {
+        "id": "running;without-a-command-the-adapter-is-detected-from-the-project",
+        "keyword": "Scenario",
+        "name": "Without a command the adapter is detected from the project",
+        "description": "",
+        "line": 38,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 2533023
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit run\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 20902153
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 3",
+            "line": 40,
+            "result": {
+              "status": "passed",
+              "duration": 18848179
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"no adapter detected\"",
+            "line": 41,
+            "result": {
+              "status": "passed",
+              "duration": 17039909
+            }
+          }
+        ]
+      },
+      {
+        "id": "running;an-unknown-adapter-is-rejected",
+        "keyword": "Scenario",
+        "name": "An unknown adapter is rejected",
+        "description": "",
+        "line": 43,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a Cucumber JSON result with 2 passed and 1 failed scenario",
+            "line": 8,
+            "result": {
+              "status": "passed",
+              "duration": 21029675
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit run --adapter cobol\"",
+            "line": 44,
+            "result": {
+              "status": "passed",
+              "duration": 32618173
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 3",
+            "line": 45,
+            "result": {
+              "status": "passed",
+              "duration": 16932359
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"unknown adapter\"",
+            "line": 46,
+            "result": {
+              "status": "passed",
+              "duration": 22166417
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

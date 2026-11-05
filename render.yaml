@@ -1,0 +1,12 @@
+# Render Blueprint: pull request previews of the browser demo (docs/render-preview.md).
+previews:
+  generation: automatic
+
+services:
+  - type: web
+    name: gherkit-demo-preview
+    runtime: docker
+    dockerfilePath: ./render/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /

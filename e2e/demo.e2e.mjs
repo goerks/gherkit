@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = resolve(process.env.GHERKIT_SITE || join(dirname(fileURLToPath(import.meta.url)), '..', 'build', 'site'));
-const types = { '.js': 'text/javascript', '.html': 'text/html', '.json': 'application/json', '.gz': 'application/gzip', '.zip': 'application/zip', '.txt': 'text/plain' };
+const types = { '.js': 'text/javascript', '.html': 'text/html', '.json': 'application/json', '.gz': 'application/gzip', '.zip': 'application/zip', '.txt': 'text/plain', '.svg': 'image/svg+xml' };
 
 let server, base, browser;
 
@@ -181,6 +181,40 @@ test('export, import and reset work on the editor page', async () => {
 test('the landing page links to the editor', async () => {
   const page = await open();
   assert.equal(await page.getAttribute('#open-editor', 'href'), 'editor/');
+  await page.close();
+});
+
+test('a report command shows the generated report right below the terminal', async () => {
+  const page = await open();
+  await startDemo(page);
+  let t = await run(page, 'ls results');
+  assert.match(t, /examples\.cucumber\.json/);
+  assert.match(t, /manual\.cucumber\.json/);
+  assert.equal(await page.locator('#report').isHidden(), true, 'no report before the first report command');
+
+  t = await run(page, 'gherkit report results/examples.cucumber.json -o report.html --title Beispiele');
+  assert.match(t, /17 scenario\(s\): 14 passed, 2 failed, 1 other/);
+  assert.match(t, /Report «report\.html» wird unter dem Terminal angezeigt/);
+  await page.waitForSelector('#report:not([hidden]) iframe');
+  const frame = page.frameLocator('#report iframe');
+  assert.match(await frame.locator('h1').innerText(), /Beispiele/);
+  assert.match(await frame.locator('body').innerText(), /Discount code NOPE/, 'the failing scenario is in the report');
+
+  // all three files together, in German, and the manual run with its evidence
+  await run(page, 'gherkit report results/gherkit.cucumber.json results/examples.cucumber.json results/manual.cucumber.json -o alle.html --lang de');
+  assert.match(await frame.locator('h1').innerText(), /Abnahmetest-Report/);
+  assert.match(await frame.locator('body').innerText(), /Anna Muster/, 'the manual tester is shown');
+  assert.equal(await frame.locator('a[href^="blob:"]').count() >= 1, true, 'evidence links point to files of the virtual folder');
+
+  // output without -o is shown too; Markdown stays in the terminal
+  t = await run(page, 'gherkit report results/manual.cucumber.json');
+  assert.doesNotMatch(t, /<!doctype/i, 'the HTML itself is not dumped into the terminal');
+  t = await run(page, 'gherkit report results/manual.cucumber.json -f md');
+  assert.match(t, /# /);
+
+  await page.click('#report button[aria-label="Report schliessen"]');
+  assert.equal(await page.locator('#report').isHidden(), true);
+  assert.deepEqual(page.errors, []);
   await page.close();
 });
 
