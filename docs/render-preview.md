@@ -15,7 +15,7 @@ Das Standardset enthält Beispiel-Ergebnisse (`examples/results/`, Cucumber JSON
 | Datei | Inhalt |
 | --- | --- |
 | `results/gherkit.cucumber.json` | 48 Szenarien aus `features/`, alle erfolgreich |
-| `results/examples.cucumber.json` | 17 Szenarien aus `examples/`: 1 fehlgeschlagen (`NOPE`), 1 undefiniert, `broken.feature` fehlgeschlagen |
+| `results/examples.cucumber.json` | 17 Szenarien aus `examples/`: 2 fehlgeschlagen (`NOPE`, `broken.feature`), 1 undefiniert |
 | `results/manual.cucumber.json` | 6 `@manual`-Szenarien eines erfundenen manuellen Laufs (Tester, Kommentare, Nachweis in `evidence/`, ein ignorierter und ein fehlgeschlagener Schritt) |
 
 Im Terminal (Startseite, oder im Editor unten «Terminal → Aufklappen»):

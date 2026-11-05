@@ -193,7 +193,7 @@ test('a report command shows the generated report right below the terminal', asy
   assert.equal(await page.locator('#report').isHidden(), true, 'no report before the first report command');
 
   t = await run(page, 'gherkit report results/examples.cucumber.json -o report.html --title Beispiele');
-  assert.match(t, /17 scenario\(s\): 15 passed, 1 failed, 1 other/);
+  assert.match(t, /17 scenario\(s\): 14 passed, 2 failed, 1 other/);
   assert.match(t, /Report «report\.html» wird unter dem Terminal angezeigt/);
   await page.waitForSelector('#report:not([hidden]) iframe');
   const frame = page.frameLocator('#report iframe');
