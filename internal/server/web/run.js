@@ -27,7 +27,11 @@
       nScenarios: 'Szenarien', nSteps: 'Schritte', reason: 'Begründung', jira: 'Jira-Text', jump: 'Hin', colScenario: 'Szenario', colResult: 'Ergebnis', colSteps: 'Schritte', colNote: 'Begründung',
       jiraTitle: 'Jira-Bug aus fehlgeschlagenem Test', jiraSummary: 'Zusammenfassung', jiraDesc: 'Beschreibung (Jira-Wiki-Format)', copySummary: 'Zusammenfassung kopieren', copyDesc: 'Beschreibung kopieren',
       copied: 'Kopiert', close: 'Schliessen', jiraXray: 'Xray-Test:', jiraHint: 'Nachweis-Dateien bitte von Hand an das Ticket anhängen.', noMore: 'Keine offenen Schritte mehr.',
-      mandatory: 'Pflicht', evidenceN: '{n} Nachweis(e)', next: 'Nächster Schritt'
+      mandatory: 'Pflicht', evidenceN: '{n} Nachweis(e)', next: 'Nächster Schritt',
+      cmpOpen: 'Begleitfenster', cmpClose: 'Begleitfenster schliessen', cmpTitle: 'gherkit Begleitfenster', cmpBack: '← Zurück', cmpToEditor: 'Zum Editor',
+      cmpShot: 'Screenshot', cmpShotFail: 'Screenshot nicht möglich', cmpBlocked: 'Das Fenster wurde blockiert. Bitte Popups für diese Seite erlauben.',
+      cmpNoRun: 'Kein Lauf geöffnet. Im Editor einen Lauf starten oder fortsetzen.', cmpDone: 'Alle Schritte erledigt. Im Editor prüfen und den Lauf abschliessen.',
+      cmpKeys: 'Tasten: G Gut · S Schlecht · I Ignorieren · ← zurück', cmpPopup: 'Dieser Browser kann kein schwebendes Fenster. Das Fenster bleibt nicht im Vordergrund.'
     },
     en: {
       vRun: 'Run', runNew: 'New manual run', runTester: 'Tester', runEnv: 'Environment (e.g. URL or stage)', runBuild: 'Build / version',
@@ -47,7 +51,11 @@
       nScenarios: 'Scenarios', nSteps: 'Steps', reason: 'Reason', jira: 'Jira text', jump: 'Go', colScenario: 'Scenario', colResult: 'Result', colSteps: 'Steps', colNote: 'Reason',
       jiraTitle: 'Jira bug from a failed test', jiraSummary: 'Summary', jiraDesc: 'Description (Jira wiki format)', copySummary: 'Copy summary', copyDesc: 'Copy description',
       copied: 'Copied', close: 'Close', jiraXray: 'Xray test:', jiraHint: 'Please attach the evidence files to the ticket by hand.', noMore: 'No open steps left.',
-      mandatory: 'required', evidenceN: '{n} evidence file(s)', next: 'Next step'
+      mandatory: 'required', evidenceN: '{n} evidence file(s)', next: 'Next step',
+      cmpOpen: 'Companion window', cmpClose: 'Close companion window', cmpTitle: 'gherkit companion', cmpBack: '← Back', cmpToEditor: 'To the editor',
+      cmpShot: 'Screenshot', cmpShotFail: 'Screenshot not possible', cmpBlocked: 'The window was blocked. Please allow popups for this page.',
+      cmpNoRun: 'No run is open. Start or resume a run in the editor.', cmpDone: 'All steps are done. Check the results in the editor and finish the run.',
+      cmpKeys: 'Keys: G good · S bad · I ignore · ← back', cmpPopup: 'This browser cannot float a window above others. The window will not stay in front.'
     }
   };
 
@@ -56,6 +64,7 @@
   var TEXT = { de: {}, en: {} };
   ['de', 'en'].forEach(function (l) { Object.keys(RAW[l]).forEach(function (k) { TEXT[l][k === 'vRun' ? k : 'r_' + k] = RAW[l][k]; }); });
 
+  var CMP = { win: null, stream: null, err: '' };
   var c, R = { runs: [], run: null, tab: 'run', cur: null, pending: null, done: null, error: '', scope: 'manual', files: 'all', form: {}, allDone: false };
   var IMG = /\.(png|jpe?g|gif|webp)$/i;
   // The browser demo answers the API in process (window.gherkitFetch): there is no server to link to, and its
@@ -116,6 +125,11 @@
     for (var i = 0; i < run.cases.length; i++) { var o = firstOpen(run.cases[i]); if (o >= 0) return { c: run.cases[i].id, s: o }; }
     return null;
   }
+  function prevPos(run, ci, si) {
+    if (si > 0) return { c: run.cases[ci].id, s: si - 1 };
+    if (ci > 0) return { c: run.cases[ci - 1].id, s: run.cases[ci - 1].steps.length - 1 };
+    return null;
+  }
   function features(run) {
     var out = [], by = {};
     run.cases.forEach(function (cs) {
@@ -155,6 +169,7 @@
       if (ta.dataset.key === focusKey) { ta.focus(); try { ta.setSelectionRange(caret, caret); } catch (e) { } }
     });
     host.scrollTop = top;
+    cmpRender();
   }
 
   function field(label, input) { return c.el('label', { class: 'rn-field' }, [c.el('span', { text: label }), input]); }
@@ -244,6 +259,7 @@
         el('span', { class: 'rn-muted', text: [run.tester, run.environment, run.build].filter(Boolean).join(' · ') })
       ]),
       tabs,
+      fin ? null : el('button', { id: 'rn-companion', 'aria-pressed': String(cmpIsOpen()), text: cmpIsOpen() ? t('cmpClose') : t('cmpOpen'), onclick: function () { cmpToggle(); } }),
       el('span', { class: 'rn-muted', id: 'rn-progress', text: p.done + '/' + p.total + ' ' + t('nSteps') }), bar, reportLink(run.id, 'rn-report'), finish
     ]);
     var kids = [head];
@@ -433,6 +449,169 @@
     }).catch(function (e) { alert(e.message); });
   }
 
+
+  // ---------- companion window ----------
+  // A small window that floats above the application under test (Document Picture-in-Picture, Chrome and Edge
+  // 116+; elsewhere an ordinary popup). It shows only the current step with the three answers, the comment and
+  // the evidence, and works on the same state (R) as the Run tab, so both always agree.
+  function cmpSupported() { return 'documentPictureInPicture' in window; }
+  function cmpIsOpen() { return !!(CMP.win && !CMP.win.closed); }
+  function cmpToggle() {
+    if (cmpIsOpen()) { CMP.win.close(); cmpClosed(); return; }
+    // called straight from the click: the browser only grants the window to a user gesture
+    var p = cmpSupported() ? window.documentPictureInPicture.requestWindow({ width: 380, height: 560 })
+      : Promise.resolve(window.open('', 'gherkit-companion', 'popup=yes,width=380,height=560'));
+    p.then(function (w) {
+      if (!w) { alert(t('cmpBlocked')); return; }
+      cmpSetup(w); render();
+    }).catch(function (e) { alert(e.message); });
+  }
+  function cmpClosed() {
+    if (CMP.stream) { CMP.stream.getTracks().forEach(function (x) { x.stop(); }); }
+    CMP.win = null; CMP.stream = null; CMP.err = '';
+    if (R.run) render();
+  }
+  function cmpSetup(w) {
+    var d = w.document;
+    d.documentElement.lang = lang();
+    d.title = t('cmpTitle');
+    // the window starts empty: take over the styles of the editor
+    [].forEach.call(document.querySelectorAll('link[rel="stylesheet"], style'), function (n) { d.head.appendChild(n.cloneNode(true)); });
+    var meta = d.createElement('meta'); meta.name = 'viewport'; meta.content = 'width=device-width,initial-scale=1'; d.head.appendChild(meta);
+    d.body.className = 'cmp-body';
+    var host = d.createElement('div'); host.id = 'cmp'; d.body.appendChild(host);
+    CMP.win = w; CMP.err = '';
+    w.addEventListener('pagehide', cmpClosed);
+    d.addEventListener('keydown', function (e) {
+      var tag = e.target && e.target.tagName;
+      if (tag === 'TEXTAREA' || tag === 'INPUT' || e.ctrlKey || e.altKey || e.metaKey) return;
+      var cur = cmpCur(); if (!cur) return;
+      var k = e.key.toLowerCase(), ta = d.getElementById('cmp-comment');
+      if (k === 'g') { e.preventDefault(); record(cur.cs.id, cur.i, 'passed', ta ? ta.value : ''); }
+      else if (k === 's') { e.preventDefault(); R.pending = { key: cur.cs.id + '-' + cur.i, status: 'failed' }; render(); }
+      else if (k === 'i') { e.preventDefault(); R.pending = { key: cur.cs.id + '-' + cur.i, status: 'ignored' }; render(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); cmpBack(); }
+      else if (e.key === 'Escape' && R.pending) { R.pending = null; render(); }
+    });
+    d.addEventListener('paste', function (e) {
+      var cur = cmpCur(); if (!cur || demo()) return;
+      var files = [].filter.call((e.clipboardData && e.clipboardData.files) || [], function (f) { return f.type.indexOf('image/') === 0; });
+      if (!files.length) return;
+      e.preventDefault();
+      upload(cur.cs.id, cur.i, files.map(function (f, n) { return { file: f, name: 'screenshot-' + Date.now() + (n ? '-' + n : '') + '.png' }; }));
+    });
+  }
+  // the step the tester is at, or null when there is none (no run, finished, nothing open)
+  function cmpCur() {
+    var run = R.run;
+    if (!run || isFinished(run) || !run.cases.length) return null;
+    if (!R.cur || caseIndex(run, R.cur.c) < 0) R.cur = startPos(run) || { c: run.cases[0].id, s: 0 };
+    var cs = run.cases[caseIndex(run, R.cur.c)];
+    return { cs: cs, i: R.cur.s, step: cs.steps[R.cur.s] };
+  }
+  function cmpBack() {
+    var cur = cmpCur(); if (!cur) return;
+    var pp = prevPos(R.run, caseIndex(R.run, cur.cs.id), cur.i);
+    if (pp) { R.pending = null; R.cur = pp; render(); }
+  }
+
+  function cmpFrame(w, stream) {
+    return new Promise(function (ok, fail) {
+      var v = w.document.createElement('video'); v.muted = true; v.srcObject = stream;
+      v.onloadedmetadata = function () {
+        v.play().then(function () {
+          setTimeout(function () {
+            var cv = w.document.createElement('canvas'); cv.width = v.videoWidth; cv.height = v.videoHeight;
+            cv.getContext('2d').drawImage(v, 0, 0);
+            cv.toBlob(function (b) { b ? ok(b) : fail(new Error('toBlob')); }, 'image/png');
+          }, 150);
+        }, fail);
+      };
+    });
+  }
+  // One window is shared once, then every click takes a picture of it.
+  function cmpShot(cs, i) {
+    var w = CMP.win, md = w && w.navigator.mediaDevices;
+    if (!md || !md.getDisplayMedia) { CMP.err = t('cmpShotFail'); cmpRender(); return; }
+    var have = CMP.stream && CMP.stream.active ? Promise.resolve(CMP.stream) : md.getDisplayMedia({ video: true }).then(function (s) { CMP.stream = s; return s; });
+    have.then(function (s) { return cmpFrame(w, s); })
+      .then(function (blob) { CMP.err = ''; return upload(cs.id, i, [{ file: blob, name: 'screenshot-' + Date.now() + '.png' }]); })
+      .catch(function (e) { CMP.err = t('cmpShotFail') + ': ' + (e && e.message || e); cmpRender(); });
+  }
+
+  function cmpRender() {
+    if (!cmpIsOpen()) return;
+    var d = CMP.win.document, host = d.getElementById('cmp'), el = c.el;
+    if (!host) return;
+    var ta0 = host.querySelector('textarea'), typed = ta0 ? { key: ta0.dataset.key, v: ta0.value, caret: ta0.selectionStart, focus: d.activeElement === ta0 } : null;
+    host.innerHTML = '';
+    var run = R.run, cur = cmpCur();
+    var toEditor = el('button', { id: 'cmp-editor', text: t('cmpToEditor'), onclick: function () { window.focus(); } });
+    if (!run || !cur) {
+      host.appendChild(el('div', { class: 'cmp' }, [el('div', { class: 'cmp-msg', id: 'cmp-none', text: run && isFinished(run) ? t('readOnly') : t('cmpNoRun') }), el('div', { class: 'cmp-foot' }, [toEditor])]));
+      return;
+    }
+    var p = progress(run), cs = cur.cs, s = cur.step, i = cur.i, key = cs.id + '-' + i;
+    var pend = R.pending && R.pending.key === key ? R.pending.status : '';
+    var bar = el('div', { class: 'rn-bar' }, [el('span', { style: 'width:' + (p.total ? Math.round(p.done * 100 / p.total) : 0) + '%' })]);
+    var head = el('div', { class: 'cmp-head' }, [
+      el('strong', { text: run.title || run.id }),
+      el('span', { class: 'rn-muted', id: 'cmp-progress', text: p.done + '/' + p.total + ' ' + t('nSteps') }), bar
+    ]);
+    var kids = [head];
+    if (startPos(run) === null) kids.push(el('div', { class: 'cmp-msg', id: 'cmp-alldone', text: t('cmpDone') }));
+    kids.push(el('div', { class: 'cmp-crumb', id: 'cmp-crumb', text: (cs.feature || cs.uri) + ' › ' + cs.name + (cs.example ? ' (' + cs.example + ')' : '') + ' · ' + t('step') + ' ' + (i + 1) + ' ' + t('ofN') + ' ' + cs.steps.length }));
+    var dots = el('div', { class: 'cmp-dots' });
+    var e = eff(cs);
+    cs.steps.forEach(function (x, n) {
+      dots.appendChild(el('button', { class: 'cmp-dot ' + e[n] + (n === i ? ' current' : ''), title: x.keyword.trim() + ' ' + x.text, 'aria-label': t('step') + ' ' + (n + 1), onclick: function () { R.pending = null; R.cur = { c: cs.id, s: n }; render(); } }));
+    });
+    kids.push(dots);
+    var card = el('div', { class: 'rn-step rn-focus cmp-step ' + (pend || (s.status || 'open')), id: 'cmp-focus' });
+    card.appendChild(el('div', { class: 'rn-step-text big' }, [el('span', { class: 'rn-kw', text: s.keyword.trim() }), ' ' + s.text]));
+    if (s.rows && s.rows.length) card.appendChild(el('table', { class: 'rn-table' }, s.rows.map(function (r) { return el('tr', {}, r.map(function (x) { return el('td', { text: x }); })); })));
+    if (s.docString) card.appendChild(el('pre', { class: 'rn-doc', text: s.docString }));
+    kids.push(card);
+
+    var label = pend === 'failed' ? t('whyBad') : pend === 'ignored' ? t('whyIgnore') : t('infoLabel');
+    var ta = el('textarea', { id: 'cmp-comment', class: pend ? 'required' : '', rows: pend ? 4 : 2, 'data-key': key, placeholder: pend === 'failed' ? t('reasonPh') : t('infoPh'), 'aria-label': label });
+    ta.value = typed && typed.key === key ? typed.v : (s.comment || '');
+    kids.push(el('label', { class: 'rn-label', for: 'cmp-comment', text: label }), ta);
+
+    var buttons;
+    if (pend) {
+      var ok = el('button', { id: 'cmp-confirm', class: 'primary', text: pend === 'failed' ? t('saveBad') : t('saveIgnore'), disabled: true, onclick: function () { record(cs.id, i, pend, ta.value); } });
+      var sync = function () { ok.disabled = !ta.value.trim(); };
+      ta.addEventListener('input', sync); sync();
+      buttons = [ok, el('button', { id: 'cmp-cancel', text: t('cancel'), onclick: function () { R.pending = null; render(); } })];
+      setTimeout(function () { if (cmpIsOpen()) ta.focus(); }, 0);
+    } else {
+      buttons = [
+        el('button', { id: 'cmp-good', class: 'rn-b rs-pass primary', text: '✓ ' + t('good'), onclick: function () { record(cs.id, i, 'passed', ta.value); } }),
+        el('button', { id: 'cmp-bad', class: 'rn-b rs-fail', text: '✗ ' + t('bad'), onclick: function () { R.pending = { key: key, status: 'failed' }; render(); } }),
+        el('button', { id: 'cmp-ignore', class: 'rn-b rs-ignore', text: '⏭ ' + t('ignore'), onclick: function () { R.pending = { key: key, status: 'ignored' }; render(); } })
+      ];
+    }
+    kids.push(el('div', { class: 'rn-btns cmp-btns', role: 'group' }, buttons));
+
+    if (!demo()) {
+      var ev = el('div', { class: 'cmp-ev' }, [el('button', { id: 'cmp-shot', text: '📷 ' + t('cmpShot'), onclick: function () { cmpShot(cs, i); } })]);
+      (s.evidence || []).forEach(function (rel) {
+        ev.appendChild(el('a', { href: evidenceUrl(rel), target: '_blank', rel: 'noopener', title: rel }, [IMG.test(rel) ? el('img', { class: 'cmp-thumb', src: evidenceUrl(rel), alt: rel }) : el('span', { text: rel.replace(/^evidence\//, '') })]));
+      });
+      kids.push(ev);
+      kids.push(el('div', { class: 'rn-muted cmp-hint', text: t('pasteHint') }));
+    }
+    if (CMP.err) kids.push(el('div', { class: 'rn-error', id: 'cmp-error', role: 'alert', text: CMP.err }));
+    kids.push(el('div', { class: 'rn-muted cmp-hint', text: t('cmpKeys') }));
+    if (!cmpSupported()) kids.push(el('div', { class: 'rn-muted cmp-hint', text: t('cmpPopup') }));
+    kids.push(el('div', { class: 'cmp-foot' }, [
+      el('button', { id: 'cmp-back', text: t('cmpBack'), disabled: !prevPos(run, caseIndex(run, cs.id), i), onclick: cmpBack }), toEditor
+    ]));
+    host.appendChild(el('div', { class: 'cmp' }, kids));
+    if (typed && typed.focus && typed.key === key && !pend) { var t2 = host.querySelector('textarea'); if (t2) { t2.focus(); try { t2.setSelectionRange(typed.caret, typed.caret); } catch (x) { } } }
+  }
+
   // ---------- actions ----------
   function record(caseId, step, status, comment) {
     return c.api('PUT', url('/step'), { case: caseId, step: step, status: status, comment: comment }).then(function (run) {
@@ -461,6 +640,7 @@
     init: function (ctx) { c = ctx; },
     show: show,
     render: function () { if (c && R) render(); },
-    state: R // for browser tests
+    state: R, // for browser tests
+    companion: CMP
   };
 })();

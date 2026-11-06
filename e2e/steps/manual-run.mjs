@@ -121,6 +121,50 @@ Then(/^the evidence file "([^"]*)" is stored with the run$/, async (w, name) => 
   assert.ok(existsSync(dir) && readdirSync(dir).some((f) => f.endsWith('-' + name)), `no evidence "${name}" in ${dir}`);
 });
 
+// ---------- companion window ----------
+// A real browser can float the window (Document Picture-in-Picture); the test takes the popup that
+// browsers without that API get, because it is a page Playwright can drive.
+When(/^I open the companion window$/, async (w) => {
+  await w.page.evaluate(() => { try { delete Window.prototype.documentPictureInPicture; } catch (e) { } try { delete window.documentPictureInPicture; } catch (e) { } });
+  [w.cmp] = await Promise.all([w.page.context().waitForEvent('page'), w.page.click('#rn-companion')]);
+  await w.cmp.waitForSelector('#cmp-focus');
+});
+Then(/^the companion window shows step (\d+) of (\d+)$/, async (w, n, of) => {
+  await w.cmp.waitForFunction((re) => new RegExp(re).test(document.getElementById('cmp-crumb').textContent), `Step ${n} of ${of}$`);
+});
+When(/^I say good in the companion window$/, (w) => recording(w, () => w.cmp.click('#cmp-good')));
+When(/^I say bad in the companion window$/, async (w) => { await w.cmp.click('#cmp-bad'); await w.cmp.waitForSelector('#cmp-confirm'); });
+When(/^I say bad in the companion window with the reason "([^"]*)"$/, async (w, reason) => {
+  await w.cmp.click('#cmp-bad');
+  await w.cmp.fill('#cmp-comment', reason);
+  await recording(w, () => w.cmp.click('#cmp-confirm'));
+});
+When(/^I press "(.)" in the companion window$/, async (w, key) => {
+  await w.cmp.keyboard.press(key);
+  if (key === 'g') await w.cmp.waitForFunction(() => !document.getElementById('cmp-focus').classList.contains('failed'));
+  else await w.cmp.waitForSelector('#cmp-confirm');
+});
+Then(/^saving in the companion window is not possible without a reason$/, async (w) => { assert.equal(await w.cmp.locator('#cmp-confirm').isDisabled(), true); });
+When(/^I paste a screenshot into the companion window$/, async (w) => {
+  await w.cmp.evaluate((b64) => {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const dt = new DataTransfer();
+    dt.items.add(new File([bytes], 'image.png', { type: 'image/png' }));
+    document.body.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+  }, PNG.toString('base64'));
+  await w.cmp.waitForSelector('#cmp-focus ~ .cmp-ev .cmp-thumb');
+});
+Then(/^the companion window shows an evidence image$/, async (w) => { assert.equal(await w.cmp.locator('.cmp-ev .cmp-thumb').count(), 1); });
+Then(/^a screenshot is stored with the run$/, async (w) => {
+  const dir = join(w.runDir(), 'evidence');
+  assert.ok(existsSync(dir) && readdirSync(dir).some((f) => /screenshot-\d+\.png$/.test(f)), `no screenshot in ${dir}`);
+});
+When(/^I close the companion window$/, async (w) => { await w.cmp.close(); });
+Then(/^the companion window can be opened again$/, async (w) => {
+  await w.page.waitForFunction(() => document.getElementById('rn-companion').getAttribute('aria-pressed') === 'false');
+  assert.equal(await text(w, '#rn-companion'), 'Companion window');
+});
+
 // ---------- results and Jira ----------
 When(/^I open the results$/, async (w) => { await w.page.click('#rn-tab-overview'); await w.page.waitForSelector('.rn-ov'); });
 Then(/^the results show (\d+) failed, (\d+) ignored and (\d+) open$/, async (w, f, i, o) => {

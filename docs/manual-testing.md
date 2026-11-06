@@ -53,6 +53,20 @@ judge is tagged `@manual`.
 After a failed or ignored step the remaining steps count as `skipped`. Tester, environment, build and times, and the
 comment and evidence of each step, are stored in an additional `gherkit` object that other tools ignore.
 
+## The companion window
+
+The Run tab is too big to keep open next to the application under test. **Companion window** (button in the header of
+a run) opens a small window that floats above every other window: the current step, the three answers, the comment and
+the evidence. It works on the same run as the Run tab, so both always agree; closing it changes nothing.
+
+* Keys: `G` good, `S` bad, `I` ignore (a reason is required for the last two), `←` back, `Esc` cancels.
+* Evidence: **Screenshot** asks once which window to share (the application under test), every further click takes a
+  picture of it. Or paste a screenshot with Ctrl+V.
+* Needs Chrome or Edge 116 or newer for the floating window (Document Picture-in-Picture, page on `localhost` or
+  `https`). Other browsers get a normal small window that does not stay in front.
+* Not included: jumping to the field in the application under test. The prototypes in
+  `prototypes/begleitfenster` (browser extension, controlled browser) show how that could work.
+
 ## In the browser demo
 
 The demo records, guides and reports like the local editor. It has no attachments, because its virtual folder holds
