@@ -9,7 +9,7 @@ Wird von Claude Code automatisch gelesen. Stand: 2026-11-05.
 - Alles läuft über GitHub (`goerks/gherkit`). Der Branchname wechselt je Sitzung (zuletzt `claude/gallant-curie-0vvsib`); er ist in der Sitzung vorgegeben.
 - Nachrichten sind teils diktiert (Tippfehler, «Becken» = Backend, «Ränder» = Render, «Guitar» = GitHub): grosszügig auslegen, bei Zweifel kurz zurückfragen.
 - Der Nutzer testet oft nicht lokal. Wenn etwas abgenommen werden soll, zeigen statt beschreiben: Video über die CI (siehe unten) oder Bilder im Chat.
-- Nur PRs erstellen, wenn gewünscht. In dieser Sitzung wollte der Nutzer ausdrücklich PRs und Merges Schritt für Schritt.
+- **Arbeitsablauf (Vorgabe des Nutzers, 2026-11-07):** Jeder neue Auftrag startet auf einem eigenen Branch, und zu jedem Branch gehört sofort ein PR (Entwurf genügt), damit der Nutzer etwas zum Testen hat und der Stand der Arbeit dort abgebildet ist. Den PR nach dem ersten Push anlegen, nicht erst auf Nachfrage. Gemergt wird nur auf ausdrücklichen Wunsch, Schritt für Schritt.
 
 ## Offene Punkte und Reihenfolge (Analyse 2026-11-07, mit dem Nutzer besprochen)
 
