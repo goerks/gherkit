@@ -60,9 +60,11 @@ jobs:
           echo "released=$released" >> "$GITHUB_OUTPUT"
           echo "Version $v, publish: $publish, already released: $released" >> "$GITHUB_STEP_SUMMARY"
 
+  # "Run workflow" for an already released version only re-checks the published files (job "published").
   build:
     name: build all platforms
     needs: prepare
+    if: github.event_name != 'workflow_dispatch' || needs.prepare.outputs.released != 'true'
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
@@ -75,8 +77,9 @@ jobs:
           go-version-file: go.mod
       - run: go vet ./...
       - run: go test ./internal/...
+      # -f: for an already released version the tag exists and points at the release commit.
       - name: Tag locally (goreleaser takes the version from the tag, the tag is only pushed on publish)
-        run: git tag "v$VERSION"
+        run: git tag -f "v$VERSION"
       - uses: goreleaser/goreleaser-action@v6
         with:
           args: release --clean --skip=publish,announce,validate
