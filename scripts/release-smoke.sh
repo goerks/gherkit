@@ -35,11 +35,24 @@ set +e; g fmt --check "$work/bad.feature" >/dev/null; code=$?; set -e
 g fmt "$work/bad.feature" >/dev/null
 g fmt --check "$work/bad.feature" >/dev/null || fail "formatted file still needs formatting"
 
-step "CRLF files stay CRLF"
+step "line endings: CRLF stays CRLF, LF stays LF (exact bytes)"
+# Compared as hex dumps: grep, cmp and diff behave differently in text mode of Git Bash on Windows, od does not.
+bytes() { od -An -v -tx1 "$1" | tr -d ' \n'; }
+same_bytes() { [ "$(bytes "$1")" = "$(bytes "$2")" ]; }
+# 1. a CRLF file that is already canonical is not changed at all
 printf 'Feature: Crlf\r\n\r\n  Scenario: S\r\n    Given x\r\n' > "$work/crlf.feature"
+cp "$work/crlf.feature" "$work/crlf.expected"
 g fmt "$work/crlf.feature" >/dev/null
-# od instead of grep: grep of Git Bash on Windows reads in text mode and hides the CR.
-od -An -c "$work/crlf.feature" | grep -q '\\r' || fail "fmt removed the CRLF line endings"
+same_bytes "$work/crlf.feature" "$work/crlf.expected" || fail "fmt changed a canonical CRLF file: $(bytes "$work/crlf.feature")"
+# 2. a CRLF file that needs formatting is formatted and keeps CRLF
+printf 'Feature:   Crlf\r\n\r\n  Scenario:   S\r\n      Given x\r\n' > "$work/crlf2.feature"
+g fmt "$work/crlf2.feature" >/dev/null
+same_bytes "$work/crlf2.feature" "$work/crlf.expected" || fail "fmt did not format a CRLF file to the CRLF form: $(bytes "$work/crlf2.feature")"
+# 3. an LF file stays LF
+printf 'Feature:   Lf\n\n  Scenario: S\n    Given x\n' > "$work/lf.feature"
+printf 'Feature: Lf\n\n  Scenario: S\n    Given x\n' > "$work/lf.expected"
+g fmt "$work/lf.feature" >/dev/null
+same_bytes "$work/lf.feature" "$work/lf.expected" || fail "fmt did not format an LF file to the LF form: $(bytes "$work/lf.feature")"
 
 step "parse and dialects"
 g parse "$examples/shop/checkout.feature" | grep -q '"feature"' || fail "parse printed no feature"
