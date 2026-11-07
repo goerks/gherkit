@@ -37,7 +37,8 @@ identical pickles; the 12 files of `testdata/bad` are rejected with positioned e
 | `parse` (AST / pickles as JSON) | ✅ | Debugging, tooling |
 | `dialects` | ✅ | |
 | `edit` | ✅ | See editor |
-| `init`, `ci` | 📋 M2 | |
+| `init` | ✅ | Example feature, optional pipeline (`--ci`) |
+| `ci` | ✅ | GitHub Actions, GitLab CI, Azure Pipelines; needs a published release |
 | `steps sync` (step catalogue from runner dry-run) | 📋 M1 | Cucumber Messages `StepDefinition` |
 | `glossary` | 📋 M1 | `glossary/*.yaml`, hover, lint rule |
 | `run` with adapters | 🚧 M2 | ✅ Go (godog), Java (Cucumber-JVM) and any `--cmd`; 📋 TypeScript |

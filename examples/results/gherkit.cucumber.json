@@ -3233,5 +3233,398 @@
         ]
       }
     ]
+  },
+  {
+    "uri": "features/scaffolding.feature",
+    "id": "setting-up-a-project",
+    "keyword": "Feature",
+    "name": "Setting up a project",
+    "description": "",
+    "tags": [
+      {
+        "name": "@cli",
+        "line": 1
+      },
+      {
+        "name": "@init",
+        "line": 1
+      },
+      {
+        "name": "@ci",
+        "line": 1
+      }
+    ],
+    "elements": [
+      {
+        "id": "setting-up-a-project;an-empty-folder-gets-an-example",
+        "keyword": "Scenario",
+        "name": "An empty folder gets an example",
+        "description": "",
+        "line": 9,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit init\"",
+            "line": 10,
+            "result": {
+              "status": "passed",
+              "duration": 33728874
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 11,
+            "result": {
+              "status": "passed",
+              "duration": 39011324
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the output contains \"created\"",
+            "line": 12,
+            "result": {
+              "status": "passed",
+              "duration": 17018438
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"features/example.feature\" contains \"Scenario: Greeting\"",
+            "line": 13,
+            "result": {
+              "status": "passed",
+              "duration": 1171664
+            }
+          }
+        ]
+      },
+      {
+        "id": "setting-up-a-project;the-example-can-be-german",
+        "keyword": "Scenario",
+        "name": "The example can be German",
+        "description": "",
+        "line": 15,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit init --lang de\"",
+            "line": 16,
+            "result": {
+              "status": "passed",
+              "duration": 4543554
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the file \"features/example.feature\" contains \"Funktionalität: Beispiel\"",
+            "line": 17,
+            "result": {
+              "status": "passed",
+              "duration": 5257428
+            }
+          }
+        ]
+      },
+      {
+        "id": "setting-up-a-project;a-folder-with-specifications-keeps-them",
+        "keyword": "Scenario",
+        "name": "A folder with specifications keeps them",
+        "description": "",
+        "line": 19,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \"shop.feature\" with:",
+            "line": 20,
+            "result": {
+              "status": "passed",
+              "duration": 13633781
+            },
+            "doc_string": {
+              "value": "Feature: Shop",
+              "content_type": "",
+              "line": 21
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit init\"",
+            "line": 24,
+            "result": {
+              "status": "passed",
+              "duration": 37886051
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 25,
+            "result": {
+              "status": "passed",
+              "duration": 22364121
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"no example is written\"",
+            "line": 26,
+            "result": {
+              "status": "passed",
+              "duration": 14672207
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"features/example.feature\" does not exist",
+            "line": 27,
+            "result": {
+              "status": "passed",
+              "duration": 38674156
+            }
+          }
+        ]
+      },
+      {
+        "id": "setting-up-a-project;nothing-is-written-in-a-dry-run",
+        "keyword": "Scenario",
+        "name": "Nothing is written in a dry run",
+        "description": "",
+        "line": 29,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit init --dry-run\"",
+            "line": 30,
+            "result": {
+              "status": "passed",
+              "duration": 17680835
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the output contains \"dry run\"",
+            "line": 31,
+            "result": {
+              "status": "passed",
+              "duration": 6737237
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \"features/example.feature\" does not exist",
+            "line": 32,
+            "result": {
+              "status": "passed",
+              "duration": 32898287
+            }
+          }
+        ]
+      },
+      {
+        "id": "setting-up-a-project;github-actions-is-the-default",
+        "keyword": "Scenario",
+        "name": "GitHub Actions is the default",
+        "description": "",
+        "line": 36,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit ci\"",
+            "line": 37,
+            "result": {
+              "status": "passed",
+              "duration": 2215410
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 0",
+            "line": 38,
+            "result": {
+              "status": "passed",
+              "duration": 10348388
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \".github/workflows/gherkit.yml\" contains \"gherkit lint --strict\"",
+            "line": 39,
+            "result": {
+              "status": "passed",
+              "duration": 18872542
+            }
+          }
+        ]
+      },
+      {
+        "id": "setting-up-a-project;other-ci-systems-are-supported",
+        "keyword": "Scenario",
+        "name": "Other CI systems are supported",
+        "description": "",
+        "line": 41,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit ci --provider azure\"",
+            "line": 42,
+            "result": {
+              "status": "passed",
+              "duration": 36483677
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the file \"azure-pipelines.yml\" contains \"gherkit fmt --check\"",
+            "line": 43,
+            "result": {
+              "status": "passed",
+              "duration": 4550347
+            }
+          }
+        ]
+      },
+      {
+        "id": "setting-up-a-project;a-pipeline-can-be-printed-instead-of-written",
+        "keyword": "Scenario",
+        "name": "A pipeline can be printed instead of written",
+        "description": "",
+        "line": 45,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit ci -o -\"",
+            "line": 46,
+            "result": {
+              "status": "passed",
+              "duration": 37619040
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the output contains \"gherkit fmt --check\"",
+            "line": 47,
+            "result": {
+              "status": "passed",
+              "duration": 6685686
+            }
+          }
+        ]
+      },
+      {
+        "id": "setting-up-a-project;an-existing-pipeline-is-not-replaced",
+        "keyword": "Scenario",
+        "name": "An existing pipeline is not replaced",
+        "description": "",
+        "line": 49,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "name": "a file \".github/workflows/gherkit.yml\" with:",
+            "line": 50,
+            "result": {
+              "status": "passed",
+              "duration": 29445577
+            },
+            "doc_string": {
+              "value": "# mine",
+              "content_type": "",
+              "line": 51
+            }
+          },
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit ci\"",
+            "line": 54,
+            "result": {
+              "status": "passed",
+              "duration": 28461407
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 3",
+            "line": 55,
+            "result": {
+              "status": "passed",
+              "duration": 6460645
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"use --force\"",
+            "line": 56,
+            "result": {
+              "status": "passed",
+              "duration": 36896371
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the file \".github/workflows/gherkit.yml\" contains \"# mine\"",
+            "line": 57,
+            "result": {
+              "status": "passed",
+              "duration": 39555536
+            }
+          }
+        ]
+      },
+      {
+        "id": "setting-up-a-project;an-unknown-ci-system-is-a-usage-error",
+        "keyword": "Scenario",
+        "name": "An unknown CI system is a usage error",
+        "description": "",
+        "line": 59,
+        "type": "scenario",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "When ",
+            "name": "I run \"gherkit ci --provider jenkins\"",
+            "line": 60,
+            "result": {
+              "status": "passed",
+              "duration": 27855205
+            }
+          },
+          {
+            "keyword": "Then ",
+            "name": "the exit code is 3",
+            "line": 61,
+            "result": {
+              "status": "passed",
+              "duration": 26806771
+            }
+          },
+          {
+            "keyword": "And ",
+            "name": "the error output contains \"unknown CI provider\"",
+            "line": 62,
+            "result": {
+              "status": "passed",
+              "duration": 12209737
+            }
+          }
+        ]
+      }
+    ]
   }
 ]

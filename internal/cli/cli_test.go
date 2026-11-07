@@ -159,3 +159,64 @@ func TestRunUsageErrors(t *testing.T) {
 		t.Errorf("a failing runner without results: %d %q", code, errOut)
 	}
 }
+
+func TestInitWritesExampleAndKeepsFiles(t *testing.T) {
+	d := filepath.Join(t.TempDir(), "specs")
+	code, out, _ := run("init", d, "--lang", "de")
+	if code != ExitOK || !strings.Contains(out, "created") {
+		t.Fatalf("init: %d %q", code, out)
+	}
+	p := filepath.Join(d, "features", "example.feature")
+	if b, _ := os.ReadFile(p); !strings.Contains(string(b), "Funktionalität") {
+		t.Fatalf("example: %q", b)
+	}
+	// A folder with features gets no second example.
+	if code, _, errs := run("init", d); code != ExitOK || !strings.Contains(errs, "no example is written") {
+		t.Fatalf("second init: %d %q", code, errs)
+	}
+	if code, _, _ := run("init", d, "--lang", "xx"); code != ExitUsage {
+		t.Fatalf("unknown language: %d", code)
+	}
+}
+
+func TestInitDryRunWritesNothing(t *testing.T) {
+	d := t.TempDir()
+	code, out, _ := run("init", d, "--dry-run", "--ci", "github")
+	if code != ExitOK || !strings.Contains(out, "gherkit.yml") {
+		t.Fatalf("dry run: %d %q", code, out)
+	}
+	if found, _ := os.ReadDir(d); len(found) != 0 {
+		t.Fatalf("dry run wrote %d entries", len(found))
+	}
+}
+
+func TestCIDetectsAdapterAndRefusesOverwrite(t *testing.T) {
+	d := t.TempDir()
+	write(t, d, "go.mod", "module x\n")
+	write(t, d, "features/a.feature", "Feature: A\n")
+	if code, _, errs := run("ci", d); code != ExitOK || !strings.Contains(errs, "detected the go runner") {
+		t.Fatalf("ci: %d %q", code, errs)
+	}
+	b, err := os.ReadFile(filepath.Join(d, ".github", "workflows", "gherkit.yml"))
+	if err != nil || !strings.Contains(string(b), "gherkit run --adapter go") || !strings.Contains(string(b), "gherkit fmt --check features") {
+		t.Fatalf("pipeline: %v\n%s", err, b)
+	}
+	if code, _, errs := run("ci", d); code != ExitUsage || !strings.Contains(errs, "--force") {
+		t.Fatalf("overwrite: %d %q", code, errs)
+	}
+	if code, _, _ := run("ci", d, "--force"); code != ExitOK {
+		t.Fatalf("force: %d", code)
+	}
+}
+
+func TestCIPrintsAndRejectsBadChoices(t *testing.T) {
+	d := t.TempDir()
+	if code, out, _ := run("ci", d, "-o", "-", "--provider", "gitlab", "--adapter", "none"); code != ExitOK || !strings.Contains(out, "gherkit lint --strict") || strings.Contains(out, "gherkit run") {
+		t.Fatalf("print: %d %q", code, out)
+	}
+	for _, args := range [][]string{{"--provider", "jenkins"}, {"--adapter", "dotnet"}, {"--version", "1 2"}, {"-o", "../x.yml"}} {
+		if code, _, _ := run(append([]string{"ci", d}, args...)...); code != ExitUsage {
+			t.Errorf("%v: exit %d", args, code)
+		}
+	}
+}

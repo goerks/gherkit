@@ -109,6 +109,7 @@ func initScenario(sc *godog.ScenarioContext) {
 	sc.Step(`^the file "([^"]+)" contains:$`, w.fileContainsDoc)
 	sc.Step(`^the file "([^"]+)" contains "([^"]*)"$`, w.fileContains)
 	sc.Step(`^the file "([^"]+)" does not contain "([^"]*)"$`, w.fileNotContains)
+	sc.Step(`^the file "([^"]+)" does not exist$`, w.fileNotExists)
 	sc.Step(`^the file "([^"]+)" is unchanged$`, w.fileUnchanged)
 	sc.Step(`^the file still yields the same test cases$`, w.samePickles)
 	sc.Step(`^a Cucumber JSON result with (\d+) passed and (\d+) failed scenarios?$`, w.cucumberResult)
@@ -191,6 +192,13 @@ func (w *world) fileNotContains(name, unwanted string) error {
 	}
 	if strings.Contains(string(b), unwanted) {
 		return fmt.Errorf("file %s contains %q:\n%s", name, unwanted, b)
+	}
+	return nil
+}
+
+func (w *world) fileNotExists(name string) error {
+	if _, err := os.Stat(w.path(name)); err == nil {
+		return fmt.Errorf("file %s exists", name)
 	}
 	return nil
 }

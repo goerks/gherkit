@@ -50,6 +50,30 @@ descriptions keep their relative indentation, comments are kept, `# language:` i
 | `empty-background` | warning | Background without steps |
 | `unformatted` | info | File differs from `gherkit fmt` output |
 
+### `gherkit init [folder]`
+
+Prepares a folder (default: the current folder, created when missing): writes `features/example.feature` when the folder has no feature file yet, and with `--ci` a pipeline. Existing files are never overwritten without `--force`. The example contains a `@manual` scenario.
+
+| Flag | |
+| --- | --- |
+| `--lang` | language of the example (`en`, `de`) |
+| `--ci <provider>` | also write a pipeline, see `gherkit ci` |
+| `--force` | overwrite existing files |
+| `--dry-run` | show what would be written, write nothing |
+
+### `gherkit ci [folder]`
+
+Writes a CI pipeline: installs gherkit from the GitHub release, runs `fmt --check` and `lint --strict` on the feature files, runs the tests with `gherkit run` and publishes the HTML report as artifact. The adapter is detected (`go.mod`, `pom.xml`, `build.gradle`); in other projects the pipeline only checks the files. It needs a published release (the install step downloads `gherkit_<version>_linux_amd64.tar.gz`). The templates are tested for structure and valid YAML, not on every CI platform.
+
+| Flag | |
+| --- | --- |
+| `--provider` | `github` (default, `.github/workflows/gherkit.yml`), `gitlab` (`.gitlab-ci.yml`), `azure` (`azure-pipelines.yml`) |
+| `--adapter` | `auto` (default), `none`, `go`, `java` |
+| `--version` | gherkit release to install, e.g. `0.1.0` (default `latest`) |
+| `--features` | folder with the feature files (default `features`, else the project folder) |
+| `-o, --out` | file below the folder; `-` prints the pipeline |
+| `--force` | replace an existing file (otherwise exit 3) |
+
 ### `gherkit run [features…]`
 
 Starts the test runner of the project through an **adapter**, reads the Cucumber JSON it writes and prints a
