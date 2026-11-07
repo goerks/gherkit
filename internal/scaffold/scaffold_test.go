@@ -43,7 +43,7 @@ func TestWriteDryRunWritesNothing(t *testing.T) {
 }
 
 func TestWriteRejectsPathsOutsideTarget(t *testing.T) {
-	for _, p := range []string{"../x", "a/../../x", "/etc/x"} {
+	for _, p := range []string{"../x", "a/../../x", "/etc/x", `\\x`, `C:\x`, "C:/x"} {
 		if _, err := Write(t.TempDir(), []File{{p, "x"}}, false, false); err == nil {
 			t.Errorf("%q was accepted", p)
 		}
