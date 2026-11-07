@@ -86,6 +86,53 @@ Feature: Manual testing in the editor
       And I go to test case 4 in the navigation
       Then I am at scenario 2 of 2 in feature 2 of 3
 
+  Rule: A companion window leads the run from a small window above the application under test
+
+    Scenario: The companion window shows the current step
+      When I start a run as "Anna"
+      And I open the companion window
+      Then the companion window shows step 1 of 6
+
+    Scenario: Good in the companion window moves both views on
+      When I start a run as "Anna"
+      And I open the companion window
+      And I say good in the companion window
+      Then the companion window shows step 2 of 6
+      And I am at step 2 of 6
+      And the progress shows 1 step done
+
+    Scenario: Bad in the companion window needs a reason
+      When I start a run as "Anna"
+      And I open the companion window
+      And I say bad in the companion window
+      Then saving in the companion window is not possible without a reason
+      When I say bad in the companion window with the reason "return date is missing"
+      Then test case 1 is marked as "failed"
+      And the progress shows 6 steps done
+
+    Scenario: The keys G, S and I answer the step
+      When I start a run as "Anna"
+      And I open the companion window
+      And I press "g" in the companion window
+      Then the companion window shows step 2 of 6
+      When I press "i" in the companion window
+      Then saving in the companion window is not possible without a reason
+
+    Scenario: A screenshot pasted into the companion window becomes evidence of the step
+      When I start a run as "Anna"
+      And I open the companion window
+      And I paste a screenshot into the companion window
+      Then the companion window shows an evidence image
+      And a screenshot is stored with the run
+
+    Scenario: Closing the companion window leaves the run as it is
+      When I start a run as "Anna"
+      And I open the companion window
+      And I say good in the companion window
+      And I close the companion window
+      Then the companion window can be opened again
+      And I am at step 2 of 6
+
   Rule: Evidence belongs to the step
 
     Scenario: Evidence is attached in the step

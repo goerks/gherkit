@@ -1,0 +1,222 @@
+<title>Begleitfenster-Prototypen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: ein Arbeitsbereich zum Ausprobieren (Test-Anwendung links, Panel rechts), darunter die vier Varianten als Vergleich. */
+  :root {
+    --bg: #f3f4f6; --surface: #ffffff; --fg: #1b2433; --muted: #5a6577; --line: #d5dae2;
+    --accent: #1d5f8a; --accent-fg: #ffffff; --app: #7a1f3d; --code-bg: #e9edf3; --ok: #2e8a55; --warn: #b9770e;
+    --sans: 'IBM Plex Sans', system-ui, 'Segoe UI', sans-serif; --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #12161d; --surface: #1b222d; --fg: #e5e9f0; --muted: #9aa5b8; --line: #323c4c;
+    --accent: #6cb4e4; --accent-fg: #0c1118; --app: #c0587c; --code-bg: #262f3c; --ok: #5fc68a; --warn: #e0a64a; color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --bg: #12161d; --surface: #1b222d; --fg: #e5e9f0; --muted: #9aa5b8; --line: #323c4c;
+    --accent: #6cb4e4; --accent-fg: #0c1118; --app: #c0587c; --code-bg: #262f3c; --ok: #5fc68a; --warn: #e0a64a; color-scheme: dark; }
+  body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--sans); padding-block: 28px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+  h1 { font-size: 26px; line-height: 1.2; margin: 0 0 6px; font-weight: 600; text-wrap: balance; }
+  h2 { font-size: 18px; margin: 0 0 4px; font-weight: 600; }
+  p { margin: 0; }
+  .lead { color: var(--muted); max-width: 66ch; }
+  .sub { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
+  code, pre { font-family: var(--mono); font-size: 12.5px; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  a { color: var(--accent); }
+
+  .try { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; margin-top: 14px; }
+  @media (max-width: 820px) { .try { grid-template-columns: minmax(0, 1fr); } }
+  .app { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .app > header { background: var(--app); color: #fff; padding: 10px 16px; font-weight: 500; }
+  .app .in { padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .app label { font-weight: 600; margin-top: 8px; }
+  .app input { padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: var(--bg); color: var(--fg); }
+  .app button { align-self: flex-start; margin-top: 12px; padding: 8px 16px; border: 0; border-radius: 6px; background: var(--app); color: #fff; font: inherit; cursor: pointer; }
+  #meldung { min-height: 22px; margin-top: 8px; font-weight: 600; }
+  #meldung.ok { color: var(--ok); } #meldung.fehler { color: #d64545; }
+  .app h3 { margin: 0; padding: 10px 16px 0; font-size: 15px; border-top: 1px solid var(--line); }
+  #liste { margin: 6px 0 12px; padding-left: 36px; min-height: 22px; }
+  .gk-highlight { outline: 3px solid #f5a623 !important; outline-offset: 3px !important; box-shadow: 0 0 0 6px #f5a62355 !important; }
+  #panel { height: 540px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; box-shadow: 0 6px 24px #0003; }
+  .cap { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+
+  #xraybox { margin-top: 14px; }
+  #xraybox[hidden] { display: none; }
+  pre { background: var(--code-bg); border-radius: 8px; padding: 12px; max-height: 260px; overflow: auto; margin: 6px 0 0; }
+  .btn { padding: 7px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; }
+  .btn.pri { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .btn:focus-visible, .app button:focus-visible, .app input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 16px; margin-top: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .card h3 { margin: 0; font-size: 16px; font-weight: 600; }
+  .tag { font-family: var(--mono); font-size: 12px; color: var(--accent); margin-right: 6px; }
+  .yn { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13.5px; }
+  @media (max-width: 460px) { .yn { grid-template-columns: 1fr; } }
+  .yn b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 500; margin-bottom: 2px; }
+  .yn ul { margin: 0; padding-left: 18px; }
+  .card ol { margin: 0; padding-left: 20px; font-size: 13.5px; }
+  .card pre { max-height: none; margin: 4px 0 0; overflow-x: auto; }
+  .state { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; margin-top: auto; }
+  .state em { font-style: normal; color: var(--warn); }
+  #pipinfo { font-size: 13px; color: var(--muted); }
+  .table { overflow-x: auto; margin-top: 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 13.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--code-bg); font-weight: 500; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Begleitfenster für manuelle Tests</h1>
+    <p class="lead">Vier Varianten, dasselbe Panel. Unten kannst du das Panel direkt ausprobieren, weiter unten stehen die Varianten mit Startanleitung.</p>
+  </header>
+
+  <section>
+    <h2>Hier ausprobieren</h2>
+    <p class="sub">Links die Test-Anwendung, rechts das Panel. Das Feld des aktuellen Schritts wird markiert, so wie es D2 und D3 in einer echten Anwendung tun. Tasten: <code>G</code> Gut, <code>S</code> Schlecht, <code>I</code> Ignorieren, <code>←</code> zurück. Der Nachweis ist hier ein simuliertes Bild der Eingaben.</p>
+    <div class="try">
+      <div>
+        <div class="app" id="bereich">
+          <header>Stadtbibliothek – Verwaltung</header>
+          <form class="in" id="form" novalidate>
+            <h2 style="font-size:16px;margin:0">Leserinnen</h2>
+            <label for="vorname">Vorname</label><input id="vorname" autocomplete="off">
+            <label for="nachname">Nachname</label><input id="nachname" autocomplete="off">
+            <label for="email">E-Mail</label><input id="email" autocomplete="off">
+            <button id="speichern" type="submit">Speichern</button>
+            <div id="meldung" role="status"></div>
+          </form>
+          <h3>Erfasste Leserinnen</h3>
+          <ul id="liste"></ul>
+        </div>
+        <p class="cap">Szenario 1: Leserin erfassen. Szenario 2: ungültige E-Mail «anna@» wird abgelehnt.</p>
+      </div>
+      <div>
+        <div id="panel"></div>
+        <p class="cap">Zustand bleibt in diesem Browser erhalten.</p>
+      </div>
+    </div>
+    <div id="xraybox" hidden>
+      <h2 style="font-size:15px">Export für Xray</h2>
+      <p class="sub">Ein Download ist in dieser Ansicht gesperrt, deshalb steht das JSON hier. Im echten Prototyp wird eine Datei geschrieben.</p>
+      <div style="margin-top:8px"><button class="btn pri" id="copyx" type="button">JSON kopieren</button> <span id="copied" class="sub"></span></div>
+      <pre id="xray"></pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Die vier Varianten</h2>
+    <p class="sub">Alle vier liegen im Repository unter <code>prototypes/begleitfenster</code> (Branch <code>claude/jolly-volta-3ylu54</code>), das Zip ist im Chat. Die Seite hier ersetzt keinen der Prototypen, sie zeigt nur das gemeinsame Panel.</p>
+    <div class="cards">
+      <article class="card">
+        <h3><span class="tag">D1</span>Schwebendes Fenster</h3>
+        <p class="sub">Ein kleines Fenster, das immer im Vordergrund über der getesteten Anwendung liegt. Chrome und Edge ab Version 116, keine Installation.</p>
+        <div class="yn"><div><b>Kann</b><ul><li>immer im Vordergrund</li><li>Screenshot per Fensterfreigabe</li></ul></div><div><b>Kann nicht</b><ul><li>zum Feld springen</li></ul></div></div>
+        <ol><li>Ordner mit <code>python3 -m http.server 8000</code> bereitstellen</li><li><code>localhost:8000/d1-pip/</code> öffnen, «Begleitfenster öffnen»</li><li>Test-Anwendung in einem anderen Fenster öffnen</li></ol>
+        <div><button class="btn" id="pipbtn" type="button">Schwebendes Fenster hier testen</button> <span id="pipinfo"></span></div>
+        <div class="state">Geprüft: Fenster öffnet sich und zeigt das Panel. <em>Offen:</em> Verhalten auf deinem Bildschirm, Edge.</div>
+      </article>
+      <article class="card">
+        <h3><span class="tag">D2</span>Browser-Erweiterung</h3>
+        <p class="sub">Panel in der Seitenleiste von Chrome oder Edge, daneben die getestete Web-Anwendung.</p>
+        <div class="yn"><div><b>Kann</b><ul><li>Feld markieren und anspringen</li><li>Screenshot der Seite ohne Freigabe</li></ul></div><div><b>Kann nicht</b><ul><li>Desktop-Software</li><li>ohne Installation der Erweiterung</li></ul></div></div>
+        <ol><li><code>edge://extensions</code> oder <code>chrome://extensions</code> öffnen</li><li>Entwicklermodus, «Entpackte Erweiterung laden», Ordner <code>d2-extension</code></li><li>Test-Anwendung öffnen, Symbol anklicken</li></ol>
+        <div class="state">Geprüft in Chromium: markieren, fokussieren, Springen beim Schrittwechsel, Screenshot. <em>Offen:</em> Seitenleiste selbst, Edge.</div>
+      </article>
+      <article class="card">
+        <h3><span class="tag">D3</span>Gesteuerter Browser</h3>
+        <p class="sub">gherkit startet den Browser mit der Anwendung und blendet das Panel in die Seite ein. Das Panel lässt sich verschieben und einklappen.</p>
+        <div class="yn"><div><b>Kann</b><ul><li>zum Feld springen</li><li>Nachweis automatisch</li><li>Ergebnisse in Datei</li></ul></div><div><b>Kann nicht</b><ul><li>Desktop-Software</li><li>braucht Node.js beim Tester</li></ul></div></div>
+        <pre>cd prototypes/begleitfenster/d3-launcher
+npm install
+node launch.mjs https://meine.app</pre>
+        <div class="state">Geprüft in Chromium: Panel in der Seite, Springen, Nachweis, Zustand nach Neuladen. <em>Offen:</em> Edge (unter Windows Standard), eigene Anwendung.</div>
+      </article>
+      <article class="card">
+        <h3><span class="tag">D4</span>Desktop-Fenster</h3>
+        <p class="sub">Eigenes kleines Fenster, rahmenlos und immer im Vordergrund, für jede Anwendung, auch Desktop-Software.</p>
+        <div class="yn"><div><b>Kann</b><ul><li>jede Anwendung begleiten</li><li>Screenshot des Bildschirms</li></ul></div><div><b>Kann nicht</b><ul><li>zum Feld springen</li><li>am grössten im Aufwand</li></ul></div></div>
+        <pre>cd prototypes/begleitfenster/d4-desktop
+npm install
+npm start</pre>
+        <div class="state"><em>Nicht gelaufen:</em> Electron ließ sich in der Sandbox nicht installieren. Geprüft ist nur die Oberfläche in Chromium.</div>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Offen für die Entscheidung</h2>
+    <div class="table"><table>
+      <tr><th></th><th>D1</th><th>D2</th><th>D3</th><th>D4</th></tr>
+      <tr><td>Installation beim Tester</td><td>keine</td><td>Erweiterung</td><td>Node.js</td><td>Programm</td></tr>
+      <tr><td>Zum Feld springen</td><td>nein</td><td>ja</td><td>ja</td><td>nein</td></tr>
+      <tr><td>Desktop-Software testen</td><td>ja (anderes Fenster)</td><td>nein</td><td>nein</td><td>ja</td></tr>
+      <tr><td>Nachweis</td><td>Fensterfreigabe</td><td>Seitenbild, automatisch</td><td>Seitenbild, automatisch</td><td>Bildschirmbild</td></tr>
+      <tr><td>Aufwand bis Produkt</td><td>klein</td><td>mittel</td><td>mittel bis gross</td><td>gross</td></tr>
+    </table></div>
+    <p class="sub" style="margin-top:10px">Der Export nach Xray ist nach der Dokumentation nachgebaut, aber noch nicht gegen eine echte Instanz geprüft. «Ignoriert» wird vorläufig als TODO ausgegeben.</p>
+  </section>
+</div>
+
+<script>/*COMMON*/</script>
+<script>
+(function () {
+  var store = GherkitPanel.localStore('gk-artifact-demo');
+  function save(s) { try { store.save(s); } catch (e) {} }
+  function load() { try { return store.load(); } catch (e) { return null; } }
+
+  // Test-Anwendung
+  document.getElementById('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = vorname.value.trim(), n = nachname.value.trim(), m = email.value.trim(), out = document.getElementById('meldung');
+    if (!v) { out.className = 'fehler'; out.textContent = 'Bitte einen Vornamen eingeben'; return; }
+    if (m && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)) { out.className = 'fehler'; out.textContent = 'Bitte eine gültige E-Mail eingeben'; return; }
+    var li = document.createElement('li'); li.textContent = v + ' ' + n; liste.appendChild(li);
+    out.className = 'ok'; out.textContent = 'Leserin gespeichert';
+  });
+
+  function locate(sel) {
+    document.querySelectorAll('.gk-highlight').forEach(function (e) { e.classList.remove('gk-highlight'); });
+    var el = document.querySelector(sel); if (!el) return;
+    el.classList.add('gk-highlight');
+    if (/^(input|button)$/i.test(el.tagName)) { try { el.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  // Simulierter Nachweis: Bild der aktuellen Eingaben
+  function evidence() {
+    var c = document.createElement('canvas'); c.width = 480; c.height = 270; var x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, 480, 270); x.fillStyle = '#7a1f3d'; x.fillRect(0, 0, 480, 36);
+    x.fillStyle = '#fff'; x.font = '600 16px sans-serif'; x.fillText('Stadtbibliothek – Verwaltung', 14, 24);
+    x.fillStyle = '#1b2433'; x.font = '15px sans-serif';
+    [['Vorname', vorname.value], ['Nachname', nachname.value], ['E-Mail', email.value]].forEach(function (r, i) { x.fillText(r[0] + ': ' + r[1], 14, 70 + i * 30); });
+    x.fillText('Meldung: ' + (document.getElementById('meldung').textContent || '–'), 14, 190);
+    x.fillStyle = '#5a6577'; x.font = '12px sans-serif'; x.fillText('Beispiel-Nachweis (simuliert)', 14, 255);
+    return Promise.resolve(c.toDataURL('image/png'));
+  }
+  function exportXray(name, json) {
+    document.getElementById('xray').textContent = json; document.getElementById('xraybox').hidden = false;
+    document.getElementById('xraybox').scrollIntoView({ block: 'nearest' });
+  }
+  GherkitPanel.mount(document.getElementById('panel'), { scenarios: GK_SCENARIOS, load: load, save: save, locate: locate, captureEvidence: evidence, onExport: exportXray });
+
+  document.getElementById('copyx').addEventListener('click', function () {
+    var t = document.getElementById('xray').textContent, o = document.getElementById('copied');
+    function sel() { var r = document.createRange(); r.selectNodeContents(document.getElementById('xray')); var s = getSelection(); s.removeAllRanges(); s.addRange(r); o.textContent = 'Markiert, bitte mit Strg+C kopieren'; }
+    try { navigator.clipboard.writeText(t).then(function () { o.textContent = 'Kopiert'; }, sel); } catch (e) { sel(); }
+  });
+
+  // D1: Versuch mit dem echten schwebenden Fenster
+  var pip = document.getElementById('pipinfo');
+  document.getElementById('pipbtn').addEventListener('click', function () {
+    if (!('documentPictureInPicture' in window)) { pip.textContent = 'In dieser Ansicht nicht verfügbar. Bitte die Datei d1-pip/index.html öffnen.'; return; }
+    documentPictureInPicture.requestWindow({ width: 360, height: 500 }).then(function (w) {
+      w.document.body.style.margin = '0'; w.document.body.style.height = '100vh'; w.document.documentElement.style.height = '100%';
+      var s2 = GherkitPanel.localStore('gk-artifact-pip');
+      GherkitPanel.mount(w.document.body, { scenarios: GK_SCENARIOS, load: s2.load, save: s2.save });
+      pip.textContent = 'Fenster ist offen.';
+    }, function (e) { pip.textContent = 'Nicht möglich in dieser Ansicht (' + e.message + '). Bitte die Datei d1-pip/index.html öffnen.'; });
+  });
+})();
+</script>

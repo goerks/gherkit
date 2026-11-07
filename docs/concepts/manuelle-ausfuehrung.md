@@ -53,6 +53,10 @@ Fragen dazu, die sich auf Gestaltung auswirken:
 * Mehrere Testende an einem Lauf (z. B. je ein Feature)? Heute nein; es bräuchte eine Zuordnung und eine Sperre.
 * Soll die Zeit je Schritt oder Szenario erfasst werden (für Aufwandsschätzung und Auditspur)?
 
+**Begleitfenster (umgesetzt):** Zusätzlich gibt es ein kleines schwebendes Fenster (Document Picture-in-Picture) mit dem
+aktuellen Schritt, den Antworten, Kommentar und Nachweis, mit den Tasten G, S, I. Siehe `docs/manual-testing.md`.
+Varianten und Prototypen: `prototypes/begleitfenster`.
+
 **Empfehlung:** A1 behalten und A2 als Tastatur-Modus darauf setzen (Taste G, S, I; Pfeile für Navigation). Das gibt
 Tempo für Geübte, ohne den Überblick zu verlieren. A3 erst, wenn ein Pilotprojekt Regeln wirklich braucht.
 

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Bibliothek – Leserinnen (Test-Anwendung)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font:15px/1.4 system-ui,Segoe UI,sans-serif;margin:0;background:#eef1f6;color:#1d2433}
+  header{background:#7a1f3d;color:#fff;padding:14px 24px;font-size:18px}
+  main{max-width:620px;margin:24px auto;padding:0 16px}
+  section{background:#fff;border:1px solid #d4d9e1;border-radius:8px;padding:16px 18px;margin-bottom:16px}
+  h2{margin:0 0 12px;font-size:17px}
+  label{display:block;margin:10px 0 3px;font-weight:600}
+  input{width:100%;padding:8px;border:1px solid #b8c0cc;border-radius:6px;font:inherit}
+  button{margin-top:14px;padding:9px 18px;border:0;border-radius:6px;background:#7a1f3d;color:#fff;font:inherit;cursor:pointer}
+  #meldung{margin-top:12px;min-height:22px;font-weight:600}
+  #meldung.ok{color:#2e9e5b}#meldung.fehler{color:#d64545}
+  li{padding:3px 0}
+</style></head><body>
+<header>Stadtbibliothek – Verwaltung</header>
+<main>
+  <section id="bereich"><h2>Leserinnen</h2>
+    <form id="form" novalidate>
+      <label for="vorname">Vorname</label><input id="vorname" autocomplete="off">
+      <label for="nachname">Nachname</label><input id="nachname" autocomplete="off">
+      <label for="email">E-Mail</label><input id="email" autocomplete="off">
+      <button id="speichern" type="submit">Speichern</button>
+    </form>
+    <div id="meldung" role="status"></div>
+  </section>
+  <section><h2>Erfasste Leserinnen</h2><ul id="liste"></ul></section>
+</main>
+<script>
+  document.getElementById('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = vorname.value.trim(), n = nachname.value.trim(), m = email.value.trim(), out = document.getElementById('meldung');
+    if (!v) { out.className = 'fehler'; out.textContent = 'Bitte einen Vornamen eingeben'; return; }
+    if (m && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)) { out.className = 'fehler'; out.textContent = 'Bitte eine gültige E-Mail eingeben'; return; }
+    var li = document.createElement('li'); li.textContent = v + ' ' + n; liste.appendChild(li);
+    out.className = 'ok'; out.textContent = 'Leserin gespeichert';
+  });
+</script></body></html>
