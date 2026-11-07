@@ -37,7 +37,9 @@ func Write(root string, files []File, force, dryRun bool) ([]Result, error) {
 	var res []Result
 	for _, f := range files {
 		rel := filepath.Clean(filepath.FromSlash(f.Path))
-		if filepath.IsAbs(rel) || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		// On Windows "/etc/x" has no drive letter and is not "absolute" for filepath: reject rooted paths and volumes too.
+		if filepath.IsAbs(rel) || filepath.VolumeName(rel) != "" || strings.HasPrefix(f.Path, "/") || strings.HasPrefix(f.Path, `\`) || (len(f.Path) >= 2 && f.Path[1] == ':') ||
+			rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 			return res, fmt.Errorf("path %q leaves the target folder", f.Path)
 		}
 		target := filepath.Join(root, rel)
