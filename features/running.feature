@@ -9,27 +9,32 @@ Feature: Running
 
   Rule: The results are summarised and can fail the build
 
+    @posix
     Scenario: A failed scenario fails the build
       When I run "gherkit run --cmd \"cp results.json {output}\" --report report.html"
       Then the exit code is 1
       And the error output contains "3 scenario(s): 2 passed, 1 failed"
       And the file "report.html" contains "2 / 3"
 
+    @posix
     Scenario: The results can be reported without failing the build
       When I run "gherkit run --cmd \"cp results.json {output}\" --fail-on-failed=false"
       Then the exit code is 0
 
+    @posix
     Scenario: The Cucumber JSON can be kept
       When I run "gherkit run --cmd \"cp results.json {output}\" -o kept/out.json --fail-on-failed=false"
       Then the file "kept/out.json" contains "bad 0"
 
   Rule: Problems with the runner are reported clearly
 
+    @posix
     Scenario: A failing runner without results fails the build
       When I run "gherkit run --cmd false"
       Then the exit code is 1
       And the error output contains "wrote no results"
 
+    @posix
     Scenario: A runner that writes nothing is a configuration error
       When I run "gherkit run --cmd true"
       Then the exit code is 3

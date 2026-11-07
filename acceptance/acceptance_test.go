@@ -35,22 +35,39 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 	_, file, _, _ := runtime.Caller(0)
 	repo = filepath.Dir(filepath.Dir(file))
-	dir, err := os.MkdirTemp("", "gherkit-bin")
-	if err != nil {
-		panic(err)
-	}
-	binary = filepath.Join(dir, "gherkit")
-	if runtime.GOOS == "windows" {
-		binary += ".exe"
-	}
-	build := exec.Command("go", "build", "-o", binary, "./cmd/gherkit")
-	build.Dir = repo
-	build.Stdout, build.Stderr = os.Stdout, os.Stderr
-	if err := build.Run(); err != nil {
-		panic("building gherkit failed: " + err.Error())
+	// GHERKIT_BINARY tests an existing binary (the release archive on its target platform) instead of
+	// a freshly built one.
+	var dir string
+	if b := os.Getenv("GHERKIT_BINARY"); b != "" {
+		abs, err := filepath.Abs(b)
+		if err != nil {
+			panic(err)
+		}
+		if _, err := os.Stat(abs); err != nil {
+			panic("GHERKIT_BINARY: " + err.Error())
+		}
+		binary = abs
+	} else {
+		var err error
+		dir, err = os.MkdirTemp("", "gherkit-bin")
+		if err != nil {
+			panic(err)
+		}
+		binary = filepath.Join(dir, "gherkit")
+		if runtime.GOOS == "windows" {
+			binary += ".exe"
+		}
+		build := exec.Command("go", "build", "-o", binary, "./cmd/gherkit")
+		build.Dir = repo
+		build.Stdout, build.Stderr = os.Stdout, os.Stderr
+		if err := build.Run(); err != nil {
+			panic("building gherkit failed: " + err.Error())
+		}
 	}
 	code := m.Run()
-	os.RemoveAll(dir)
+	if dir != "" {
+		os.RemoveAll(dir)
+	}
 	os.Exit(code)
 }
 
@@ -65,6 +82,7 @@ func TestAcceptance(t *testing.T) {
 			Format:   "pretty,cucumber:" + *cucJSON,
 			Paths:    []string{filepath.Join(repo, "features")},
 			Strict:   true,
+			Tags:     os.Getenv("GHERKIT_TAGS"), // e.g. "~@posix" (godog syntax) on Windows
 			TestingT: t,
 		},
 	}

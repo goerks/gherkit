@@ -19,7 +19,11 @@ gherkit dialects  all Gherkin languages and their keywords
 ## Quick start
 
 ```bash
-go install github.com/goerks/gherkit/cmd/gherkit@latest   # or download a release binary
+# Download from https://github.com/goerks/gherkit/releases/latest (Windows, macOS, Linux; x64 and ARM),
+# or with Go:
+go install github.com/goerks/gherkit/cmd/gherkit@latest
+
+gherkit init            # example feature (+ --ci github|gitlab|azure for a pipeline)
 
 gherkit edit            # editor for the current folder → http://127.0.0.1:4848
 gherkit edit specs/     # … or for another folder (switchable in the editor)

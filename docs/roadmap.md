@@ -2,7 +2,7 @@
 
 | Milestone | Content | Status |
 | --- | --- | --- |
-| **M0 Foundation** | Parser wrapper, model, `fmt`, `lint`, `parse`, `dialects`, CI, releases | ✅ in this cut |
+| **M0 Foundation** | Parser wrapper, model, `fmt`, `lint`, `parse`, `dialects`, CI, releases | ✅ in this cut; release 0.1.0 prepared ([releasing.md](releasing.md)) |
 | **M1 Writing** | Editor (all four variants, Code and Document polished first), step catalogue via runner dry-run, glossary, language server, VS Code extension | 🚧 editor variants done |
 | **M2 Running** | `run` with adapters (Java first, then TypeScript), `report` from Cucumber Messages, `init`, `ci` | 🚧 `report` from Cucumber JSON and `run` with the Go and Java adapters, `init` and `ci` done |
 | **M2b Manual execution** | Manual and hybrid tests: `@manual`, "Run" view in the editor, merged report ([ADR 0009](adr/0009-manual-and-hybrid-execution.md)) | 🚧 stage 1 (manual scenarios, Run view, companion window, merged report) ready for acceptance; Xray export open |
