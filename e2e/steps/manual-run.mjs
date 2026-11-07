@@ -135,7 +135,8 @@ Then(/^the companion window shows step (\d+) of (\d+)$/, async (w, n, of) => {
 When(/^I say good in the companion window$/, (w) => recording(w, () => w.cmp.click('#cmp-good')));
 When(/^I say bad in the companion window$/, async (w) => { await w.cmp.click('#cmp-bad'); await w.cmp.waitForSelector('#cmp-confirm'); });
 When(/^I say bad in the companion window with the reason "([^"]*)"$/, async (w, reason) => {
-  await w.cmp.click('#cmp-bad');
+  // after "I say bad in the companion window" the window already asks for the reason
+  if (await w.cmp.locator('#cmp-bad').count()) await w.cmp.click('#cmp-bad');
   await w.cmp.fill('#cmp-comment', reason);
   await recording(w, () => w.cmp.click('#cmp-confirm'));
 });
