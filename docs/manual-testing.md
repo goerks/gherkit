@@ -67,10 +67,32 @@ the evidence. It works on the same run as the Run tab, so both always agree; clo
 * Not included: jumping to the field in the application under test. The prototypes in
   `prototypes/begleitfenster` (browser extension, controlled browser) show how that could work.
 
+## Trying the companion window
+
+**Online, nothing to install** (the browser demo, https://goerks.github.io/gherkit/editor/; after a release press
+Ctrl+F5, and `reset` in the terminal if you have visited before):
+
+1. Tab **Run**, enter a tester, **Start run**.
+2. **Companion window**. In Chrome or Edge 116+ a small window floats above all others; open the application under test
+   in another window and work through the steps with `G`, `S`, `I`.
+3. Check that the Run tab moves along, that bad and ignore need a reason, and that **Results** shows the answers.
+4. Not available there: screenshots and attachments (no server).
+
+**With the local editor** (`gherkit edit`, also the Windows download), where evidence is saved with the run:
+
+1. Same steps as above, with a run on the folder of your specifications.
+2. Press **Screenshot** in the companion window: the browser asks which window to share; choose the application under
+   test. Every further click adds a picture to the current step. Or paste a screenshot with Ctrl+V.
+3. After **Finish run**, the pictures are in `.gherkit/runs/<id>/evidence/` and in the report.
+
+What only a person can judge: whether the window really stays in front on your screens (several monitors, full-screen
+applications), and how the screen-sharing dialog behaves in your browser and company setup.
+
 ## In the browser demo
 
-The demo records, guides and reports like the local editor. It has no attachments, because its virtual folder holds
-text only.
+The demo records, guides and reports like the local editor, and it has the companion window too. It has no
+attachments, because its virtual folder holds text only: there is no **Screenshot** button and no pasting of images in
+the Run tab and in the companion window.
 
 ## What comes next
 

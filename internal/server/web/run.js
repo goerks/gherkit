@@ -476,7 +476,8 @@
     d.documentElement.lang = lang();
     d.title = t('cmpTitle');
     // the window starts empty: take over the styles of the editor
-    [].forEach.call(document.querySelectorAll('link[rel="stylesheet"], style'), function (n) { d.head.appendChild(n.cloneNode(true)); });
+    // (links with absolute addresses: the new window has no base address of its own, e.g. in the demo with ?v=)
+    [].forEach.call(document.querySelectorAll('link[rel="stylesheet"], style'), function (n) { var cl = n.cloneNode(true); if (n.href) cl.href = n.href; d.head.appendChild(cl); });
     var meta = d.createElement('meta'); meta.name = 'viewport'; meta.content = 'width=device-width,initial-scale=1'; d.head.appendChild(meta);
     d.body.className = 'cmp-body';
     var host = d.createElement('div'); host.id = 'cmp'; d.body.appendChild(host);

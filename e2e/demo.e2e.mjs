@@ -236,6 +236,36 @@ test('the demo runner executes the standard set and writes a report', async () =
   await page.close();
 });
 
+test('the companion window leads a run in the demo', async () => {
+  const page = await openEditor();
+  await page.click('.variants [data-variant="run"]');
+  await page.waitForSelector('#rn-start');
+  await page.fill('#rn-tester', 'Demo');
+  await page.click('#rn-start');
+  await page.waitForSelector('#rn-focus');
+  // Browsers without Document Picture-in-Picture get a normal window, which is the one a test can drive.
+  await page.evaluate(() => { try { delete Window.prototype.documentPictureInPicture; } catch (e) { } try { delete window.documentPictureInPicture; } catch (e) { } });
+  const [cmp] = await Promise.all([page.context().waitForEvent('page'), page.click('#rn-companion')]);
+  await cmp.waitForSelector('#cmp-focus');
+  assert.equal(await cmp.locator('#cmp-shot').count(), 0, 'the demo offers no screenshots, like no attachments');
+  const styled = await cmp.evaluate(() => getComputedStyle(document.querySelector('.cmp-btns')).display);
+  assert.equal(styled, 'flex', 'the companion window has the styles of the editor');
+  await cmp.click('#cmp-good');
+  await page.waitForFunction(() => /^1\//.test(document.getElementById('rn-progress').textContent));
+  await cmp.keyboard.press('s');
+  await cmp.waitForSelector('#cmp-confirm');
+  assert.equal(await cmp.locator('#cmp-confirm').isDisabled(), true, 'a reason is required');
+  await cmp.fill('#cmp-comment', 'Demo-Fehler');
+  await cmp.click('#cmp-confirm');
+  await page.waitForFunction(() => Number(document.getElementById('rn-progress').textContent.split('/')[0]) > 1);
+  await page.click('#rn-tab-overview');
+  assert.equal(await page.textContent('#ov-failed b'), '1', 'the answer given in the companion window shows in the results');
+  await cmp.close();
+  await page.waitForFunction(() => document.getElementById('rn-companion').getAttribute('aria-pressed') === 'false');
+  assert.deepEqual(page.errors, []);
+  await page.close();
+});
+
 test('the Run view works in the demo: a manual run is guided and finished without a server', async () => {
   const page = await openEditor();
   await page.click('.variants [data-variant="run"]');
