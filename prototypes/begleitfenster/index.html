@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Prototypen: Begleitfenster für manuelle Tests</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font:15px/1.5 system-ui,Segoe UI,sans-serif;max-width:760px;margin:32px auto;padding:0 16px;color:#1d2433}
+  table{border-collapse:collapse;width:100%}td,th{border:1px solid #d4d9e1;padding:8px 10px;text-align:left;vertical-align:top}th{background:#eef1f6}
+  code{background:#eef1f6;padding:1px 5px;border-radius:4px}
+</style></head><body>
+<h1>Begleitfenster für manuelle Tests: Prototypen</h1>
+<p>Vier Varianten, dasselbe Panel, dieselben Beispiel-Szenarien. Anleitung zum Ausprobieren: <code>README.md</code>.</p>
+<table>
+<tr><th>Variante</th><th>Start</th><th>Kann</th></tr>
+<tr><td><b>D1</b> Schwebendes Fenster</td><td><a href="d1-pip/index.html">d1-pip/index.html</a> (Seite über <code>http://localhost</code> öffnen)</td><td>immer im Vordergrund, keine Installation; kein Springen zum Feld</td></tr>
+<tr><td><b>D2</b> Browser-Erweiterung</td><td><code>d2-extension/</code> als entpackte Erweiterung laden</td><td>Seitenleiste, Feld markieren und anspringen, Screenshot der Seite</td></tr>
+<tr><td><b>D3</b> Gesteuerter Browser</td><td><code>node d3-launcher/launch.mjs</code></td><td>Panel in der Seite, Feld anspringen, Nachweis automatisch, Ergebnisse in Datei</td></tr>
+<tr><td><b>D4</b> Desktop-Fenster</td><td><code>d4-desktop/</code>: <code>npm install</code>, <code>npm start</code></td><td>immer im Vordergrund für jede Anwendung, Screenshot des Bildschirms</td></tr>
+</table>
+<p>Die <a href="testapp/index.html">Test-Anwendung</a> ist ein einfaches Formular, an dem die Beispiel-Szenarien durchgespielt werden.</p>
+</body></html>

@@ -44,7 +44,7 @@ pickles (test cases), scanner tokens and diagnostics.
 | **Document** | Business, reviewers | Read view (living documentation): Markdown descriptions, tables, DocStrings, test case count per outline |
 | **Structure** | Business analysts | Form editor on the AST: blocks, steps, tables, Examples, tags; translates all keywords into another language |
 | **Split** | Everyone | Code and Document side by side, live |
-| **Run** | Testers | Guided manual testing of `@manual` scenarios, feature by feature, step by step: good / bad / ignore with mandatory reasons, comments, evidence, results overview, Jira bug text; exports Cucumber JSON ([manual-testing.md](docs/manual-testing.md)) |
+| **Run** | Testers | Guided manual testing of `@manual` scenarios, feature by feature, step by step: good / bad / ignore with mandatory reasons, comments, evidence, results overview, Jira bug text, and a small floating companion window for the current step; exports Cucumber JSON ([manual-testing.md](docs/manual-testing.md)) |
 
 See [docs/editor-variants.md](docs/editor-variants.md) for screenshots and the M1 decision.
 

@@ -1,0 +1,227 @@
+<title>Run-Tab mit Begleitfenster</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>/*STYLE*/</style>
+<style>
+  /* Explizite Theme-Wahl des Viewers: der Editor kennt nur prefers-color-scheme, hier dieselben Werte auch für data-theme. */
+  :root[data-theme="dark"] {
+    --bg: #151514; --surface: #1d1d1b; --sunken: #232321; --line: #33322e; --fg: #e9e8e2; --muted: #a09f97;
+    --accent: #8cc56d; --accent-soft: #24331d; --danger: #ef6b5b; --warn: #f0a33a; --info: #7aa7ff; color-scheme: dark; }
+  :root[data-theme="light"] {
+    --bg: #f7f7f4; --surface: #ffffff; --sunken: #f0efea; --line: #e2e0d8; --fg: #1f1f1c; --muted: #6d6c66;
+    --accent: #3d7a28; --accent-soft: #e6f1df; --danger: #c0392b; --warn: #b26a00; --info: #2f6fde; color-scheme: light; }
+  /* Layout der Seite: Editor-Kopfzeile (nachgebaut), Hinweis, getestete Anwendung, Run-Tab */
+  body { height: auto; min-height: 100%; padding-left: max(0px, env(safe-area-inset-left, 0px)); padding-right: max(0px, env(safe-area-inset-right, 0px)); }
+  .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+  .top select { margin-left: auto; }
+  .variants button[disabled] { opacity: .45; }
+  .intro { max-width: 1240px; margin: 14px auto 0; padding: 0 clamp(12px, 3vw, 40px); display: grid; gap: 12px; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+  @media (max-width: 900px) { .intro { grid-template-columns: minmax(0, 1fr); } }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; min-width: 0; }
+  .card h2 { margin: 0 0 6px; font-size: 15px; }
+  .card ol { margin: 6px 0 0; padding-left: 20px; }
+  .card li { margin: 2px 0; }
+  .mode { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; font-size: 13px; }
+  .mode label { display: flex; gap: 6px; align-items: center; }
+  .sim { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .shop h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); font-weight: 600; }
+  .shop .bar { background: #7a1f3d; color: #fff; margin: -12px -16px 12px; padding: 8px 16px; border-radius: 10px 10px 0 0; font-weight: 600; }
+  .shop .row { display: flex; gap: 6px; }
+  .shop input { flex: 1; min-width: 0; }
+  #hits { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; }
+  #hits li { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+  #hits small { display: block; color: var(--muted); }
+  #view-run { padding: 14px clamp(12px, 3vw, 40px) 90px; }
+  .simwin { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); width: min(380px, calc(100vw - 32px)); height: min(560px, calc(100vh - 100px)); z-index: 50;
+    display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--muted); border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.35); overflow: hidden; }
+  .simwin header { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 12px; background: var(--sunken); border-bottom: 1px solid var(--line); cursor: grab; touch-action: none; font-size: 12px; user-select: none; }
+  .simwin header span { flex: 1; }
+  .simwin iframe { flex: 1; border: 0; width: 100%; min-height: 0; background: var(--bg); }
+  .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 60; background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; max-width: min(520px, 90vw); }
+  a.rn-link { display: none; }
+</style>
+
+<header class="top">
+  <span class="brand"><span class="logo"></span>gherkit</span>
+  <div class="variants" role="tablist"><button disabled>Code</button><button disabled>Dokument</button><button disabled>Struktur</button><button disabled>Split</button><button aria-selected="true" role="tab">Ausführen</button></div>
+  <select id="ui-lang" aria-label="Sprache"><option value="de">Deutsch</option><option value="en">English</option></select>
+</header>
+
+<div class="intro">
+  <section class="card">
+    <h2>Prototyp: der echte Run-Tab mit Begleitfenster</h2>
+    <p>Diese Seite läuft mit dem echten Code des Editors (<code>run.js</code> und <code>style.css</code>) und den manuellen Szenarien aus <code>examples/bibliothek</code>. Nur der Server ist in der Seite nachgebaut, der Lauf bleibt in diesem Browser.</p>
+    <ol>
+      <li>Unten einen Lauf starten (Name eingeben).</li>
+      <li>«Begleitfenster» anklicken. Das kleine Fenster zeigt nur den aktuellen Schritt.</li>
+      <li>Mit den Knöpfen oder mit <code>G</code>, <code>S</code>, <code>I</code>, <code>←</code> durch den Test gehen. Der Run-Tab folgt mit.</li>
+      <li>«Screenshot» legt ein simuliertes Bild als Nachweis an. Ergebnisse siehst du im Tab «Ergebnisse».</li>
+    </ol>
+    <div class="mode" role="radiogroup" aria-label="Art des Fensters">
+      <label><input type="radio" name="mode" value="sim" checked> Simuliert, in dieser Seite (funktioniert immer)</label>
+      <label><input type="radio" name="mode" value="real" id="mode-real"> Echt schwebend (Chrome/Edge ab 116, falls diese Ansicht es zulässt)</label>
+    </div>
+    <p class="sim">Simuliert: Das Fenster ist ein verschiebbarer Rahmen in der Seite. Echt: ein eigenes Fenster, das über allen anderen liegt. Die Anzeige und die Bedienung sind in beiden Fällen dieselben.</p>
+  </section>
+  <section class="card shop" aria-label="Getestete Anwendung">
+    <div class="bar">Stadtbibliothek – Katalog</div>
+    <h3>Getestete Anwendung (Beispiel)</h3>
+    <form class="row" id="shop" novalidate><input id="q" aria-label="Suchbegriff" placeholder="Titel oder Autor, z. B. Kafka" autocomplete="off"><button class="primary" type="submit">Suchen</button></form>
+    <ul id="hits"></ul>
+  </section>
+</div>
+
+<section id="view-run" class="view run-view"></section>
+
+<script>/*RUNJS*/</script>
+<script>
+(function () {
+  'use strict';
+  var CASES = /*CASES*/;
+  var KEY = 'gk-runtab-proto';
+
+  // ---------- Hilfen: confirm() und alert() gibt es in einem Artifact nicht ----------
+  window.confirm = function () { return true; };
+  window.alert = function (m) {
+    var d = document.createElement('div'); d.className = 'toast'; d.setAttribute('role', 'alert'); d.textContent = m; document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 5000);
+  };
+
+  // ---------- der nachgebaute Server (/api/manual/*) ----------
+  var DB; try { DB = JSON.parse(localStorage.getItem(KEY)); } catch (e) { DB = null; }
+  if (!DB || !DB.runs) DB = { runs: [], seq: 0 };
+  var EV = {}; // Nachweisbilder: nur im Speicher
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { } }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function eff(cs) { var stopped = false; return cs.steps.map(function (s) { var st = s.status || (stopped ? 'skipped' : 'undefined'); if (s.status === 'failed' || s.status === 'ignored') stopped = true; return st; }); }
+  function counts(run) { var done = 0, total = 0; run.cases.forEach(function (cs) { eff(cs).forEach(function (x) { total++; if (x !== 'undefined') done++; }); }); return { done: done, total: total }; }
+  function find(id) { return DB.runs.filter(function (r) { return r.id === id; })[0]; }
+  function bad(m) { return { status: 400, body: { error: m } }; }
+  function readBlob(b) { return new Promise(function (ok) { var f = new FileReader(); f.onload = function () { ok(f.result); }; f.readAsDataURL(b); }); }
+
+  function handle(url, init) {
+    var u = new URL(url, 'http://x'), p = u.pathname, q = u.searchParams, m = (init.method || 'GET').toUpperCase(), r;
+    if (p === '/api/manual/runs' && m === 'GET') {
+      return Promise.resolve({ body: DB.runs.slice().reverse().map(function (x) { var c = counts(x); return { id: x.id, title: x.title, tester: x.tester, started: x.started, finished: x.finished.indexOf('0001-') === 0 ? '' : x.finished, done: c.done, total: c.total }; }) });
+    }
+    if (p === '/api/manual/runs' && m === 'POST') {
+      var b = JSON.parse(init.body);
+      if (!(b.tester || '').trim()) return Promise.resolve(bad('tester is required'));
+      var id = 'r' + (++DB.seq);
+      r = { id: id, title: b.title || '', tester: b.tester, environment: b.environment || '', build: b.build || '', started: new Date().toISOString(), finished: '0001-01-01T00:00:00Z', cases: clone(CASES), skipped: [] };
+      DB.runs.push(r); save(); return Promise.resolve({ body: clone(r) });
+    }
+    var mm = p.match(/^\/api\/manual\/runs\/([^/]+)(?:\/(.*))?$/);
+    if (!mm) return Promise.resolve({ status: 404, body: { error: 'not found' } });
+    r = find(decodeURIComponent(mm[1])); var rest = mm[2] || '';
+    if (!r) return Promise.resolve({ status: 404, body: { error: 'run not found' } });
+    if (rest === '' && m === 'GET') return Promise.resolve({ body: clone(r) });
+    if (r.finished.indexOf('0001-') !== 0 && rest !== 'issue') return Promise.resolve(bad('the run is finished'));
+    if (rest === 'step' && m === 'PUT') {
+      var j = JSON.parse(init.body), cs = r.cases.filter(function (c) { return c.id === j.case; })[0];
+      if (!cs || !cs.steps[j.step]) return Promise.resolve(bad('no such step'));
+      if ((j.status === 'failed' || j.status === 'ignored') && !(j.comment || '').trim()) return Promise.resolve(bad('a reason is required for failed and ignored steps'));
+      var s = cs.steps[j.step]; if (j.status) s.status = j.status; else delete s.status; s.comment = j.comment || '';
+      save(); return Promise.resolve({ body: clone(r) });
+    }
+    if (rest === 'evidence' && m === 'POST') {
+      var cs2 = r.cases.filter(function (c) { return c.id === q.get('case'); })[0], st = cs2 && cs2.steps[+q.get('step')];
+      if (!st) return Promise.resolve(bad('no such step'));
+      return readBlob(init.body).then(function (data) {
+        var rel = 'evidence/' + (++DB.seq) + '-' + q.get('name'); EV[r.id + '/' + rel] = data; (st.evidence = st.evidence || []).push(rel); save();
+        return { body: { run: clone(r) } };
+      });
+    }
+    if (rest === 'finish' && m === 'POST') { r.finished = new Date().toISOString(); save(); return Promise.resolve({ body: { run: clone(r), cucumber: '.gherkit/runs/' + r.id + '/cucumber.json' } }); }
+    if (rest === 'issue') {
+      var c3 = r.cases.filter(function (c) { return c.id === q.get('case'); })[0]; if (!c3) return Promise.resolve(bad('no such case'));
+      var si = q.get('step') !== null ? +q.get('step') : c3.steps.findIndex(function (x) { return x.status === 'failed'; }), step = c3.steps[si] || c3.steps[0];
+      var tag = (c3.tags || []).filter(function (x) { return /^@TEST_/.test(x); }).map(function (x) { return x.replace('@TEST_', ''); });
+      return Promise.resolve({ body: { summary: '[' + c3.feature + '] ' + c3.name + ': ' + step.text, xray: tag, description: 'h3. Beobachtung\n' + (step.comment || '') + '\n\nh3. Testfall\n* Feature: ' + c3.feature + '\n* Szenario: ' + c3.name + (c3.example ? ' (' + c3.example + ')' : '') + '\n* Schritt: ' + step.keyword.trim() + ' ' + step.text + '\n* Lauf: ' + r.id + ', ' + r.tester + '\n\n(Beispieltext des Prototyps)' } });
+    }
+    return Promise.resolve({ status: 404, body: { error: 'not found' } });
+  }
+  var realFetch = window.fetch.bind(window);
+  window.fetch = function (url, init) {
+    if (String(url).indexOf('/api/manual/') !== 0) return realFetch(url, init);
+    return handle(String(url), init || {}).then(function (x) { return new Response(JSON.stringify(x.body), { status: x.status || 200, headers: { 'Content-Type': 'application/json' } }); });
+  };
+  window.__gkEvidence = function (runId, rel) { return EV[runId + '/' + rel] || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='; };
+
+  // ---------- simulierter Bildschirm für «Screenshot» ----------
+  window.__gkShotSim = function () {
+    return new Promise(function (ok) {
+      var c = document.createElement('canvas'); c.width = 960; c.height = 540; var x = c.getContext('2d');
+      x.fillStyle = '#eceae4'; x.fillRect(0, 0, 960, 540); x.fillStyle = '#7a1f3d'; x.fillRect(0, 0, 960, 56);
+      x.fillStyle = '#fff'; x.font = '600 24px sans-serif'; x.fillText('Stadtbibliothek – Katalog', 24, 36);
+      x.fillStyle = '#fff'; x.fillRect(24, 84, 912, 60); x.fillStyle = '#1f1f1c'; x.font = '22px sans-serif';
+      x.fillText('Suche: ' + (document.getElementById('q').value || '–'), 40, 122);
+      var li = document.querySelectorAll('#hits li'); li.forEach(function (e, i) { x.fillStyle = '#fff'; x.fillRect(24, 164 + i * 84, 912, 72); x.fillStyle = '#1f1f1c'; x.font = '600 22px sans-serif'; x.fillText(e.firstChild.textContent, 40, 196 + i * 84); x.font = '18px sans-serif'; x.fillStyle = '#5a5a55'; x.fillText(e.querySelector('small').textContent, 40, 222 + i * 84); });
+      x.fillStyle = '#7a1f3d'; x.font = '15px sans-serif'; x.fillText('Simulierter Bildschirm (Prototyp) · ' + new Date().toLocaleTimeString(), 24, 524);
+      c.toBlob(ok, 'image/png');
+    });
+  };
+
+  // ---------- Begleitfenster: simuliert (Rahmen in der Seite) oder echt ----------
+  var realPip = window.documentPictureInPicture, mode = 'sim';
+  function simWindow(o) {
+    return new Promise(function (ok, fail) {
+      var box = document.createElement('div'); box.className = 'simwin'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Begleitfenster');
+      var head = document.createElement('header'), title = document.createElement('span'), x = document.createElement('button');
+      title.textContent = 'Begleitfenster (simuliert)'; x.textContent = '×'; x.type = 'button'; x.setAttribute('aria-label', 'Schliessen');
+      head.appendChild(title); head.appendChild(x);
+      var fr = document.createElement('iframe'); fr.title = 'Begleitfenster'; fr.srcdoc = '<!doctype html><html><head></head><body></body></html>';
+      box.appendChild(head); box.appendChild(fr); document.body.appendChild(box);
+      fr.addEventListener('load', function () {
+        var cw = fr.contentWindow;
+        try { void cw.document.body; } catch (e) { box.remove(); fail(new Error('Der Rahmen ist in dieser Ansicht nicht zugänglich.')); return; }
+        cw.close = function () { try { cw.dispatchEvent(new Event('pagehide')); } catch (e) { } box.remove(); };
+        x.addEventListener('click', function () { cw.close(); });
+        ok(cw);
+      }, { once: true });
+      var drag = null;
+      head.addEventListener('pointerdown', function (e) { if (e.target === x) return; var r = box.getBoundingClientRect(); drag = { dx: e.clientX - r.left, dy: e.clientY - r.top }; head.setPointerCapture(e.pointerId); head.style.cursor = 'grabbing'; });
+      head.addEventListener('pointermove', function (e) { if (!drag) return; box.style.left = Math.max(0, Math.min(innerWidth - 80, e.clientX - drag.dx)) + 'px'; box.style.top = Math.max(0, Math.min(innerHeight - 40, e.clientY - drag.dy)) + 'px'; box.style.right = 'auto'; box.style.bottom = 'auto'; });
+      head.addEventListener('pointerup', function () { drag = null; head.style.cursor = ''; });
+    });
+  }
+  var fake = { requestWindow: simWindow };
+  Object.defineProperty(window, 'documentPictureInPicture', { configurable: true, get: function () { return mode === 'real' && realPip ? realPip : fake; } });
+  document.querySelectorAll('input[name=mode]').forEach(function (r) {
+    r.addEventListener('change', function () { mode = r.value; });
+  });
+  if (!realPip) { var rr = document.getElementById('mode-real'); rr.disabled = true; rr.parentNode.append(' (in diesem Browser nicht verfügbar)'); }
+
+  // ---------- Verbindung zum Run-Tab, wie app.js ihn aufruft ----------
+  var lang = 'de';
+  document.documentElement.lang = lang;
+  function t(k, n) { var s = (GherkitRun.TEXT[lang] && GherkitRun.TEXT[lang][k]) || GherkitRun.TEXT.en[k] || k; return n === undefined ? s : s.replace('{n}', n); }
+  function api(method, url, body) {
+    return fetch(url, { method: method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.statusText); return j; }); });
+  }
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      var v = attrs[k];
+      if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v; else if (k === 'html') e.innerHTML = v;
+      else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+      else if (v !== undefined && v !== null && v !== false) e.setAttribute(k, v === true ? '' : v);
+    });
+    (kids || []).forEach(function (c) { if (c) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return e;
+  }
+  GherkitRun.init({ t: t, el: el, api: api, S: { path: '' }, $: function (id) { return document.getElementById(id); } });
+  document.getElementById('ui-lang').addEventListener('change', function (e) { lang = e.target.value; document.documentElement.lang = lang; GherkitRun.render(); });
+  GherkitRun.show();
+
+  // ---------- getestete Anwendung ----------
+  var BOOKS = [{ t: 'Die Verwandlung', a: 'Franz Kafka', n: '3 Exemplare verfügbar' }, { t: 'Der Prozess', a: 'Franz Kafka', n: '1 Exemplar verfügbar' }, { t: 'Heidi', a: 'Johanna Spyri', n: 'ausgeliehen bis 10.11.2026' }];
+  document.getElementById('shop').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var q = document.getElementById('q').value.trim().toLowerCase(), ul = document.getElementById('hits'); ul.innerHTML = '';
+    var hits = q ? BOOKS.filter(function (b) { return (b.t + ' ' + b.a).toLowerCase().indexOf(q) >= 0; }) : [];
+    if (!hits.length) { var li = document.createElement('li'); li.textContent = 'Keine Bücher gefunden'; var sm = document.createElement('small'); sm.textContent = ''; li.appendChild(sm); ul.appendChild(li); return; }
+    hits.forEach(function (b) { var li = document.createElement('li'); li.appendChild(document.createTextNode(b.t + ' – ' + b.a)); var sm = document.createElement('small'); sm.textContent = b.n; li.appendChild(sm); ul.appendChild(li); });
+  });
+})();
+</script>
