@@ -24,7 +24,7 @@ gherkit report cucumber.json -o report.html --lang de
 | **Dokument** | Fachbereich, Review | Lesesicht als Living Documentation, Testfälle je Szenario-Vorlage |
 | **Struktur** | Business-Analyse | Formular-Editor auf dem AST; übersetzt alle Schlüsselwörter in eine andere Sprache |
 | **Split** | alle | Code und Dokument nebeneinander, live |
-| **Ausführen** | Testende | `@manual`-Szenarien geführt von Hand testen, Feature für Feature, Schritt für Schritt: gut / schlecht / ignorieren mit Pflichtbegründung, Kommentar, Nachweis, Ergebnisübersicht, Jira-Text; Ergebnis als Cucumber JSON ([manual-testing.md](docs/manual-testing.md)) |
+| **Ausführen** | Testende | `@manual`-Szenarien geführt von Hand testen, Feature für Feature, Schritt für Schritt: gut / schlecht / ignorieren mit Pflichtbegründung, Kommentar, Nachweis, Ergebnisübersicht, Jira-Text, dazu ein kleines schwebendes Begleitfenster für den aktuellen Schritt; Ergebnis als Cucumber JSON ([manual-testing.md](docs/manual-testing.md)) |
 
 ## gherkit testet gherkit
 

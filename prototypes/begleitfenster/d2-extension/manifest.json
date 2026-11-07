@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "gherkit Begleitfenster (Prototyp D2)",
+  "version": "0.0.1",
+  "description": "Manuelle Tests geführt durchführen, mit Seitenleiste und Hervorhebung des Feldes in der getesteten Seite.",
+  "permissions": ["sidePanel", "storage", "tabs", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "action": { "default_title": "gherkit Begleitfenster öffnen" },
+  "side_panel": { "default_path": "panel.html" },
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [{ "matches": ["<all_urls>"], "js": ["content.js"], "run_at": "document_idle" }]
+}
