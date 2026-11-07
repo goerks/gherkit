@@ -1,15 +1,69 @@
 name: release
 
+# Releases the version in the file VERSION.
+#
+#   1. Merging a change of VERSION into main starts the pipeline (or "Run workflow" on main).
+#   2. All platforms are built with goreleaser (nothing is published yet).
+#   3. Every archive is tested on its target platform: the smoke test (scripts/release-smoke.sh) and the
+#      complete acceptance specification (features/*.feature) run against the binary from the archive.
+#   4. Only when all six platforms pass, the GitHub release and its tag are created.
+#   5. The published files are downloaded again like a user would, checked against checksums.txt and run.
+#
+# Pull requests that touch the release files run steps 1 to 3 without publishing.
+# A version that already has a tag is never released twice. See docs/releasing.md.
+
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+    paths: [VERSION]
+  pull_request:
+    paths:
+      - VERSION
+      - .goreleaser.yaml
+      - .github/workflows/release.yml
+      - scripts/release-smoke.sh
+      - acceptance/**
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  release:
+  prepare:
+    name: version
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      publish: ${{ steps.v.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        shell: bash
+        run: |
+          v="$(tr -d '[:space:]' < VERSION)"
+          [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "VERSION must look like 1.2.3, got '$v'"; exit 1; }
+          publish=false
+          if [ "$GITHUB_REF" = refs/heads/main ] && [ "$GITHUB_EVENT_NAME" != pull_request ]; then
+            if git ls-remote --exit-code --tags origin "refs/tags/v$v" >/dev/null 2>&1; then
+              echo "v$v is already released, nothing to publish"
+            else
+              publish=true
+            fi
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+          echo "Version $v, publish: $publish" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: build all platforms
+    needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,9 +71,197 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - run: go vet ./...
       - run: go test ./internal/...
+      - name: Tag locally (goreleaser takes the version from the tag, the tag is only pushed on publish)
+        run: git tag "v$VERSION"
       - uses: goreleaser/goreleaser-action@v6
         with:
-          args: release --clean
+          args: release --clean --skip=publish,announce,validate
+      - name: Every platform has its archive
+        shell: bash
+        run: |
+          set -e
+          cd dist
+          for t in linux_amd64.tar.gz linux_arm64.tar.gz darwin_amd64.tar.gz darwin_arm64.tar.gz windows_amd64.zip windows_arm64.zip; do
+            test -s "gherkit_${VERSION}_$t" || { echo "missing: gherkit_${VERSION}_$t"; ls; exit 1; }
+          done
+          sha256sum -c checksums.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/checksums.txt
+          retention-days: 14
+
+  platform:
+    name: acceptance · ${{ matrix.target }}
+    needs: [prepare, build]
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: linux-amd64, os: ubuntu-24.04, goos: linux, goarch: amd64, ext: tar.gz, exe: "", tags: "" }
+          - { target: linux-arm64, os: ubuntu-24.04-arm, goos: linux, goarch: arm64, ext: tar.gz, exe: "", tags: "" }
+          - { target: darwin-amd64, os: macos-15-intel, goos: darwin, goarch: amd64, ext: tar.gz, exe: "", tags: "" }
+          - { target: darwin-arm64, os: macos-15, goos: darwin, goarch: arm64, ext: tar.gz, exe: "", tags: "" }
+          # cmd.exe has no cp, echo {tags} > file works differently: scenarios tagged @posix are left out here,
+          # the smoke test covers `gherkit run` on Windows with its own runner command.
+          - { target: windows-amd64, os: windows-2025, goos: windows, goarch: amd64, ext: zip, exe: ".exe", tags: "~@posix" }
+          - { target: windows-arm64, os: windows-11-arm, goos: windows, goarch: arm64, ext: zip, exe: ".exe", tags: "~@posix" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+      - name: Unpack the archive (tar.gz)
+        if: matrix.ext == 'tar.gz'
+        shell: bash
+        run: |
+          mkdir -p "release/${{ matrix.target }}"
+          tar -xzf "dist/gherkit_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}.tar.gz" -C "release/${{ matrix.target }}"
+      - name: Unpack the archive (zip)
+        if: matrix.ext == 'zip'
+        shell: pwsh
+        run: Expand-Archive -Path "dist/gherkit_${env:VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}.zip" -DestinationPath "release/${{ matrix.target }}"
+      - name: Locate the binary
+        shell: bash
+        run: |
+          bin="$(cd "release/${{ matrix.target }}" && pwd)/gherkit${{ matrix.exe }}"
+          if command -v cygpath >/dev/null; then bin="$(cygpath -m "$bin")"; fi
+          test -f "$bin" || { ls -R "release/${{ matrix.target }}"; exit 1; }
+          echo "BIN=$bin" >> "$GITHUB_ENV"
+          echo "binary: $bin"
+          file "$bin" || true
+          uname -sm
+      - name: Smoke test of the released binary
+        shell: bash
+        run: scripts/release-smoke.sh "$BIN" "$VERSION"
+      - name: Acceptance specification against the released binary
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHERKIT_BINARY: ${{ env.BIN }}
+          GHERKIT_TAGS: ${{ matrix.tags }}
+        run: go test -count=1 ./acceptance
+      - name: Report of this platform
+        if: always()
+        shell: bash
+        run: |
+          test -s build/acceptance/cucumber.json || exit 0
+          "$BIN" report build/acceptance/cucumber.json -o build/acceptance/report.html --title "gherkit $VERSION on ${{ matrix.target }}"
+          "$BIN" report build/acceptance/cucumber.json -f md --title "gherkit $VERSION on ${{ matrix.target }}" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance-${{ matrix.target }}
+          path: build/acceptance/
+          if-no-files-found: ignore
+
+  publish:
+    name: publish v${{ needs.prepare.outputs.version }}
+    needs: [prepare, build, platform]
+    if: needs.prepare.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+      - name: Release notes
+        run: |
+          cat > notes.md <<EOF
+          ## Download
+
+          | System | File |
+          | --- | --- |
+          | Windows (x64, ARM) | \`gherkit_${VERSION}_windows_amd64.zip\`, \`gherkit_${VERSION}_windows_arm64.zip\` |
+          | macOS (Intel, Apple silicon) | \`gherkit_${VERSION}_darwin_amd64.tar.gz\`, \`gherkit_${VERSION}_darwin_arm64.tar.gz\` |
+          | Linux (x64, ARM) | \`gherkit_${VERSION}_linux_amd64.tar.gz\`, \`gherkit_${VERSION}_linux_arm64.tar.gz\` |
+
+          Each archive contains the binary, the licence and the examples. \`checksums.txt\` has the SHA-256 sums.
+          Every archive was tested on its own platform before this release was published (smoke test and the
+          complete acceptance specification, see the release workflow run).
+          The binaries are not signed: Windows SmartScreen and macOS Gatekeeper may ask for confirmation
+          (macOS: \`xattr -d com.apple.quarantine gherkit\`).
+
+          ## Changes
+
+          EOF
+      - name: Create the release and its tag
+        run: |
+          flags=""
+          case "$VERSION" in *-*) flags="--prerelease" ;; esac
+          gh release create "v$VERSION" dist/*.tar.gz dist/*.zip dist/checksums.txt \
+            --target "$GITHUB_SHA" --title "gherkit $VERSION" --notes-file notes.md --generate-notes $flags
+
+  published:
+    name: download v${{ needs.prepare.outputs.version }} · ${{ matrix.target }}
+    needs: [prepare, publish]
+    runs-on: ${{ matrix.os }}
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: linux-amd64, os: ubuntu-24.04, goos: linux, goarch: amd64, ext: tar.gz }
+          - { target: linux-arm64, os: ubuntu-24.04-arm, goos: linux, goarch: arm64, ext: tar.gz }
+          - { target: darwin-amd64, os: macos-15-intel, goos: darwin, goarch: amd64, ext: tar.gz }
+          - { target: darwin-arm64, os: macos-15, goos: darwin, goarch: arm64, ext: tar.gz }
+          - { target: windows-amd64, os: windows-2025, goos: windows, goarch: amd64, ext: zip }
+          - { target: windows-arm64, os: windows-11-arm, goos: windows, goarch: arm64, ext: zip }
+    steps:
+      - name: Download from the release like a user, verify the checksum
+        shell: bash
+        run: |
+          set -e
+          base="https://github.com/${{ github.repository }}/releases/download/v$VERSION"
+          file="gherkit_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}.${{ matrix.ext }}"
+          curl -fsSL --retry 5 --retry-delay 5 -O "$base/$file"
+          curl -fsSL --retry 5 --retry-delay 5 -O "$base/checksums.txt"
+          want="$(grep " $file\$" checksums.txt | cut -d' ' -f1)"
+          if command -v sha256sum >/dev/null; then got="$(sha256sum "$file" | cut -d' ' -f1)"; else got="$(shasum -a 256 "$file" | cut -d' ' -f1)"; fi
+          [ -n "$want" ] && [ "$want" = "$got" ] || { echo "checksum mismatch for $file: want '$want', got '$got'"; exit 1; }
+          echo "checksum ok: $file"
+          echo "FILE=$file" >> "$GITHUB_ENV"
+      - name: Unpack and run (tar.gz)
+        if: matrix.ext == 'tar.gz'
+        shell: bash
+        run: |
+          mkdir out && tar -xzf "$FILE" -C out
+          out/gherkit --version | grep -q "^gherkit $VERSION "
+          out/gherkit dialects | head -3
+      - name: Unpack and run (zip)
+        if: matrix.ext == 'zip'
+        shell: pwsh
+        run: |
+          Expand-Archive -Path $env:FILE -DestinationPath out
+          $v = & ./out/gherkit.exe --version
+          Write-Host $v
+          if ($v -notlike "gherkit $env:VERSION *") { throw "unexpected version: $v" }
+      - name: The install step written by "gherkit ci" works against the published release
+        if: matrix.target == 'linux-amd64'
+        shell: bash
+        run: |
+          ./out/gherkit ci -o - --provider github --adapter none \
+            | sed -n '/^ *V="latest"/,/tar -xz/p' | sed 's/^ *//' > install.sh
+          test -s install.sh
+          cat install.sh
+          mkdir home
+          HOME="$PWD/home" sh install.sh
+          "$PWD/home/.local/bin/gherkit" --version | grep -q "^gherkit $VERSION "

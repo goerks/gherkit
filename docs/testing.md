@@ -13,6 +13,7 @@ Mark it as a required check in the repository settings so nothing is merged with
 | Windows binary | `gherkit.exe` builds and runs; `fmt` and `lint` work on a CRLF checkout; `gherkit run` starts a runner through `cmd.exe`, also with spaces in paths. The binary is an artifact of the run | Windows |
 | Java adapter | Maven and Cucumber-JVM run through `gherkit run`; a failing scenario gives exit code 1 | Linux |
 | Release config | goreleaser builds every platform | Linux |
+| Release (`release.yml`, see [releasing.md](releasing.md)) | Every archive is unpacked and tested on its target system before the release is published: smoke test and the acceptance specification against the shipped binary; afterwards the published files are downloaded and checked | Linux x64/ARM, macOS Intel/ARM, Windows x64/ARM |
 | Static site | The GitHub Pages site builds, every download is complete and valid, the Linux download runs, and the CLI works in the browser (WebAssembly, virtual folder, terminal), see [demo.md](demo.md) | Linux |
 
 ## What the pipeline cannot prove

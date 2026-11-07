@@ -10,10 +10,12 @@ Feature: Manual scenarios
 
   Rule: Automated runs exclude manual scenarios
 
+    @posix
     Scenario: Manual scenarios are excluded by default
       When I run "gherkit run --cmd \"cp results.json {output}; echo {tags} > tags.txt\" --fail-on-failed=false"
       Then the file "tags.txt" contains "not @manual"
 
+    @posix
     Scenario: The tag expression can be changed
       When I run "gherkit run --cmd \"cp results.json {output}; echo {tags} > tags.txt\" --tags @smoke --fail-on-failed=false"
       Then the file "tags.txt" contains "@smoke"
@@ -50,6 +52,7 @@ Feature: Manual scenarios
       When I start a manual run as "Anna" for the tag "@nightly"
       Then the editor refuses the request with "no test cases found"
 
+    @posix
     Scenario: A failed manual step fails the build and shows up in the report
       Given I start a manual run as "Anna" for the tag "@manual"
       And I record "passed" with the comment "" for step 1 of test case 1

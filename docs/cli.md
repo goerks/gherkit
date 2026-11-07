@@ -63,7 +63,7 @@ Prepares a folder (default: the current folder, created when missing): writes `f
 
 ### `gherkit ci [folder]`
 
-Writes a CI pipeline: installs gherkit from the GitHub release, runs `fmt --check` and `lint --strict` on the feature files, runs the tests with `gherkit run` and publishes the HTML report as artifact. The adapter is detected (`go.mod`, `pom.xml`, `build.gradle`); in other projects the pipeline only checks the files. It needs a published release (the install step downloads `gherkit_<version>_linux_amd64.tar.gz`). The templates are tested for structure and valid YAML, not on every CI platform.
+Writes a CI pipeline: installs gherkit from the GitHub release, runs `fmt --check` and `lint --strict` on the feature files, runs the tests with `gherkit run` and publishes the HTML report as artifact. The adapter is detected (`go.mod`, `pom.xml`, `build.gradle`); in other projects the pipeline only checks the files. It needs a published release (the install step downloads `gherkit_<version>_linux_amd64.tar.gz`, see [releasing.md](releasing.md)). The templates are tested for structure and valid YAML, not on every CI platform.
 
 | Flag | |
 | --- | --- |
