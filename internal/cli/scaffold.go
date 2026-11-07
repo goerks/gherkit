@@ -97,11 +97,12 @@ Existing files are never overwritten unless --force is given. --dry-run shows wh
 				}
 				existing = len(found)
 			}
+			// The language is checked even when no example is written.
+			ex, err := scaffold.Init(lang)
+			if err != nil {
+				return &ExitError{ExitUsage, err.Error()}
+			}
 			if existing == 0 {
-				ex, err := scaffold.Init(lang)
-				if err != nil {
-					return &ExitError{ExitUsage, err.Error()}
-				}
 				files = append(files, ex...)
 			} else {
 				fmt.Fprintf(errw, "note: the folder already has %d feature file(s), no example is written\n", existing)
