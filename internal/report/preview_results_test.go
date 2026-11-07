@@ -68,7 +68,7 @@ func TestPreviewResultsMatchFeatureFiles(t *testing.T) {
 			t.Errorf("%s: results cover\n%s\nbut the file has\n%s", uri, strings.Join(names, "\n"), strings.Join(want, "\n"))
 		}
 	}
-	if len(got) != 13 {
-		t.Errorf("expected 13 feature files in the results, got %d", len(got))
+	if len(got) != 14 {
+		t.Errorf("expected 14 feature files in the results, got %d", len(got))
 	}
 }
