@@ -55,8 +55,11 @@ g fmt "$work/lf.feature" >/dev/null
 same_bytes "$work/lf.feature" "$work/lf.expected" || fail "fmt did not format an LF file to the LF form: $(bytes "$work/lf.feature")"
 
 step "parse and dialects"
-g parse "$examples/shop/checkout.feature" | grep -q '"feature"' || fail "parse printed no feature"
-g dialects de | grep -q "Szenario" || fail "dialects de"
+# Output is captured first: "grep -q" would close the pipe early and kill the binary with SIGPIPE (pipefail).
+parsed="$(g parse "$examples/shop/checkout.feature")"
+case "$parsed" in *'"feature"'*) ;; *) fail "parse printed no feature" ;; esac
+dialect="$(g dialects de)"
+case "$dialect" in *Szenario*) ;; *) fail "dialects de" ;; esac
 
 step "run starts a runner command and reports"
 cat > "$work/results.json" <<'JSON'
@@ -96,7 +99,7 @@ for _ in $(seq 1 50); do
 done
 [ -n "$url" ] || { cat "$work/editor.log"; fail "the editor did not start"; }
 page="$(curl -fsS "$url")" || fail "editor page"
-echo "$page" | grep -qi "gherkit" || fail "editor page has no content"
+case "$page" in *[Gg]herkit*) ;; *) fail "editor page has no content" ;; esac
 curl -fsS "${url}app.js" >/dev/null || fail "editor script"
 
 echo

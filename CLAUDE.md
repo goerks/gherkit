@@ -13,11 +13,11 @@ Wird von Claude Code automatisch gelesen. Stand: 2026-11-05.
 
 ## Offene Punkte und Reihenfolge (Analyse 2026-11-07, mit dem Nutzer besprochen)
 
-Commands: fertig sind `fmt`, `lint`, `parse`, `dialects`, `edit`, `report`, `run` (Adapter Go, Java, `--cmd`). Es fehlen `init`, `ci`, `steps sync`, `glossary`, `coverage`, `jira`/Xray, `lsp`, Plugins, Adapter TS/.NET.
+Commands: fertig sind `fmt`, `lint`, `parse`, `dialects`, `edit`, `report`, `run` (Adapter Go, Java, `--cmd`), `init`, `ci`. Es fehlen `steps sync`, `glossary`, `coverage`, `jira`/Xray, `lsp`, Plugins, Adapter TS/.NET.
 
 Lücken bei Debugging und Fehlerbehandlung: kein `--verbose`/`--quiet`, kein Logger, `run` zeigt Befehl/Umgebung nicht an, kein Panic-Handler in `cmd/gherkit`, keine Fehlercodes mit Hinweisen, keine Konfigurationsdatei (`.gherkit.yaml`), Fehlerbehandlung der Editor-HTTP-API ungeprüft. Vorhanden: Exit-Codes 0-3 (`docs/cli.md`), brauchbare Meldungen, Parser ohne Panics.
 
-Empfohlene Reihenfolge: 1. `init` und `ci` (umgesetzt: `internal/scaffold`, `internal/cli/scaffold.go`, `features/scaffolding.feature`; nur in der CI getestet, Vorlagen für GitLab/Azure nicht auf den Plattformen erprobt), 2. Debugging/Fehlerbehandlung (Flags, Logger, Panic-Handler, Konfigurationsdatei; vor dem Pilot), 3. `v0.1.0` (in Arbeit, Branch `claude/release-0-1-0`: `VERSION`-Datei löst beim Merge nach `main` Release aus, vorher Abnahme je Plattform, siehe `docs/releasing.md`; ersetzt das manuelle Taggen; `ci`-Vorlagen laden Releases von GitHub), 4. `steps sync` und `glossary`, dann Jira/Xray (M3). Demo-Feinschliff und Report-Ausbau bis nach Pilotstart zurückstellen. Weitere offene Punkte: Render-Vorschau ungetestet, Live-Demo nicht bestätigt, Xray-Status für «Ignoriert» (TODO oder ABORTED) offen, Pilot beim Kunden (Gate vor M3).
+Empfohlene Reihenfolge: 1. `init` und `ci` (umgesetzt: `internal/scaffold`, `internal/cli/scaffold.go`, `features/scaffolding.feature`; nur in der CI getestet, Vorlagen für GitLab/Azure nicht auf den Plattformen erprobt), 2. Debugging/Fehlerbehandlung (Flags, Logger, Panic-Handler, Konfigurationsdatei; vor dem Pilot), 3. `v0.1.0` (**veröffentlicht 2026-11-07**: https://github.com/goerks/gherkit/releases/tag/v0.1.0, sechs Archive und `checksums.txt`; ausgelöst durch die Datei `VERSION` beim Merge nach `main`, vorher Abnahme je Plattform, siehe `docs/releasing.md`. Neue Version = `VERSION` ändern und mergen. Download-Prüfung nach dem Release lässt sich über «Run workflow» auf `main` wiederholen), 4. `steps sync` und `glossary`, dann Jira/Xray (M3). Demo-Feinschliff und Report-Ausbau bis nach Pilotstart zurückstellen. Weitere offene Punkte: Render-Vorschau ungetestet, Live-Demo nicht bestätigt, Xray-Status für «Ignoriert» (TODO oder ABORTED) offen, Pilot beim Kunden (Gate vor M3).
 
 ## Projekt
 
@@ -41,7 +41,7 @@ Stand der Schritte (alle gemergt, PRs #5 bis #8):
 5. **Offen: Feinschliff** (Report im Terminal ist seit PR #11 da) (Banner-Text "Im Aufbau" anpassen, Download-Dialog, mehr Beispieldateien, Tests gegen gebaute Seite weiter ausbauen)
 
 Weitere offene Punkte:
-- Erstes Release `v0.1.0` taggen (dauerhafte Download-Links statt `dev-<commit>`); vom Nutzer noch nicht entschieden.
+- Release `v0.1.0` ist veröffentlicht (Stand 2026-11-07). Die Landing-Seite der Demo verlinkt noch die `dev-<commit>`-ZIPs aus `scripts/build-site.sh`; Links auf das Release stehen aus.
 - Ob die Live-Seite beim Nutzer wirklich funktioniert, wurde nach dem Cache-Fix noch nicht bestätigt (Test: Strg+F5, dann `gherkit run --adapter demo . --report report.html`, erwartet 17 Szenarien, 16 bestanden, 1 fehlgeschlagen, 6 `@manual` übersprungen).
 - Jira/Xray-Anbindung, weitere Adapter (TS, .NET).
 

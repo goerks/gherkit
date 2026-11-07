@@ -43,6 +43,10 @@ before it is needed.
 If a platform fails, nothing is published: fix the cause and merge again (no tag exists yet).
 If publishing itself fails after the tests, run the workflow again on `main` ("Run workflow").
 
+To check an existing release again (for example after a change of the check itself), run the workflow on `main`
+("Run workflow") while `VERSION` names the released version: nothing is built or published, only the download
+check of step 4 runs against the published files.
+
 ## What is not covered
 
 - The binaries are not signed. Windows SmartScreen and macOS Gatekeeper may ask for confirmation
