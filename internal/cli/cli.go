@@ -81,7 +81,7 @@ func NewRoot(stdout, stderr io.Writer) *cobra.Command {
 	root.SetOut(stdout)
 	root.SetErr(stderr)
 	root.SetVersionTemplate("gherkit {{.Version}} (" + Commit + ")\n")
-	root.AddCommand(fmtCmd(), lintCmd(), reportCmd(), runCmd(), editCmd(), dialectsCmd(), parseCmd())
+	root.AddCommand(fmtCmd(), lintCmd(), reportCmd(), runCmd(), editCmd(), dialectsCmd(), parseCmd(), initCmd(), ciCmd())
 	return root
 }
 

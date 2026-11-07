@@ -11,6 +11,14 @@ Wird von Claude Code automatisch gelesen. Stand: 2026-11-05.
 - Der Nutzer testet oft nicht lokal. Wenn etwas abgenommen werden soll, zeigen statt beschreiben: Video über die CI (siehe unten) oder Bilder im Chat.
 - Nur PRs erstellen, wenn gewünscht. In dieser Sitzung wollte der Nutzer ausdrücklich PRs und Merges Schritt für Schritt.
 
+## Offene Punkte und Reihenfolge (Analyse 2026-11-07, mit dem Nutzer besprochen)
+
+Commands: fertig sind `fmt`, `lint`, `parse`, `dialects`, `edit`, `report`, `run` (Adapter Go, Java, `--cmd`). Es fehlen `init`, `ci`, `steps sync`, `glossary`, `coverage`, `jira`/Xray, `lsp`, Plugins, Adapter TS/.NET.
+
+Lücken bei Debugging und Fehlerbehandlung: kein `--verbose`/`--quiet`, kein Logger, `run` zeigt Befehl/Umgebung nicht an, kein Panic-Handler in `cmd/gherkit`, keine Fehlercodes mit Hinweisen, keine Konfigurationsdatei (`.gherkit.yaml`), Fehlerbehandlung der Editor-HTTP-API ungeprüft. Vorhanden: Exit-Codes 0-3 (`docs/cli.md`), brauchbare Meldungen, Parser ohne Panics.
+
+Empfohlene Reihenfolge: 1. `init` und `ci` (umgesetzt: `internal/scaffold`, `internal/cli/scaffold.go`, `features/scaffolding.feature`; nur in der CI getestet, Vorlagen für GitLab/Azure nicht auf den Plattformen erprobt), 2. Debugging/Fehlerbehandlung (Flags, Logger, Panic-Handler, Konfigurationsdatei; vor dem Pilot), 3. `v0.1.0` taggen (`ci`-Vorlagen laden Releases von GitHub), 4. `steps sync` und `glossary`, dann Jira/Xray (M3). Demo-Feinschliff und Report-Ausbau bis nach Pilotstart zurückstellen. Weitere offene Punkte: Render-Vorschau ungetestet, Live-Demo nicht bestätigt, Xray-Status für «Ignoriert» (TODO oder ABORTED) offen, Pilot beim Kunden (Gate vor M3).
+
 ## Projekt
 
 Go-CLI **gherkit** (cobra): Gherkin `fmt`, `lint`, `parse`, `edit` (Web-Editor, eingebettet in `internal/server/web`, reines JS ohne Build), `report`, `run` (Runner-Adapter). Offizieller Cucumber-Gherkin-Parser, Format gegen den offiziellen Testkorpus abgesichert. Docs: `docs/` (ADRs 0001-0009, `testing.md`, `demo.md`, `editor-variants.md`, `roadmap.md`).
