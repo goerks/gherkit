@@ -38,7 +38,8 @@ g fmt --check "$work/bad.feature" >/dev/null || fail "formatted file still needs
 step "CRLF files stay CRLF"
 printf 'Feature: Crlf\r\n\r\n  Scenario: S\r\n    Given x\r\n' > "$work/crlf.feature"
 g fmt "$work/crlf.feature" >/dev/null
-grep -q $'\r' "$work/crlf.feature" || fail "fmt removed the CRLF line endings"
+# od instead of grep: grep of Git Bash on Windows reads in text mode and hides the CR.
+od -An -c "$work/crlf.feature" | grep -q '\\r' || fail "fmt removed the CRLF line endings"
 
 step "parse and dialects"
 g parse "$examples/shop/checkout.feature" | grep -q '"feature"' || fail "parse printed no feature"
