@@ -39,6 +39,7 @@ jobs:
     outputs:
       version: ${{ steps.v.outputs.version }}
       publish: ${{ steps.v.outputs.publish }}
+      released: ${{ steps.v.outputs.released }}
     steps:
       - uses: actions/checkout@v4
       - id: v
@@ -47,20 +48,23 @@ jobs:
           v="$(tr -d '[:space:]' < VERSION)"
           [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "VERSION must look like 1.2.3, got '$v'"; exit 1; }
           publish=false
-          if [ "$GITHUB_REF" = refs/heads/main ] && [ "$GITHUB_EVENT_NAME" != pull_request ]; then
-            if git ls-remote --exit-code --tags origin "refs/tags/v$v" >/dev/null 2>&1; then
-              echo "v$v is already released, nothing to publish"
-            else
-              publish=true
-            fi
+          released=false
+          if git ls-remote --exit-code --tags origin "refs/tags/v$v" >/dev/null 2>&1; then
+            released=true
+            echo "v$v is already released, nothing to publish"
+          elif [ "$GITHUB_REF" = refs/heads/main ] && [ "$GITHUB_EVENT_NAME" != pull_request ]; then
+            publish=true
           fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
           echo "publish=$publish" >> "$GITHUB_OUTPUT"
-          echo "Version $v, publish: $publish" >> "$GITHUB_STEP_SUMMARY"
+          echo "released=$released" >> "$GITHUB_OUTPUT"
+          echo "Version $v, publish: $publish, already released: $released" >> "$GITHUB_STEP_SUMMARY"
 
+  # "Run workflow" for an already released version only re-checks the published files (job "published").
   build:
     name: build all platforms
     needs: prepare
+    if: github.event_name != 'workflow_dispatch' || needs.prepare.outputs.released != 'true'
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
@@ -73,8 +77,9 @@ jobs:
           go-version-file: go.mod
       - run: go vet ./...
       - run: go test ./internal/...
+      # -f: for an already released version the tag exists and points at the release commit.
       - name: Tag locally (goreleaser takes the version from the tag, the tag is only pushed on publish)
-        run: git tag "v$VERSION"
+        run: git tag -f "v$VERSION"
       - uses: goreleaser/goreleaser-action@v6
         with:
           args: release --clean --skip=publish,announce,validate
@@ -209,9 +214,15 @@ jobs:
           gh release create "v$VERSION" dist/*.tar.gz dist/*.zip dist/checksums.txt \
             --target "$GITHUB_SHA" --title "gherkit $VERSION" --notes-file notes.md --generate-notes $flags
 
+  # Runs after publishing, and on "Run workflow" on main for a version that is already released
+  # (checks the published files again, builds and publishes nothing).
   published:
     name: download v${{ needs.prepare.outputs.version }} · ${{ matrix.target }}
     needs: [prepare, publish]
+    if: >-
+      always() && needs.prepare.result == 'success' &&
+      (needs.publish.result == 'success' ||
+      (github.event_name == 'workflow_dispatch' && needs.prepare.outputs.released == 'true'))
     runs-on: ${{ matrix.os }}
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
@@ -244,8 +255,11 @@ jobs:
         shell: bash
         run: |
           mkdir out && tar -xzf "$FILE" -C out
-          out/gherkit --version | grep -q "^gherkit $VERSION "
-          out/gherkit dialects | head -3
+          # No "| head" or "| grep -q" on the binary: the early close ends it with SIGPIPE (141) under pipefail.
+          v="$(out/gherkit --version)"; echo "$v"
+          case "$v" in "gherkit $VERSION "*) ;; *) echo "unexpected version: $v"; exit 1 ;; esac
+          out/gherkit dialects > dialects.txt
+          head -3 dialects.txt
       - name: Unpack and run (zip)
         if: matrix.ext == 'zip'
         shell: pwsh
@@ -264,4 +278,5 @@ jobs:
           cat install.sh
           mkdir home
           HOME="$PWD/home" sh install.sh
-          "$PWD/home/.local/bin/gherkit" --version | grep -q "^gherkit $VERSION "
+          v="$("$PWD/home/.local/bin/gherkit" --version)"; echo "$v"
+          case "$v" in "gherkit $VERSION "*) ;; *) echo "unexpected version: $v"; exit 1 ;; esac
